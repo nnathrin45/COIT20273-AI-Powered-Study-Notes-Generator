@@ -1,0 +1,1 @@
+# COIT20273-AI-Powered-Study-Notes-Generator
