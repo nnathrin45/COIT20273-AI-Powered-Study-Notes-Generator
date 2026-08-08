@@ -1,17 +1,36 @@
 const express = require("express");
+const db = require("./config/database");
+const authenticateUser = require("./middleware/auth.middleware");
 
 const app = express();
+
 const PORT = 5000;
 
-// Middleware
+const healthRoutes = require("./routes/health.routes");
+const userRoutes = require("./routes/user.routes");
+const noteRoutes = require("./routes/note.routes");
+const uploadRoutes = require("./routes/upload.routes");
+const uploadedRoutes = require("./routes/uploaded.routes");
+
 app.use(express.json());
 
-// Default route
-app.get("/", (req, res) => {
-    res.send("AI-Powered-Study-Notes-Generator Backend is Running!");
+app.use("/api", healthRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/uploaded", uploadedRoutes);
+
+app.get("/api/profile", authenticateUser, (req, res) => {
+    res.json({
+        status: "success",
+        user: req.user
+    });
 });
 
-// Start the server
+app.get("/test", (req, res) => {
+    res.send("Server is updated");
+});
+
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
