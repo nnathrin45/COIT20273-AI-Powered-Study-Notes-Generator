@@ -1,16 +1,19 @@
 import { NavLink, Outlet } from 'react-router'
 
 function AppLayout() {
-  const menuItems = [
+  const availableMenuItems = [
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Upload Material', path: '/upload' },
-    { name: 'Summaries', path: '/summaries' },
-    { name: 'Flashcards', path: '/flashcards' },
-    { name: 'Practice Quiz', path: '/quiz' },
-    { name: 'Concept Explanation', path: '/explanation' },
-    { name: 'Study Planner', path: '/study-plan' },
-    { name: 'Saved Materials', path: '/saved-materials' },
-    { name: 'Progress', path: '/progress' },
+  ]
+
+  const futureFeatures = [
+    'Summaries',
+    'Flashcards',
+    'Practice Quiz',
+    'Concept Explanation',
+    'Study Planner',
+    'Saved Materials',
+    'Progress',
   ]
 
   return (
@@ -23,33 +26,63 @@ function AppLayout() {
             <h1 className="text-xl font-bold">
               AI Study Notes
             </h1>
+
             <p className="mt-1 text-sm text-slate-400">
               Study smarter with AI
             </p>
           </div>
 
-          <nav className="flex-1 space-y-1 p-4">
-            {menuItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `block rounded-lg px-4 py-3 text-sm font-medium transition ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`
-                }
-              >
-                {item.name}
-              </NavLink>
-            ))}
+          {/* Navigation */}
+          <nav className="flex-1 p-4">
+
+            {/* Available pages */}
+            <div className="space-y-1">
+              {availableMenuItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `block rounded-lg px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`
+                  }
+                >
+                  {item.name}
+                </NavLink>
+              ))}
+            </div>
+
+            {/* Future features */}
+            <div className="mt-5 border-t border-slate-700 pt-4">
+              <p className="mb-2 px-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Study Tools
+              </p>
+
+              <div className="space-y-1">
+                {futureFeatures.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center justify-between rounded-lg px-4 py-3 text-sm text-slate-500"
+                  >
+                    <span>{feature}</span>
+
+                    <span className="text-xs">
+                      Soon
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </nav>
 
+          {/* Sign Out */}
           <div className="border-t border-slate-700 p-4">
             <NavLink
               to="/login"
-              className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+              className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
             >
               Sign Out
             </NavLink>
@@ -72,6 +105,7 @@ function AppLayout() {
                 <p className="text-sm font-medium text-gray-800">
                   Student
                 </p>
+
                 <p className="text-xs text-gray-500">
                   student@example.com
                 </p>

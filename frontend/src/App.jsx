@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import ComingSoon from './pages/ComingSoon'
 import AppLayout from './components/AppLayout'
+import Upload from './pages/Upload'
 
 function App() {
   return (
@@ -36,7 +37,7 @@ function App() {
 
         <Route
           path="/upload"
-          element={<ComingSoon title="Upload Study Material" />}
+          element={<Upload />}
         />
 
         <Route
