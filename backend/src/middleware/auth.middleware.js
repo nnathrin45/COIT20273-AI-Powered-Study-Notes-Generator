@@ -17,7 +17,7 @@ const authenticateUser = (req, res, next) => {
 
         const decoded = jwt.verify(
             token,
-            "study_notes_secret"
+            "process.env.JWT_SECRET"
         );
 
         req.user = decoded;

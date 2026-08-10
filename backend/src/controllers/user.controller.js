@@ -79,7 +79,7 @@ const loginUser = async (req, res) => {
         user_id: user.user_id,
         email: user.email
       },
-      "study_notes_secret",
+      "process.env.JWT_SECRET",
       {
         expiresIn: "1d"
       }
