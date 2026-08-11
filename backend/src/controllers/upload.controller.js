@@ -16,21 +16,24 @@ const uploadFile = async (req, res) => {
     const filePath = path.resolve(req.file.path);
 
     // Select the correct extraction service for the file type
+    const ext = path.extname(req.file.originalname).toLowerCase();
+
     let extractedText;
 
-    switch (req.file.mimetype) {
-      case "application/pdf":
+    switch (ext) {
+      case ".pdf":
         extractedText = await extractTextFromPDF(filePath);
         break;
-      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      case ".docx":
         extractedText = await extractTextFromDOCX(filePath);
         break;
-      case "text/plain":
+      case ".txt":
         extractedText = await extractTextFromTXT(filePath);
         break;
       default:
-        return res.status(400).json({
+        return res.status(415).json({
           status: "error",
+          code: "UNSUPPORTED_FILE_TYPE",
           message: "Unsupported file type"
         });
     }
