@@ -8,6 +8,7 @@ import AppLayout from './components/AppLayout'
 import Upload from './pages/Upload'
 import Summary from './pages/Summary'
 import Flashcards from './pages/Flashcards'
+import Quiz from './pages/Quiz'
 
 function App() {
   return (
@@ -54,7 +55,7 @@ function App() {
 
         <Route
           path="/quiz"
-          element={<ComingSoon title="Practice Quiz" />}
+          element={<Quiz />}
         />
 
         <Route
