@@ -7,6 +7,7 @@ import ComingSoon from './pages/ComingSoon'
 import AppLayout from './components/AppLayout'
 import Upload from './pages/Upload'
 import Summary from './pages/Summary'
+import Flashcards from './pages/Flashcards'
 
 function App() {
   return (
@@ -48,7 +49,7 @@ function App() {
 
         <Route
           path="/flashcards"
-          element={<ComingSoon title="Flashcards" />}
+          element={<Flashcards />}
         />
 
         <Route
