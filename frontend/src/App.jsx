@@ -11,6 +11,7 @@ import Flashcards from './pages/Flashcards'
 import Quiz from './pages/Quiz'
 import Explanation from './pages/Explanation'
 import StudyPlanner from './pages/StudyPlanner'
+import SavedMaterials from './pages/SavedMaterials'
 
 function App() {
   return (
@@ -72,7 +73,7 @@ function App() {
 
         <Route
           path="/saved-materials"
-          element={<ComingSoon title="Saved Materials" />}
+          element={<SavedMaterials />}
         />
 
         <Route
