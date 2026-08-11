@@ -9,6 +9,7 @@ import Upload from './pages/Upload'
 import Summary from './pages/Summary'
 import Flashcards from './pages/Flashcards'
 import Quiz from './pages/Quiz'
+import Explanation from './pages/Explanation'
 
 function App() {
   return (
@@ -60,7 +61,7 @@ function App() {
 
         <Route
           path="/explanation"
-          element={<ComingSoon title="Concept Explanation" />}
+          element={<Explanation />}
         />
 
         <Route
