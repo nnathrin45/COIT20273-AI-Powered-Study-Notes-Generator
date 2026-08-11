@@ -10,6 +10,7 @@ import Summary from './pages/Summary'
 import Flashcards from './pages/Flashcards'
 import Quiz from './pages/Quiz'
 import Explanation from './pages/Explanation'
+import StudyPlanner from './pages/StudyPlanner'
 
 function App() {
   return (
@@ -66,7 +67,7 @@ function App() {
 
         <Route
           path="/study-plan"
-          element={<ComingSoon title="Study Planner" />}
+          element={<StudyPlanner />}
         />
 
         <Route
