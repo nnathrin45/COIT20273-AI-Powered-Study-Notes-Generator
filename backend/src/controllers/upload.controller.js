@@ -9,6 +9,7 @@ const uploadFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         status: "error",
+        code: "NO_FILE",
         message: "No file uploaded"
       });
     }
@@ -42,6 +43,7 @@ const uploadFile = async (req, res) => {
     if (!extractedText || extractedText.trim().length === 0) {
       return res.status(422).json({
         status: "error",
+        code: "NO_READABLE_TEXT",
         message: "No readable text could be extracted from this file. " +
                  "Scanned or image-only documents are not supported. " +
                  "Please upload a text-based document."
@@ -76,6 +78,7 @@ const uploadFile = async (req, res) => {
 
     res.status(500).json({
       status: "error",
+      code: "PROCESSING_FAILED",
       message: "Unable to upload or process file"
     });
   }

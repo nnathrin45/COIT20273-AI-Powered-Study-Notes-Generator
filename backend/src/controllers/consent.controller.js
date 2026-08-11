@@ -29,6 +29,7 @@ const recordConsent = async (req, res) => {
 
     res.status(500).json({
       status: "error",
+      code: "CONSENT_ERROR",
       message: "Unable to record consent"
     });
   }
@@ -64,6 +65,7 @@ const getConsentStatus = async (req, res) => {
 
     res.status(500).json({
       status: "error",
+      code: "CONSENT_FETCH_ERROR",
       message: "Unable to fetch consent status"
     });
   }
