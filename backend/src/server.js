@@ -5,13 +5,14 @@ const authenticateUser = require("./middleware/auth.middleware");
 
 const app = express();
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 const healthRoutes = require("./routes/health.routes");
 const userRoutes = require("./routes/user.routes");
 const noteRoutes = require("./routes/note.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const uploadedRoutes = require("./routes/uploaded.routes");
+const consentRoutes = require("./routes/consent.routes"); 
 
 app.use(express.json());
 
@@ -20,6 +21,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/uploaded", uploadedRoutes);
+app.use("/api/consent", consentRoutes);  
 
 app.get("/api/profile", authenticateUser, (req, res) => {
     res.json({
