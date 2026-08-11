@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import ComingSoon from './pages/ComingSoon'
 import AppLayout from './components/AppLayout'
 import Upload from './pages/Upload'
+import Summary from './pages/Summary'
 
 function App() {
   return (
@@ -42,7 +43,7 @@ function App() {
 
         <Route
           path="/summaries"
-          element={<ComingSoon title="Summaries" />}
+          element={<Summary />}
         />
 
         <Route
