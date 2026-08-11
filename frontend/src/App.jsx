@@ -12,6 +12,7 @@ import Quiz from './pages/Quiz'
 import Explanation from './pages/Explanation'
 import StudyPlanner from './pages/StudyPlanner'
 import SavedMaterials from './pages/SavedMaterials'
+import Progress from './pages/Progress'
 
 function App() {
   return (
@@ -78,7 +79,7 @@ function App() {
 
         <Route
           path="/progress"
-          element={<ComingSoon title="Progress" />}
+          element={<Progress />}
         />
 
       </Route>
