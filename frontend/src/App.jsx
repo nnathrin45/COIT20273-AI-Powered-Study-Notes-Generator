@@ -3,8 +3,6 @@ import { Navigate, Route, Routes } from 'react-router'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import ComingSoon from './pages/ComingSoon'
-import AppLayout from './components/AppLayout'
 import Upload from './pages/Upload'
 import Summary from './pages/Summary'
 import Flashcards from './pages/Flashcards'
@@ -13,6 +11,8 @@ import Explanation from './pages/Explanation'
 import StudyPlanner from './pages/StudyPlanner'
 import SavedMaterials from './pages/SavedMaterials'
 import Progress from './pages/Progress'
+
+import AppLayout from './components/AppLayout'
 
 function App() {
   return (
@@ -34,7 +34,7 @@ function App() {
         element={<Register />}
       />
 
-      {/* Main application */}
+      {/* Main Application */}
       <Route element={<AppLayout />}>
 
         <Route
