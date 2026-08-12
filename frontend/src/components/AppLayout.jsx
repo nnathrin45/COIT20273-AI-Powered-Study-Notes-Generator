@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useNavigate } from 'react-router'
+import { logoutUser } from '../services/authService'
 
 function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const navigate = useNavigate()
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard' },
@@ -16,12 +18,19 @@ function AppLayout() {
     { name: 'Progress', path: '/progress' },
   ]
 
+  const handleLogout = () => {
+    logoutUser()
+    setMobileMenuOpen(false)
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex min-h-screen">
 
         {/* Desktop Sidebar */}
         <aside className="hidden w-64 flex-col bg-slate-900 text-white md:flex">
+
           <div className="border-b border-slate-700 px-6 py-6">
             <h1 className="text-xl font-bold">
               AI Study Notes
@@ -51,13 +60,15 @@ function AppLayout() {
           </nav>
 
           <div className="border-t border-slate-700 p-4">
-            <NavLink
-              to="/login"
-              className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full rounded-lg px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
             >
               Sign Out
-            </NavLink>
+            </button>
           </div>
+
         </aside>
 
         {/* Mobile Navigation */}
@@ -134,13 +145,13 @@ function AppLayout() {
 
               {/* Mobile Sign Out */}
               <div className="border-t border-slate-700 p-4">
-                <NavLink
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full rounded-lg px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
                 >
                   Sign Out
-                </NavLink>
+                </button>
               </div>
 
             </aside>
@@ -207,6 +218,7 @@ function AppLayout() {
               </div>
 
             </div>
+
           </header>
 
           {/* Page Content */}

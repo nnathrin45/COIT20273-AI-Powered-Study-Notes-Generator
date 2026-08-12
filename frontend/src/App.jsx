@@ -13,6 +13,7 @@ import SavedMaterials from './pages/SavedMaterials'
 import Progress from './pages/Progress'
 
 import AppLayout from './components/AppLayout'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
@@ -34,53 +35,57 @@ function App() {
         element={<Register />}
       />
 
-      {/* Main Application */}
-      <Route element={<AppLayout />}>
+      {/* Protected Application */}
+      <Route element={<ProtectedRoute />}>
 
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+        <Route element={<AppLayout />}>
 
-        <Route
-          path="/upload"
-          element={<Upload />}
-        />
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
 
-        <Route
-          path="/summaries"
-          element={<Summary />}
-        />
+          <Route
+            path="/upload"
+            element={<Upload />}
+          />
 
-        <Route
-          path="/flashcards"
-          element={<Flashcards />}
-        />
+          <Route
+            path="/summaries"
+            element={<Summary />}
+          />
 
-        <Route
-          path="/quiz"
-          element={<Quiz />}
-        />
+          <Route
+            path="/flashcards"
+            element={<Flashcards />}
+          />
 
-        <Route
-          path="/explanation"
-          element={<Explanation />}
-        />
+          <Route
+            path="/quiz"
+            element={<Quiz />}
+          />
 
-        <Route
-          path="/study-plan"
-          element={<StudyPlanner />}
-        />
+          <Route
+            path="/explanation"
+            element={<Explanation />}
+          />
 
-        <Route
-          path="/saved-materials"
-          element={<SavedMaterials />}
-        />
+          <Route
+            path="/study-plan"
+            element={<StudyPlanner />}
+          />
 
-        <Route
-          path="/progress"
-          element={<Progress />}
-        />
+          <Route
+            path="/saved-materials"
+            element={<SavedMaterials />}
+          />
+
+          <Route
+            path="/progress"
+            element={<Progress />}
+          />
+
+        </Route>
 
       </Route>
 
