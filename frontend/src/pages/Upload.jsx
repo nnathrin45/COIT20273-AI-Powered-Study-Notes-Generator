@@ -3,7 +3,6 @@ import { useState } from 'react'
 function Upload() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [error, setError] = useState('')
-  const [consent, setConsent] = useState(false)
   const [status, setStatus] = useState('')
 
   const MAX_FILE_SIZE = 15 * 1024 * 1024
@@ -20,16 +19,25 @@ function Upload() {
       return
     }
 
-    const extension = file.name.split('.').pop()?.toLowerCase()
+    const extension = file.name
+      .split('.')
+      .pop()
+      ?.toLowerCase()
 
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      setError('Unsupported file type. Please select a PDF, DOCX or TXT file.')
+      setError(
+        'Unsupported file type. Please select a PDF, DOCX or TXT file.'
+      )
+
       event.target.value = ''
       return
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setError('The selected file is larger than the 15 MB limit.')
+      setError(
+        'The selected file is larger than the 15 MB limit.'
+      )
+
       event.target.value = ''
       return
     }
@@ -53,18 +61,17 @@ function Upload() {
     event.preventDefault()
 
     if (!selectedFile) {
-      setError('Please select a study material before continuing.')
-      return
-    }
+      setError(
+        'Please select a study material before continuing.'
+      )
 
-    if (!consent) {
-      setError('Please provide consent before the document can be processed.')
       return
     }
 
     setError('')
+
     setStatus(
-      'File validated successfully. Backend upload integration will be added in the next development stage.'
+      'File validated successfully. Backend upload integration will be added once the updated API is merged into the main branch.'
     )
   }
 
@@ -83,14 +90,16 @@ function Upload() {
   return (
     <div className="mx-auto max-w-4xl">
 
+      {/* Page Heading */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           Upload Study Material
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Upload your study material so it can later be used to generate
-          summaries, flashcards, quizzes and concept explanations.
+          Upload your study material so it can later be used
+          to generate summaries, flashcards, quizzes and
+          concept explanations.
         </p>
       </div>
 
@@ -99,6 +108,7 @@ function Upload() {
         className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
       >
 
+        {/* File Selection */}
         <div>
           <label
             htmlFor="study-file"
@@ -108,10 +118,12 @@ function Upload() {
           </label>
 
           <p className="mt-1 text-sm text-gray-500">
-            Supported formats: PDF, DOCX and TXT. Maximum file size: 15 MB.
+            Supported formats: PDF, DOCX and TXT. Maximum
+            file size: 15 MB.
           </p>
 
           <div className="mt-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+
             <p className="mb-4 text-gray-600">
               Select a study document from your computer.
             </p>
@@ -130,11 +142,14 @@ function Upload() {
               onChange={handleFileChange}
               className="hidden"
             />
+
           </div>
         </div>
 
+        {/* Selected File */}
         {selectedFile && (
           <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4">
+
             <div className="flex items-start justify-between gap-4">
 
               <div>
@@ -156,62 +171,78 @@ function Upload() {
               </button>
 
             </div>
+
           </div>
         )}
 
+        {/* Error Message */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+
             <p className="text-sm text-red-700">
               {error}
             </p>
+
           </div>
         )}
 
-        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
-          <h2 className="font-semibold text-amber-900">
-            AI Processing Notice
+        {/* AI Information */}
+        <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-5">
+
+          <h2 className="font-semibold text-blue-900">
+            About AI Processing
           </h2>
 
-          <p className="mt-2 text-sm text-amber-800">
-            Your document may be sent to an external Generative AI service to
-            generate study materials. Do not upload sensitive, confidential or
+          <p className="mt-2 text-sm leading-6 text-blue-800">
+            Uploading a document does not automatically send
+            it to the Generative AI service. Your consent will
+            be requested separately before your study material
+            is used to generate AI content.
+          </p>
+
+        </div>
+
+        {/* Privacy Notice */}
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-5">
+
+          <h2 className="font-semibold text-amber-900">
+            Document Privacy
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-amber-800">
+            Only upload study materials that you are authorised
+            to use. Avoid uploading sensitive, confidential or
             private information.
           </p>
 
-          <label className="mt-4 flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(event) => setConsent(event.target.checked)}
-              className="mt-1 h-4 w-4"
-            />
-
-            <span className="text-sm text-amber-900">
-              I understand and consent to my uploaded study material being
-              processed by the external AI service.
-            </span>
-          </label>
         </div>
 
+        {/* Status Message */}
         {status && (
-          <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm text-blue-700">
+          <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4">
+
+            <p className="text-sm text-green-700">
               {status}
             </p>
+
           </div>
         )}
 
+        {/* Upload Button */}
         <div className="mt-6 flex justify-end">
+
           <button
             type="submit"
-            disabled={!selectedFile || !consent}
+            disabled={!selectedFile}
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Upload and Continue
+            Upload Material
           </button>
+
         </div>
 
       </form>
+
     </div>
   )
 }
