@@ -3,18 +3,18 @@ const express = require("express");
 const router = express.Router();
 
 const authenticateUser = require("../middleware/auth.middleware");
-const upload = require("../middleware/upload.middleware");
+const { handleUpload } = require("../middleware/upload.middleware");
 
 const {
-    uploadFile
+  uploadFile
 } = require("../controllers/upload.controller");
 
-// Upload PDF
+// Upload PDF, DOCX or TXT
 router.post(
-    "/",
-    authenticateUser,
-    upload.single("file"),
-    uploadFile
+  "/",
+  authenticateUser,
+  handleUpload,
+  uploadFile
 );
 
 module.exports = router;
