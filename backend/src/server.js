@@ -1,4 +1,10 @@
 require("dotenv").config();
+
+// Fail fast rather than signing tokens with undefined
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set. Copy .env.example to .env and set it.");
+}
+
 const express = require("express");
 const db = require("./config/database");
 const authenticateUser = require("./middleware/auth.middleware");
