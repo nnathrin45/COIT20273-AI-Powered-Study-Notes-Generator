@@ -1,0 +1,96 @@
+import { Navigate, Route, Routes } from 'react-router'
+
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import Upload from './pages/Upload'
+import Summary from './pages/Summary'
+import Flashcards from './pages/Flashcards'
+import Quiz from './pages/Quiz'
+import Explanation from './pages/Explanation'
+import StudyPlanner from './pages/StudyPlanner'
+import SavedMaterials from './pages/SavedMaterials'
+import Progress from './pages/Progress'
+
+import AppLayout from './components/AppLayout'
+import ProtectedRoute from './components/ProtectedRoute'
+
+function App() {
+  return (
+    <Routes>
+
+      {/* Authentication */}
+      <Route
+        path="/"
+        element={<Navigate to="/login" replace />}
+      />
+
+      <Route
+        path="/login"
+        element={<Login />}
+      />
+
+      <Route
+        path="/register"
+        element={<Register />}
+      />
+
+      {/* Protected Application */}
+      <Route element={<ProtectedRoute />}>
+
+        <Route element={<AppLayout />}>
+
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
+
+          <Route
+            path="/upload"
+            element={<Upload />}
+          />
+
+          <Route
+            path="/summaries"
+            element={<Summary />}
+          />
+
+          <Route
+            path="/flashcards"
+            element={<Flashcards />}
+          />
+
+          <Route
+            path="/quiz"
+            element={<Quiz />}
+          />
+
+          <Route
+            path="/explanation"
+            element={<Explanation />}
+          />
+
+          <Route
+            path="/study-plan"
+            element={<StudyPlanner />}
+          />
+
+          <Route
+            path="/saved-materials"
+            element={<SavedMaterials />}
+          />
+
+          <Route
+            path="/progress"
+            element={<Progress />}
+          />
+
+        </Route>
+
+      </Route>
+
+    </Routes>
+  )
+}
+
+export default App
