@@ -19,6 +19,7 @@ const noteRoutes = require("./routes/note.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const uploadedRoutes = require("./routes/uploaded.routes");
 const consentRoutes = require("./routes/consent.routes");
+const aiRoutes = require("./routes/ai.routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +43,7 @@ app.use("/api/notes", noteRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/uploaded", uploadedRoutes);
 app.use("/api/consent", consentRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Protected profile route
 app.get("/api/profile", authenticateUser, (req, res) => {
