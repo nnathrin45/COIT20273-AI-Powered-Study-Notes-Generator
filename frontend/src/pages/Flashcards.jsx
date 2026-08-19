@@ -1,4 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import AIConsent from '../components/AIConsent'
+import {
+  getConsentStatus,
+  updateConsentStatus,
+} from '../services/consentService'
 
 function Flashcards() {
   const [selectedDocument, setSelectedDocument] = useState('')
@@ -6,8 +11,122 @@ function Flashcards() {
   const [currentCard, setCurrentCard] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
   const [error, setError] = useState('')
+  const [consentStatus, setConsentStatus] = useState(null)
+  const [consentRecordedAt, setConsentRecordedAt] = useState(null)
+  const [consentInitialLoading, setConsentInitialLoading] =
+    useState(true)
+  const [consentLoading, setConsentLoading] = useState(false)
+  const [consentError, setConsentError] = useState('')
 
   // Temporary mock documents.
+  useEffect(() => {
+    const loadConsent = async () => {
+      setConsentInitialLoading(true)
+      setConsentError('')
+
+      try {
+        const response = await getConsentStatus()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setConsentError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setConsentError(
+              response.data?.message ||
+                'Unable to retrieve your AI consent preference.'
+            )
+          }
+
+          return
+        }
+
+        setConsentStatus(
+          response.data?.consent?.status ?? null
+        )
+
+        setConsentRecordedAt(
+          response.data?.consent?.recorded_at ?? null
+        )
+      } catch (consentFetchError) {
+        console.error(
+          'Consent fetch error:',
+          consentFetchError
+        )
+
+        setConsentError(
+          'Unable to connect to the server to retrieve your AI consent preference.'
+        )
+      } finally {
+        setConsentInitialLoading(false)
+      }
+    }
+
+    loadConsent()
+  }, [])
+
+  const handleConsentChange = async (newStatus) => {
+    setConsentLoading(true)
+    setConsentError('')
+
+    try {
+      const response = await updateConsentStatus(newStatus)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setConsentError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+        } else {
+          setConsentError(
+            response.data?.message ||
+              'Unable to update your AI consent preference.'
+          )
+        }
+
+        return
+      }
+
+      setConsentStatus(
+        response.data?.consent?.status ?? newStatus
+      )
+
+      if (newStatus !== 'granted') {
+        setGenerated(false)
+        setCurrentCard(0)
+        setShowAnswer(false)
+      }
+
+      const latestResponse = await getConsentStatus()
+
+      if (
+        latestResponse.ok &&
+        latestResponse.data?.consent
+      ) {
+        setConsentStatus(
+          latestResponse.data.consent.status
+        )
+
+        setConsentRecordedAt(
+          latestResponse.data.consent.recorded_at ?? null
+        )
+      }
+    } catch (consentUpdateError) {
+      console.error(
+        'Consent update error:',
+        consentUpdateError
+      )
+
+      setConsentError(
+        'Unable to connect to the server to update your AI consent preference.'
+      )
+    } finally {
+      setConsentLoading(false)
+    }
+  }
+
+
   // These will later come from the backend.
   const documents = [
     {
@@ -61,6 +180,14 @@ function Flashcards() {
   const handleGenerate = () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setGenerated(false)
+      return
+    }
+
+    if (consentStatus !== 'granted') {
+      setError(
+        'Please grant AI processing consent before generating flashcards.'
+      )
       setGenerated(false)
       return
     }
@@ -141,6 +268,33 @@ function Flashcards() {
           </select>
 
         </div>
+        
+        {/* AI Processing Consent */}
+        <div className="mt-6">
+          {consentInitialLoading ? (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+              <p className="text-sm text-blue-700">
+                Loading your AI consent preference...
+              </p>
+            </div>
+          ) : (
+            <AIConsent
+              consentStatus={consentStatus}
+              recordedAt={consentRecordedAt}
+              loading={consentLoading}
+              onConsentChange={handleConsentChange}
+            />
+          )}
+        </div>
+
+        {/* Consent Error */}
+        {consentError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {consentError}
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -154,7 +308,12 @@ function Flashcards() {
           <button
             type="button"
             onClick={handleGenerate}
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+            disabled={
+              consentInitialLoading ||
+              consentLoading ||
+              consentStatus !== 'granted'
+            }
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Generate Flashcards
           </button>
