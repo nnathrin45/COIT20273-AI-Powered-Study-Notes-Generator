@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
-import AIConsent from '../components/AIConsent'
-import {
-  getConsentStatus,
-  updateConsentStatus,
-} from '../services/consentService'
+import { Link } from 'react-router'
+import { getConsentStatus } from '../services/consentService'
 
 function Summary() {
   const [selectedDocument, setSelectedDocument] = useState('')
@@ -12,12 +9,10 @@ function Summary() {
   const [error, setError] = useState('')
 
   const [consentStatus, setConsentStatus] = useState(null)
-  const [consentRecordedAt, setConsentRecordedAt] = useState(null)
   const [consentInitialLoading, setConsentInitialLoading] =
     useState(true)
-  const [consentLoading, setConsentLoading] = useState(false)
   const [consentError, setConsentError] = useState('')
-  
+
   useEffect(() => {
     const loadConsent = async () => {
       setConsentInitialLoading(true)
@@ -44,10 +39,6 @@ function Summary() {
         setConsentStatus(
           response.data?.consent?.status ?? null
         )
-
-        setConsentRecordedAt(
-          response.data?.consent?.recorded_at ?? null
-        )
       } catch (consentFetchError) {
         console.error(
           'Consent fetch error:',
@@ -65,66 +56,8 @@ function Summary() {
     loadConsent()
   }, [])
 
-  const handleConsentChange = async (newStatus) => {
-    setConsentLoading(true)
-    setConsentError('')
-
-    try {
-      const response = await updateConsentStatus(newStatus)
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setConsentError(
-            'Your login session is missing or invalid. Please sign in again.'
-          )
-        } else {
-          setConsentError(
-            response.data?.message ||
-              'Unable to update your AI consent preference.'
-          )
-        }
-
-        return
-      }
-
-      setConsentStatus(
-        response.data?.consent?.status ?? newStatus
-      )
-
-      if (newStatus !== 'granted') {
-        setGenerated(false)
-      }
-
-      // Retrieve the latest record so the backend timestamp
-      // can be shown in the interface.
-      const latestResponse = await getConsentStatus()
-
-      if (
-        latestResponse.ok &&
-        latestResponse.data?.consent
-      ) {
-        setConsentStatus(
-          latestResponse.data.consent.status
-        )
-
-        setConsentRecordedAt(
-          latestResponse.data.consent.recorded_at ?? null
-        )
-      }
-    } catch (consentUpdateError) {
-      console.error(
-        'Consent update error:',
-        consentUpdateError
-      )
-
-      setConsentError(
-        'Unable to connect to the server to update your AI consent preference.'
-      )
-    } finally {
-      setConsentLoading(false)
-    }
-  }
-
+  // Temporary mock documents.
+  // These will later come from the backend/database.
   const documents = [
     {
       id: 1,
@@ -161,7 +94,8 @@ function Summary() {
 
   const selectedDocumentName =
     documents.find(
-      (document) => document.id === Number(selectedDocument)
+      (document) =>
+        document.id === Number(selectedDocument)
     )?.name || ''
 
   return (
@@ -174,7 +108,8 @@ function Summary() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Create a clear study summary from one of your uploaded documents.
+          Create a clear study summary from one of your uploaded
+          documents.
         </p>
       </div>
 
@@ -250,23 +185,36 @@ function Summary() {
           </div>
 
         </div>
-        
-        {/* AI Processing Consent */}
+
+        {/* AI Consent Status */}
         <div className="mt-6">
           {consentInitialLoading ? (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
               <p className="text-sm text-blue-700">
-                Loading your AI consent preference...
+                Checking your AI processing consent...
               </p>
             </div>
-          ) : (
-            <AIConsent
-              consentStatus={consentStatus}
-              recordedAt={consentRecordedAt}
-              loading={consentLoading}
-              onConsentChange={handleConsentChange}
-            />
-          )}
+          ) : consentStatus !== 'granted' ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+
+              <p className="font-medium text-amber-900">
+                AI processing consent required
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Grant AI processing consent from your Dashboard
+                before generating AI study content.
+              </p>
+
+              <Link
+                to="/dashboard"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Manage AI Consent
+              </Link>
+
+            </div>
+          ) : null}
         </div>
 
         {/* Consent Error */}
@@ -278,7 +226,7 @@ function Summary() {
           </div>
         )}
 
-        {/* Error */}
+        {/* Summary Error */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -294,7 +242,6 @@ function Summary() {
             onClick={handleGenerateSummary}
             disabled={
               consentInitialLoading ||
-              consentLoading ||
               consentStatus !== 'granted'
             }
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
@@ -313,6 +260,7 @@ function Summary() {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
+
                 <h2 className="text-2xl font-semibold text-gray-900">
                   Generated Summary
                 </h2>
@@ -320,6 +268,7 @@ function Summary() {
                 <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
                   AI Generated
                 </span>
+
               </div>
 
               <p className="mt-2 text-sm text-gray-500">
@@ -327,7 +276,10 @@ function Summary() {
               </p>
 
               <p className="mt-1 text-sm text-gray-500">
-                Length: {summaryLength === 'concise' ? 'Concise' : 'Detailed'}
+                Length:{' '}
+                {summaryLength === 'concise'
+                  ? 'Concise'
+                  : 'Detailed'}
               </p>
             </div>
 
@@ -342,10 +294,11 @@ function Summary() {
               </h3>
 
               <p className="mt-2 leading-7 text-gray-700">
-                This is temporary sample summary content used to demonstrate
-                the frontend interface. The final version will display a
-                summary generated from the selected uploaded study material
-                using the project's Generative AI service.
+                This is temporary sample summary content used to
+                demonstrate the frontend interface. The final
+                version will display a summary generated from the
+                selected uploaded study material using the
+                project's Generative AI service.
               </p>
             </section>
 
@@ -355,20 +308,22 @@ function Summary() {
               </h3>
 
               <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-700">
+
                 <li>
-                  Important information from the source document will be
-                  identified and condensed.
+                  Important information from the source document
+                  will be identified and condensed.
                 </li>
 
                 <li>
-                  Key ideas will be presented in a clear format for study and
-                  revision.
+                  Key ideas will be presented in a clear format
+                  for study and revision.
                 </li>
 
                 <li>
-                  The summary will remain associated with the original uploaded
-                  study material.
+                  The summary will remain associated with the
+                  original uploaded study material.
                 </li>
+
               </ul>
             </section>
 
@@ -380,24 +335,29 @@ function Summary() {
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
 
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+
                   <p className="font-medium text-gray-900">
                     Concept One
                   </p>
 
                   <p className="mt-1 text-sm text-gray-600">
-                    A short explanation of an important concept identified in
-                    the uploaded document.
+                    A short explanation of an important concept
+                    identified in the uploaded document.
                   </p>
+
                 </div>
 
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+
                   <p className="font-medium text-gray-900">
                     Concept Two
                   </p>
 
                   <p className="mt-1 text-sm text-gray-600">
-                    Another important idea that the student may need to review.
+                    Another important idea that the student may
+                    need to review.
                   </p>
+
                 </div>
 
               </div>
@@ -416,9 +376,9 @@ function Summary() {
                 </h3>
 
                 <p className="mt-1 text-sm leading-6 text-amber-800">
-                  This summary may contain inaccuracies or omissions. Always
-                  verify important information against the original uploaded
-                  study material.
+                  This summary may contain inaccuracies or
+                  omissions. Always verify important information
+                  against the original uploaded study material.
                 </p>
               </div>
 
