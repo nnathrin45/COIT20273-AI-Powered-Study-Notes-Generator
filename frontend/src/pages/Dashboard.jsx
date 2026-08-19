@@ -1,7 +1,122 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import AIConsent from '../components/AIConsent'
+import {
+  getConsentStatus,
+  updateConsentStatus,
+} from '../services/consentService'
 
 function Dashboard() {
+  const [consentStatus, setConsentStatus] = useState(null)
+  const [consentRecordedAt, setConsentRecordedAt] = useState(null)
+  const [consentInitialLoading, setConsentInitialLoading] =
+    useState(true)
+  const [consentLoading, setConsentLoading] = useState(false)
+  const [consentError, setConsentError] = useState('')
+
+    useEffect(() => {
+    const loadConsent = async () => {
+      setConsentInitialLoading(true)
+      setConsentError('')
+
+      try {
+        const response = await getConsentStatus()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setConsentError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setConsentError(
+              response.data?.message ||
+                'Unable to retrieve your AI consent preference.'
+            )
+          }
+
+          return
+        }
+
+        setConsentStatus(
+          response.data?.consent?.status ?? null
+        )
+
+        setConsentRecordedAt(
+          response.data?.consent?.recorded_at ?? null
+        )
+      } catch (consentFetchError) {
+        console.error(
+          'Consent fetch error:',
+          consentFetchError
+        )
+
+        setConsentError(
+          'Unable to connect to the server to retrieve your AI consent preference.'
+        )
+      } finally {
+        setConsentInitialLoading(false)
+      }
+    }
+
+    loadConsent()
+  }, [])
+
+  const handleConsentChange = async (newStatus) => {
+    setConsentLoading(true)
+    setConsentError('')
+
+    try {
+      const response = await updateConsentStatus(newStatus)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setConsentError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+        } else {
+          setConsentError(
+            response.data?.message ||
+              'Unable to update your AI consent preference.'
+          )
+        }
+
+        return
+      }
+
+      setConsentStatus(
+        response.data?.consent?.status ?? newStatus
+      )
+
+      const latestResponse = await getConsentStatus()
+
+      if (
+        latestResponse.ok &&
+        latestResponse.data?.consent
+      ) {
+        setConsentStatus(
+          latestResponse.data.consent.status
+        )
+
+        setConsentRecordedAt(
+          latestResponse.data.consent.recorded_at ?? null
+        )
+      }
+    } catch (consentUpdateError) {
+      console.error(
+        'Consent update error:',
+        consentUpdateError
+      )
+
+      setConsentError(
+        'Unable to connect to the server to update your AI consent preference.'
+      )
+    } finally {
+      setConsentLoading(false)
+    }
+  }
+
   const stats = [
+
     {
       title: 'Study Materials',
       value: '0',
@@ -119,6 +234,44 @@ function Dashboard() {
           </Link>
 
         </div>
+      </div>
+      
+      {/* AI Privacy and Consent */}
+      <div className="mt-8">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            AI Privacy & Consent
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-600">
+            Manage whether your uploaded study material may be sent
+            to the external Generative AI service when you request
+            AI-generated study features.
+          </p>
+        </div>
+
+        {consentInitialLoading ? (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+            <p className="text-sm text-blue-700">
+              Loading your AI consent preference...
+            </p>
+          </div>
+        ) : (
+          <AIConsent
+            consentStatus={consentStatus}
+            recordedAt={consentRecordedAt}
+            loading={consentLoading}
+            onConsentChange={handleConsentChange}
+          />
+        )}
+
+        {consentError && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {consentError}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Responsible AI notice */}
