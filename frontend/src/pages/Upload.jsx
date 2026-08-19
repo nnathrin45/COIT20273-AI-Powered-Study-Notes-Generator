@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { uploadStudyMaterial } from '../services/uploadService'
 
 function Upload() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
 
   const MAX_FILE_SIZE = 15 * 1024 * 1024
   const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt']
@@ -57,23 +59,103 @@ function Upload() {
     }
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
+  const handleSubmit = async (event) => {
+  event.preventDefault()
 
-    if (!selectedFile) {
-      setError(
-        'Please select a study material before continuing.'
-      )
+  if (!selectedFile) {
+    setError(
+      'Please select a study material before continuing.'
+    )
+    return
+  }
+
+  setError('')
+  setStatus('')
+  setIsUploading(true)
+
+  try {
+    const response = await uploadStudyMaterial(selectedFile)
+
+    if (!response.ok) {
+      const errorCode = response.data?.code
+
+      switch (errorCode) {
+        case 'NO_FILE':
+          setError(
+            'No file was received by the server. Please select the file again.'
+          )
+          break
+
+        case 'FILE_TOO_LARGE':
+          setError(
+            'The selected file exceeds the maximum size of 15 MB.'
+          )
+          break
+
+        case 'UNSUPPORTED_FILE_TYPE':
+          setError(
+            'Unsupported file type. Please upload a PDF, DOCX or TXT file.'
+          )
+          break
+
+        case 'NO_READABLE_TEXT':
+          setError(
+            'No readable text could be extracted from this document. Scanned or image-only documents are not supported.'
+          )
+          break
+
+        case 'PROCESSING_FAILED':
+          setError(
+            'The document could not be processed. Please try again.'
+          )
+          break
+
+        case 'UPLOAD_ERROR':
+          setError(
+            'The document could not be uploaded. Please check the file and try again.'
+          )
+          break
+
+        default:
+          if (response.status === 401) {
+            setError(
+              'Your login session is missing or invalid. Please sign in again before uploading a document.'
+            )
+          } else {
+            setError(
+              response.data?.message ||
+                'The document could not be uploaded.'
+            )
+          }
+      }
 
       return
     }
 
-    setError('')
+    const uploadedFileName =
+      response.data?.file?.file_name || selectedFile.name
 
-    setStatus(
-      'File validated successfully. Backend upload integration will be added once the updated API is merged into the main branch.'
+    const textLength = response.data?.text_length
+
+    if (typeof textLength === 'number') {
+      setStatus(
+        `${uploadedFileName} uploaded successfully. ${textLength.toLocaleString()} characters of readable text were extracted.`
+      )
+    } else {
+      setStatus(
+        `${uploadedFileName} uploaded successfully.`
+      )
+    }
+  } catch (uploadError) {
+    console.error('Upload error:', uploadError)
+
+    setError(
+      'Unable to connect to the server. Please check that the backend is running and try again.'
     )
+  } finally {
+    setIsUploading(false)
   }
+}
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024) {
@@ -233,10 +315,10 @@ function Upload() {
 
           <button
             type="submit"
-            disabled={!selectedFile}
+            disabled={!selectedFile || isUploading}
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Upload Material
+            {isUploading ? 'Uploading...' : 'Upload Material'}
           </button>
 
         </div>
