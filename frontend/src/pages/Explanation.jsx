@@ -1,11 +1,62 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { getConsentStatus } from '../services/consentService'
 
 function Explanation() {
   const [selectedDocument, setSelectedDocument] = useState('')
   const [concept, setConcept] = useState('')
-  const [explanationLevel, setExplanationLevel] = useState('beginner')
+  const [explanationLevel, setExplanationLevel] =
+    useState('beginner')
   const [generated, setGenerated] = useState(false)
   const [error, setError] = useState('')
+
+  const [consentStatus, setConsentStatus] = useState(null)
+  const [consentInitialLoading, setConsentInitialLoading] =
+    useState(true)
+  const [consentError, setConsentError] = useState('')
+
+  useEffect(() => {
+    const loadConsent = async () => {
+      setConsentInitialLoading(true)
+      setConsentError('')
+
+      try {
+        const response = await getConsentStatus()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setConsentError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setConsentError(
+              response.data?.message ||
+                'Unable to retrieve your AI consent preference.'
+            )
+          }
+
+          return
+        }
+
+        setConsentStatus(
+          response.data?.consent?.status ?? null
+        )
+      } catch (consentFetchError) {
+        console.error(
+          'Consent fetch error:',
+          consentFetchError
+        )
+
+        setConsentError(
+          'Unable to connect to the server to retrieve your AI consent preference.'
+        )
+      } finally {
+        setConsentInitialLoading(false)
+      }
+    }
+
+    loadConsent()
+  }, [])
 
   // Temporary mock documents.
   // These will later come from the backend.
@@ -26,7 +77,8 @@ function Explanation() {
 
   const selectedDocumentName =
     documents.find(
-      (document) => document.id === Number(selectedDocument)
+      (document) =>
+        document.id === Number(selectedDocument)
     )?.name || ''
 
   const handleGenerateExplanation = () => {
@@ -37,7 +89,17 @@ function Explanation() {
     }
 
     if (!concept.trim()) {
-      setError('Please enter a concept or topic you would like explained.')
+      setError(
+        'Please enter a concept or topic you would like explained.'
+      )
+      setGenerated(false)
+      return
+    }
+
+    if (consentStatus !== 'granted') {
+      setError(
+        'Please grant AI processing consent before generating a concept explanation.'
+      )
       setGenerated(false)
       return
     }
@@ -51,15 +113,17 @@ function Explanation() {
       return (
         <>
           <p>
-            This is a simple explanation of <strong>{concept}</strong>. The
-            purpose of the beginner level is to explain the idea using clear
+            This is a simple explanation of{' '}
+            <strong>{concept}</strong>. The purpose of the
+            beginner level is to explain the idea using clear
             language and avoid unnecessary technical terminology.
           </p>
 
           <p>
-            In the final system, this explanation will be generated from the
-            selected uploaded study material so that the explanation remains
-            connected to the student's source document.
+            In the final system, this explanation will be
+            generated from the selected uploaded study material
+            so that the explanation remains connected to the
+            student's source document.
           </p>
         </>
       )
@@ -69,15 +133,17 @@ function Explanation() {
       return (
         <>
           <p>
-            <strong>{concept}</strong> can be understood by examining its main
-            purpose, important characteristics and relationship with other
-            concepts in the selected study material.
+            <strong>{concept}</strong> can be understood by
+            examining its main purpose, important characteristics
+            and relationship with other concepts in the selected
+            study material.
           </p>
 
           <p>
-            At the intermediate level, the final AI-generated response will
-            include more subject-specific terminology while still presenting
-            the explanation in an accessible way.
+            At the intermediate level, the final AI-generated
+            response will include more subject-specific
+            terminology while still presenting the explanation
+            in an accessible way.
           </p>
         </>
       )
@@ -86,15 +152,18 @@ function Explanation() {
     return (
       <>
         <p>
-          An advanced explanation of <strong>{concept}</strong> will provide
-          greater technical depth, discuss relevant relationships and explain
-          important terminology identified in the uploaded source material.
+          An advanced explanation of{' '}
+          <strong>{concept}</strong> will provide greater
+          technical depth, discuss relevant relationships and
+          explain important terminology identified in the
+          uploaded source material.
         </p>
 
         <p>
-          The final implementation will use the project's Generative AI service
-          to produce this explanation while keeping the uploaded document as
-          the primary study context.
+          The final implementation will use the project's
+          Generative AI service to produce this explanation while
+          keeping the uploaded document as the primary study
+          context.
         </p>
       </>
     )
@@ -122,8 +191,8 @@ function Explanation() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Select a study material and request a clearer explanation of a topic
-          or concept.
+          Select a study material and request a clearer
+          explanation of a topic or concept.
         </p>
       </div>
 
@@ -229,12 +298,53 @@ function Explanation() {
           />
 
           <p className="mt-2 text-sm text-gray-500">
-            Enter a concept that appears in your selected study material.
+            Enter a concept that appears in your selected study
+            material.
           </p>
 
         </div>
 
-        {/* Error */}
+        {/* AI Consent Status */}
+        <div className="mt-6">
+          {consentInitialLoading ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700">
+                Checking your AI processing consent...
+              </p>
+            </div>
+          ) : consentStatus !== 'granted' ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+
+              <p className="font-medium text-amber-900">
+                AI processing consent required
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Grant AI processing consent from your Dashboard
+                before generating AI study content.
+              </p>
+
+              <Link
+                to="/dashboard"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Manage AI Consent
+              </Link>
+
+            </div>
+          ) : null}
+        </div>
+
+        {/* Consent Error */}
+        {consentError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {consentError}
+            </p>
+          </div>
+        )}
+
+        {/* Explanation Error */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -249,7 +359,11 @@ function Explanation() {
           <button
             type="button"
             onClick={handleGenerateExplanation}
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+            disabled={
+              consentInitialLoading ||
+              consentStatus !== 'granted'
+            }
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Explain Concept
           </button>
@@ -299,9 +413,9 @@ function Explanation() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-gray-700">
-              A relevant example from the study material can be shown here to
-              help the student connect the explanation with a practical or
-              academic situation.
+              A relevant example from the study material can be
+              shown here to help the student connect the
+              explanation with a practical or academic situation.
             </p>
 
           </div>
@@ -314,19 +428,22 @@ function Explanation() {
             </h3>
 
             <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-700">
+
               <li>
-                Focus on the main purpose and meaning of the concept.
+                Focus on the main purpose and meaning of the
+                concept.
               </li>
 
               <li>
-                Review how the concept relates to other topics in the source
-                document.
+                Review how the concept relates to other topics in
+                the source document.
               </li>
 
               <li>
-                Check technical definitions against the original study
-                material.
+                Check technical definitions against the original
+                study material.
               </li>
+
             </ul>
 
           </div>
@@ -339,9 +456,9 @@ function Explanation() {
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              This explanation may contain inaccuracies or omissions. Always
-              verify important information against your original uploaded study
-              material.
+              This explanation may contain inaccuracies or
+              omissions. Always verify important information
+              against your original uploaded study material.
             </p>
 
           </div>
