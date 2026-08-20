@@ -2,7 +2,12 @@ const db = require("../config/database");
 const { hasActiveConsent } = require("../services/consent.service");
 const { generate } = require("../services/ai.service");
 
-const SUPPORTED_TYPES = ["summary"];
+const SUPPORTED_TYPES = ["summary", "flashcards"];
+
+// Types whose content is a structured record set rather than prose. Stored as
+// JSON text in ai_outputs.content and returned parsed so the interface does
+// not have to know the storage format.
+const STRUCTURED_TYPES = ["flashcards"];
 
 // Generate AI content from a previously uploaded document (FR9-FR12, FR16, FR17)
 const generateOutput = async (req, res) => {
@@ -69,13 +74,16 @@ const generateOutput = async (req, res) => {
 
     const content = await generate(file.extracted_text, output_type);
 
+    const isStructured = STRUCTURED_TYPES.includes(output_type);
+    const stored = isStructured ? JSON.stringify(content) : content;
+
     // FR16.1 - stored with the AI-generated flag so the label travels with the
     // content wherever it is later displayed
     const [result] = await db.execute(
       `INSERT INTO ai_outputs
        (file_id, user_id, output_type, content, is_ai_generated)
        VALUES (?, ?, ?, ?, TRUE)`,
-      [file.file_id, req.user.user_id, output_type, content]
+      [file.file_id, req.user.user_id, output_type, stored]
     );
 
     res.status(201).json({
@@ -125,6 +133,17 @@ const generateOutput = async (req, res) => {
       });
     }
 
+    // The model returned something, but not in the structure this output type
+    // requires. Retryable because a second attempt often parses correctly.
+    if (error.code === "AI_MALFORMED_RESPONSE") {
+      return res.status(502).json({
+        status: "error",
+        code: "AI_MALFORMED_RESPONSE",
+        message: "The AI service returned content in an unexpected format. Please try again.",
+        retryable: true
+      });
+    }
+
     res.status(500).json({
       status: "error",
       code: "AI_GENERATION_FAILED",
@@ -147,9 +166,22 @@ const getOutputsForFile = async (req, res) => {
       [fileId, req.user.user_id]
     );
 
+    // Structured types are stored as JSON text; return them parsed so the
+    // interface receives the same shape it got when the content was generated.
+    const outputs = rows.map((row) => {
+      if (!STRUCTURED_TYPES.includes(row.output_type)) {
+        return row;
+      }
+      try {
+        return { ...row, content: JSON.parse(row.content) };
+      } catch {
+        return row;
+      }
+    });
+
     res.json({
       status: "success",
-      outputs: rows
+      outputs
     });
 
   } catch (error) {

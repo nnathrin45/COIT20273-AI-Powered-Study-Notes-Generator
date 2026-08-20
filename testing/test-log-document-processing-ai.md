@@ -51,7 +51,7 @@ Testing is currently manual. The project has no automated test framework yet; ad
 
 ---
 
-## 4. AI generation and consent enforcement (FR9, FR17)
+## 4. AI generation and consent enforcement (FR9, FR10, FR17)
 
 | ID | Requirement | Test | Expected | Result | Date |
 |---|---|---|---|---|---|
@@ -66,6 +66,10 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-20 | FR17.1 | Generation refused when no consent has been recorded | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
 | T-21 | FR17.1 | Generation permitted once consent is granted | 201 with generated content | **Pass** | 20 Aug |
 | T-22 | FR17.2 | Generation refused again after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
+| T-27 | FR10.1 | Generate flashcards from an uploaded document | 201 with an array of question/answer records | **Pass** — 6 cards, all answerable from the source text | 20 Aug |
+| T-28 | FR10.1 | Flashcard content stored as JSON and returned parsed by `GET /api/ai/outputs/:fileId` | Array returned, not a string | **Pass** | 20 Aug |
+| T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
+| T-30 | — | Request an output type that is not yet implemented (`quiz`) | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** | 20 Aug |
 
 ---
 
