@@ -25,3 +25,19 @@ export const generateAIContent = async ({
     body,
   })
 }
+
+export const submitQuizAttempt = async ({
+  outputId,
+  answers,
+}) => {
+  return apiRequest(
+    `/api/ai/quiz/${outputId}/attempt`,
+    {
+      method: 'POST',
+      requiresAuth: true,
+      body: {
+        answers,
+      },
+    }
+  )
+}

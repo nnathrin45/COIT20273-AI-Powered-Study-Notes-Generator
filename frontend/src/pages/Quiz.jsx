@@ -1,13 +1,31 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { getConsentStatus } from '../services/consentService'
+import { getUploadedFiles } from '../services/uploadedService'
+import {
+  generateAIContent,
+  submitQuizAttempt,
+} from '../services/aiService'
 
 function Quiz() {
+  const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState('')
-  const [generated, setGenerated] = useState(false)
+
+  const [documentsLoading, setDocumentsLoading] =
+    useState(true)
+  const [documentsError, setDocumentsError] = useState('')
+
+  const [questions, setQuestions] = useState([])
+  const [generatedOutput, setGeneratedOutput] = useState(null)
+  const [disclaimer, setDisclaimer] = useState('')
+
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState({})
-  const [submitted, setSubmitted] = useState(false)
+  const [attempt, setAttempt] = useState(null)
+
+  const [generationLoading, setGenerationLoading] =
+    useState(false)
+  const [submitLoading, setSubmitLoading] = useState(false)
   const [error, setError] = useState('')
 
   const [consentStatus, setConsentStatus] = useState(null)
@@ -58,79 +76,60 @@ function Quiz() {
     loadConsent()
   }, [])
 
-  // Temporary mock documents.
-  const documents = [
-    {
-      id: 1,
-      name: 'Introduction to Artificial Intelligence.pdf',
-    },
-    {
-      id: 2,
-      name: 'Database Systems Week 4.docx',
-    },
-    {
-      id: 3,
-      name: 'Software Engineering Notes.txt',
-    },
-  ]
+  useEffect(() => {
+    const loadDocuments = async () => {
+      setDocumentsLoading(true)
+      setDocumentsError('')
 
-  // Temporary mock quiz data.
-  // This will later come from the backend/Gemini.
-  const questions = [
-    {
-      id: 1,
-      type: 'multiple-choice',
-      question:
-        'What is the main purpose of Artificial Intelligence?',
-      options: [
-        'To replace all computer hardware',
-        'To enable systems to perform tasks requiring human-like intelligence',
-        'To remove the need for data',
-        'To only perform mathematical calculations',
-      ],
-      correctAnswer: 1,
-    },
-    {
-      id: 2,
-      type: 'multiple-choice',
-      question:
-        'Which statement best describes machine learning?',
-      options: [
-        'A method for manually programming every possible outcome',
-        'A method for storing files in a database',
-        'A method that allows systems to learn patterns from data',
-        'A method used only for designing websites',
-      ],
-      correctAnswer: 2,
-    },
-    {
-      id: 3,
-      type: 'true-false',
-      question:
-        'Supervised learning commonly uses labelled training examples.',
-      options: ['True', 'False'],
-      correctAnswer: 0,
-    },
-    {
-      id: 4,
-      type: 'true-false',
-      question:
-        'Artificial Intelligence systems never require data to perform useful tasks.',
-      options: ['True', 'False'],
-      correctAnswer: 1,
-    },
-  ]
+      try {
+        const response = await getUploadedFiles()
 
-  const selectedDocumentName =
-    documents.find(
-      (document) =>
-        document.id === Number(selectedDocument)
-    )?.name || ''
+        if (!response.ok) {
+          if (response.status === 401) {
+            setDocumentsError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setDocumentsError(
+              response.data?.message ||
+                'Unable to retrieve your uploaded study materials.'
+            )
+          }
 
-  const handleGenerateQuiz = () => {
+          return
+        }
+
+        setDocuments(response.data?.files ?? [])
+      } catch (documentFetchError) {
+        console.error(
+          'Uploaded files fetch error:',
+          documentFetchError
+        )
+
+        setDocumentsError(
+          'Unable to connect to the server to retrieve your uploaded study materials.'
+        )
+      } finally {
+        setDocumentsLoading(false)
+      }
+    }
+
+    loadDocuments()
+  }, [])
+
+  const clearQuiz = () => {
+    setQuestions([])
+    setGeneratedOutput(null)
+    setDisclaimer('')
+    setCurrentQuestion(0)
+    setAnswers({})
+    setAttempt(null)
+  }
+
+  const handleGenerateQuiz = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
-      setGenerated(false)
+      clearQuiz()
       return
     }
 
@@ -138,26 +137,99 @@ function Quiz() {
       setError(
         'Please grant AI processing consent before generating a practice quiz.'
       )
-      setGenerated(false)
+      clearQuiz()
       return
     }
 
+    setGenerationLoading(true)
     setError('')
-    setGenerated(true)
-    setCurrentQuestion(0)
-    setAnswers({})
-    setSubmitted(false)
+    clearQuiz()
+
+    try {
+      const response = await generateAIContent({
+        fileId: Number(selectedDocument),
+        outputType: 'quiz',
+      })
+
+      if (!response.ok) {
+        if (
+          response.status === 403 &&
+          response.data?.code === 'CONSENT_REQUIRED'
+        ) {
+          setConsentStatus('revoked')
+          setError(
+            'AI processing consent is required. Please manage your consent from the Dashboard.'
+          )
+          return
+        }
+
+        if (response.status === 401) {
+          setError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+          return
+        }
+
+        if (response.status === 404) {
+          setError(
+            'The selected study material could not be found. Please select another document.'
+          )
+          return
+        }
+
+        setError(
+          response.data?.message ||
+            'Unable to generate the practice quiz. Please try again.'
+        )
+        return
+      }
+
+      const output = response.data?.output
+      const generatedQuestions = output?.content
+
+      if (!Array.isArray(generatedQuestions)) {
+        setError(
+          'The server returned the quiz in an unexpected format.'
+        )
+        return
+      }
+
+      if (generatedQuestions.length === 0) {
+        setError(
+          'No usable quiz questions could be generated from this study material.'
+        )
+        return
+      }
+
+      setGeneratedOutput(output)
+      setQuestions(generatedQuestions)
+      setDisclaimer(response.data?.disclaimer ?? '')
+      setCurrentQuestion(0)
+      setAnswers({})
+      setAttempt(null)
+    } catch (generationError) {
+      console.error(
+        'Quiz generation error:',
+        generationError
+      )
+
+      setError(
+        'Unable to connect to the server. Please try again.'
+      )
+    } finally {
+      setGenerationLoading(false)
+    }
   }
 
-  const handleAnswer = (optionIndex) => {
-    if (submitted) {
+  const handleAnswer = (option) => {
+    if (attempt) {
       return
     }
 
-    setAnswers({
-      ...answers,
-      [currentQuestion]: optionIndex,
-    })
+    setAnswers((currentAnswers) => ({
+      ...currentAnswers,
+      [currentQuestion]: option,
+    }))
   }
 
   const handlePrevious = () => {
@@ -172,37 +244,93 @@ function Quiz() {
     }
   }
 
-  const handleSubmitQuiz = () => {
-    if (
-      Object.keys(answers).length !== questions.length
-    ) {
+  const handleSubmitQuiz = async () => {
+    if (!generatedOutput?.output_id) {
       setError(
-        'Please answer all questions before submitting the quiz.'
+        'The generated quiz could not be identified. Please generate it again.'
       )
       return
     }
 
+    const submittedAnswers = questions.map(
+      (_, index) => answers[index] ?? null
+    )
+
+    setSubmitLoading(true)
     setError('')
-    setSubmitted(true)
-  }
 
-  const calculateScore = () => {
-    let score = 0
+    try {
+      const response = await submitQuizAttempt({
+        outputId: generatedOutput.output_id,
+        answers: submittedAnswers,
+      })
 
-    questions.forEach((question, index) => {
-      if (answers[index] === question.correctAnswer) {
-        score += 1
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+          return
+        }
+
+        if (response.status === 404) {
+          setError(
+            'The generated quiz could not be found. Please generate a new quiz.'
+          )
+          return
+        }
+
+        setError(
+          response.data?.message ||
+            'Unable to submit the quiz. Please try again.'
+        )
+        return
       }
-    })
 
-    return score
+      const savedAttempt = response.data?.attempt
+
+      if (!savedAttempt) {
+        setError(
+          'The server returned the quiz result in an unexpected format.'
+        )
+        return
+      }
+
+      setAttempt(savedAttempt)
+    } catch (submitError) {
+      console.error(
+        'Quiz submission error:',
+        submitError
+      )
+
+      setError(
+        'Unable to connect to the server while submitting the quiz. Please try again.'
+      )
+    } finally {
+      setSubmitLoading(false)
+    }
   }
 
-  const score = calculateScore()
+  const handleRetake = () => {
+    setAnswers({})
+    setAttempt(null)
+    setCurrentQuestion(0)
+    setError('')
+  }
 
-  const percentage = Math.round(
-    (score / questions.length) * 100
-  )
+  const selectedDocumentName =
+    documents.find(
+      (document) =>
+        String(document.file_id) === selectedDocument
+    )?.file_name || ''
+
+  const answeredCount = Object.keys(answers).length
+
+  const currentQuestionData =
+    questions[currentQuestion]
+
+  const currentResult =
+    attempt?.results?.[currentQuestion]
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -235,34 +363,69 @@ function Quiz() {
             Study Material
           </label>
 
-          <select
-            id="quiz-document"
-            value={selectedDocument}
-            onChange={(event) => {
-              setSelectedDocument(event.target.value)
-              setGenerated(false)
-              setCurrentQuestion(0)
-              setAnswers({})
-              setSubmitted(false)
-              setError('')
-            }}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">
-              Select a document
-            </option>
+          {documentsLoading ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700">
+                Loading your uploaded study materials...
+              </p>
+            </div>
+          ) : documents.length === 0 &&
+            !documentsError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
 
-            {documents.map((document) => (
-              <option
-                key={document.id}
-                value={document.id}
+              <p className="font-medium text-amber-900">
+                No uploaded study materials
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Upload a PDF, DOCX or TXT document before
+                generating a practice quiz.
+              </p>
+
+              <Link
+                to="/upload"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
               >
-                {document.name}
+                Upload Study Material
+              </Link>
+
+            </div>
+          ) : (
+            <select
+              id="quiz-document"
+              value={selectedDocument}
+              onChange={(event) => {
+                setSelectedDocument(event.target.value)
+                clearQuiz()
+                setError('')
+              }}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">
+                Select a document
               </option>
-            ))}
-          </select>
+
+              {documents.map((document) => (
+                <option
+                  key={document.file_id}
+                  value={document.file_id}
+                >
+                  {document.file_name}
+                </option>
+              ))}
+            </select>
+          )}
 
         </div>
+
+        {/* Document Error */}
+        {documentsError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {documentsError}
+            </p>
+          </div>
+        )}
 
         {/* AI Consent Status */}
         <div className="mt-6">
@@ -295,7 +458,6 @@ function Quiz() {
           ) : null}
         </div>
 
-        {/* Consent Error */}
         {consentError && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -304,8 +466,7 @@ function Quiz() {
           </div>
         )}
 
-        {/* Quiz Error */}
-        {error && !generated && (
+        {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
               {error}
@@ -319,19 +480,24 @@ function Quiz() {
             type="button"
             onClick={handleGenerateQuiz}
             disabled={
+              documentsLoading ||
+              documents.length === 0 ||
               consentInitialLoading ||
-              consentStatus !== 'granted'
+              consentStatus !== 'granted' ||
+              generationLoading
             }
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Generate Quiz
+            {generationLoading
+              ? 'Generating Quiz...'
+              : 'Generate Quiz'}
           </button>
         </div>
 
       </div>
 
       {/* Generated Quiz */}
-      {generated && (
+      {questions.length > 0 && currentQuestionData && (
         <div className="mt-8">
 
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -343,14 +509,22 @@ function Quiz() {
                   Practice Questions
                 </h2>
 
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                  AI Generated
-                </span>
+                {generatedOutput?.is_ai_generated && (
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                    AI Generated
+                  </span>
+                )}
 
               </div>
 
               <p className="mt-2 text-sm text-gray-500">
-                Source: {selectedDocumentName}
+                Source:{' '}
+                {generatedOutput?.file_name ||
+                  selectedDocumentName}
+              </p>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Answered {answeredCount} of {questions.length}
               </p>
             </div>
 
@@ -365,57 +539,57 @@ function Quiz() {
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-              {questions[currentQuestion].type ===
-              'true-false'
+              {currentQuestionData.type === 'true_false'
                 ? 'True or False'
                 : 'Multiple Choice'}
             </p>
 
             <h3 className="mt-3 text-xl font-semibold leading-relaxed text-gray-900">
-              {questions[currentQuestion].question}
+              {currentQuestionData.question}
             </h3>
 
             <div className="mt-6 space-y-3">
 
-              {questions[currentQuestion].options.map(
+              {currentQuestionData.options.map(
                 (option, optionIndex) => {
                   const selected =
-                    answers[currentQuestion] === optionIndex
+                    answers[currentQuestion] === option
 
-                  const correct =
-                    questions[currentQuestion]
-                      .correctAnswer === optionIndex
+                  const correctAfterSubmission =
+                    attempt &&
+                    currentResult?.correct_answer === option
+
+                  const incorrectSelected =
+                    attempt &&
+                    selected &&
+                    !currentResult?.is_correct
 
                   let optionStyle =
                     'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
 
-                  if (selected && !submitted) {
+                  if (selected && !attempt) {
                     optionStyle =
                       'border-blue-500 bg-blue-50'
                   }
 
-                  if (submitted && correct) {
+                  if (correctAfterSubmission) {
                     optionStyle =
                       'border-green-500 bg-green-50'
                   }
 
-                  if (
-                    submitted &&
-                    selected &&
-                    !correct
-                  ) {
+                  if (incorrectSelected) {
                     optionStyle =
                       'border-red-500 bg-red-50'
                   }
 
                   return (
                     <button
-                      key={option}
+                      key={`${currentQuestion}-${optionIndex}`}
                       type="button"
                       onClick={() =>
-                        handleAnswer(optionIndex)
+                        handleAnswer(option)
                       }
-                      disabled={submitted}
+                      disabled={Boolean(attempt)}
                       className={`flex w-full items-start gap-3 rounded-lg border p-4 text-left transition ${optionStyle}`}
                     >
                       <div
@@ -442,12 +616,10 @@ function Quiz() {
             </div>
 
             {/* Answer Feedback */}
-            {submitted && (
+            {attempt && currentResult && (
               <div className="mt-6 rounded-lg bg-gray-50 p-4">
 
-                {answers[currentQuestion] ===
-                questions[currentQuestion]
-                  .correctAnswer ? (
+                {currentResult.is_correct ? (
                   <p className="font-medium text-green-700">
                     Correct answer.
                   </p>
@@ -455,18 +627,14 @@ function Quiz() {
                   <div>
 
                     <p className="font-medium text-red-700">
-                      Incorrect answer.
+                      {currentResult.submitted === null
+                        ? 'Question not answered.'
+                        : 'Incorrect answer.'}
                     </p>
 
                     <p className="mt-1 text-sm text-gray-700">
                       Correct answer:{' '}
-                      {
-                        questions[currentQuestion]
-                          .options[
-                          questions[currentQuestion]
-                            .correctAnswer
-                        ]
-                      }
+                      {currentResult.correct_answer}
                     </p>
 
                   </div>
@@ -478,7 +646,7 @@ function Quiz() {
           </div>
 
           {/* Question Navigation */}
-          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex items-center justify-between">
 
             <button
               type="button"
@@ -486,138 +654,89 @@ function Quiz() {
               disabled={currentQuestion === 0}
               className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              ← Previous
+              Previous
             </button>
-
-            <div className="flex flex-wrap justify-center gap-2">
-
-              {questions.map((question, index) => {
-                const answered =
-                  answers[index] !== undefined
-
-                return (
-                  <button
-                    key={question.id}
-                    type="button"
-                    onClick={() =>
-                      setCurrentQuestion(index)
-                    }
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium ${
-                      currentQuestion === index
-                        ? 'bg-blue-600 text-white'
-                        : answered
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-gray-200 text-gray-600'
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                )
-              })}
-
-            </div>
 
             <button
               type="button"
               onClick={handleNext}
               disabled={
-                currentQuestion ===
-                questions.length - 1
+                currentQuestion === questions.length - 1
               }
               className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Next →
+              Next
             </button>
 
           </div>
 
-          {/* Quiz Error */}
-          {error && (
-            <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
-              <p className="text-sm text-red-700">
-                {error}
+          {/* Quiz Submission */}
+          {!attempt ? (
+            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+
+              <p className="text-sm text-gray-600">
+                You have answered {answeredCount} of{' '}
+                {questions.length} questions. Unanswered
+                questions will be scored as incorrect.
               </p>
-            </div>
-          )}
 
-          {/* Submit Quiz */}
-          {!submitted && (
-            <div className="mt-6 flex justify-end">
-
-              <button
-                type="button"
-                onClick={handleSubmitQuiz}
-                className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition hover:bg-green-700"
-              >
-                Submit Quiz
-              </button>
-
-            </div>
-          )}
-
-          {/* Results */}
-          {submitted && (
-            <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Quiz Results
-              </h2>
-
-              <div className="mt-6 grid gap-5 sm:grid-cols-3">
-
-                <div className="rounded-lg bg-gray-50 p-5">
-                  <p className="text-sm text-gray-500">
-                    Score
-                  </p>
-
-                  <p className="mt-1 text-3xl font-bold text-gray-900">
-                    {score}/{questions.length}
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-gray-50 p-5">
-                  <p className="text-sm text-gray-500">
-                    Percentage
-                  </p>
-
-                  <p className="mt-1 text-3xl font-bold text-gray-900">
-                    {percentage}%
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-gray-50 p-5">
-                  <p className="text-sm text-gray-500">
-                    Correct Answers
-                  </p>
-
-                  <p className="mt-1 text-3xl font-bold text-gray-900">
-                    {score}
-                  </p>
-                </div>
-
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSubmitQuiz}
+                  disabled={submitLoading}
+                  className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  {submitLoading
+                    ? 'Submitting Quiz...'
+                    : 'Submit Quiz'}
+                </button>
               </div>
 
-              <p className="mt-5 text-sm text-gray-600">
-                Use the numbered question buttons above to
-                review your answers and compare them with the
-                correct responses.
+            </div>
+          ) : (
+            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+
+              <h3 className="text-xl font-semibold text-gray-900">
+                Quiz Result
+              </h3>
+
+              <p className="mt-4 text-3xl font-bold text-blue-600">
+                {attempt.score} / {attempt.total}
               </p>
+
+              <p className="mt-1 text-gray-600">
+                Score: {attempt.percentage}%
+              </p>
+
+              <p className="mt-3 text-sm text-gray-500">
+                Your result has been recorded for this quiz
+                attempt.
+              </p>
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={handleRetake}
+                  className="rounded-lg border border-blue-600 bg-white px-5 py-2.5 font-medium text-blue-600 transition hover:bg-blue-50"
+                >
+                  Retake Quiz
+                </button>
+              </div>
 
             </div>
           )}
 
           {/* Responsible AI Warning */}
-          <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5">
+          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
 
             <h3 className="font-semibold text-amber-900">
               AI-Generated Content
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              Quiz questions and answers generated by AI may
-              contain inaccuracies or omissions. Verify
-              important information against your original
-              uploaded study material.
+              {disclaimer ||
+                'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
             </p>
 
           </div>
