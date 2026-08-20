@@ -1,7 +1,9 @@
 const { GoogleGenAI } = require("@google/genai");
 
-// Model is configurable so it can be changed without a code edit (NFR8)
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+// Model is configurable so it can be changed without a code edit (NFR8).
+// Google retires model versions periodically: gemini-2.0-flash returned 404
+// "no longer available" on 20 Aug 2026 and was replaced via .env alone.
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
 // Guard against sending an unbounded document to the API. Part A scopes
 // testing to documents of up to 10 pages or 50,000 characters (NFR1).
