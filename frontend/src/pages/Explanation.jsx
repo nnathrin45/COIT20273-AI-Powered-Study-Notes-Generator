@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { getConsentStatus } from '../services/consentService'
+import { getUploadedFiles } from '../services/uploadedService'
+import { generateAIContent } from '../services/aiService'
 
 function Explanation() {
+  const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState('')
   const [concept, setConcept] = useState('')
   const [explanationLevel, setExplanationLevel] =
     useState('beginner')
-  const [generated, setGenerated] = useState(false)
+
+  const [documentsLoading, setDocumentsLoading] =
+    useState(true)
+  const [documentsError, setDocumentsError] = useState('')
+
+  const [generatedOutput, setGeneratedOutput] = useState(null)
+  const [disclaimer, setDisclaimer] = useState('')
+  const [generationLoading, setGenerationLoading] =
+    useState(false)
   const [error, setError] = useState('')
 
   const [consentStatus, setConsentStatus] = useState(null)
@@ -58,33 +69,56 @@ function Explanation() {
     loadConsent()
   }, [])
 
-  // Temporary mock documents.
-  // These will later come from the backend.
-  const documents = [
-    {
-      id: 1,
-      name: 'Introduction to Artificial Intelligence.pdf',
-    },
-    {
-      id: 2,
-      name: 'Database Systems Week 4.docx',
-    },
-    {
-      id: 3,
-      name: 'Software Engineering Notes.txt',
-    },
-  ]
+  useEffect(() => {
+    const loadDocuments = async () => {
+      setDocumentsLoading(true)
+      setDocumentsError('')
 
-  const selectedDocumentName =
-    documents.find(
-      (document) =>
-        document.id === Number(selectedDocument)
-    )?.name || ''
+      try {
+        const response = await getUploadedFiles()
 
-  const handleGenerateExplanation = () => {
+        if (!response.ok) {
+          if (response.status === 401) {
+            setDocumentsError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setDocumentsError(
+              response.data?.message ||
+                'Unable to retrieve your uploaded study materials.'
+            )
+          }
+
+          return
+        }
+
+        setDocuments(response.data?.files ?? [])
+      } catch (documentFetchError) {
+        console.error(
+          'Uploaded files fetch error:',
+          documentFetchError
+        )
+
+        setDocumentsError(
+          'Unable to connect to the server to retrieve your uploaded study materials.'
+        )
+      } finally {
+        setDocumentsLoading(false)
+      }
+    }
+
+    loadDocuments()
+  }, [])
+
+  const clearGeneratedExplanation = () => {
+    setGeneratedOutput(null)
+    setDisclaimer('')
+  }
+
+  const handleGenerateExplanation = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
-      setGenerated(false)
+      clearGeneratedExplanation()
       return
     }
 
@@ -92,7 +126,7 @@ function Explanation() {
       setError(
         'Please enter a concept or topic you would like explained.'
       )
-      setGenerated(false)
+      clearGeneratedExplanation()
       return
     }
 
@@ -100,85 +134,120 @@ function Explanation() {
       setError(
         'Please grant AI processing consent before generating a concept explanation.'
       )
-      setGenerated(false)
+      clearGeneratedExplanation()
       return
     }
 
+    setGenerationLoading(true)
     setError('')
-    setGenerated(true)
+    clearGeneratedExplanation()
+
+    try {
+      const response = await generateAIContent({
+        fileId: Number(selectedDocument),
+        outputType: 'explanation',
+        concept: concept.trim(),
+        level: explanationLevel,
+      })
+
+      if (!response.ok) {
+        if (
+          response.status === 403 &&
+          response.data?.code === 'CONSENT_REQUIRED'
+        ) {
+          setConsentStatus('revoked')
+          setError(
+            'AI processing consent is required. Please manage your consent from the Dashboard.'
+          )
+          return
+        }
+
+        if (response.status === 401) {
+          setError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+          return
+        }
+
+        if (response.status === 404) {
+          setError(
+            'The selected study material could not be found. Please select another document.'
+          )
+          return
+        }
+
+        if (
+          response.status === 400 &&
+          response.data?.code === 'MISSING_CONCEPT'
+        ) {
+          setError(
+            'Please enter a concept or topic you would like explained.'
+          )
+          return
+        }
+
+        if (
+          response.status === 400 &&
+          response.data?.code === 'INVALID_LEVEL'
+        ) {
+          setError(
+            'Please select a valid explanation level.'
+          )
+          return
+        }
+
+        setError(
+          response.data?.message ||
+            'Unable to generate the explanation. Please try again.'
+        )
+        return
+      }
+
+      const output = response.data?.output
+
+      if (
+        !output ||
+        typeof output.content !== 'string' ||
+        !output.content.trim()
+      ) {
+        setError(
+          'The server returned the explanation in an unexpected format.'
+        )
+        return
+      }
+
+      setGeneratedOutput(output)
+      setDisclaimer(response.data?.disclaimer ?? '')
+    } catch (generationError) {
+      console.error(
+        'Explanation generation error:',
+        generationError
+      )
+
+      setError(
+        'Unable to connect to the server. Please try again.'
+      )
+    } finally {
+      setGenerationLoading(false)
+    }
   }
 
-  const getMockExplanation = () => {
-    if (explanationLevel === 'beginner') {
-      return (
-        <>
-          <p>
-            This is a simple explanation of{' '}
-            <strong>{concept}</strong>. The purpose of the
-            beginner level is to explain the idea using clear
-            language and avoid unnecessary technical terminology.
-          </p>
+  const selectedDocumentName =
+    documents.find(
+      (document) =>
+        String(document.file_id) === selectedDocument
+    )?.file_name || ''
 
-          <p>
-            In the final system, this explanation will be
-            generated from the selected uploaded study material
-            so that the explanation remains connected to the
-            student's source document.
-          </p>
-        </>
-      )
-    }
-
-    if (explanationLevel === 'intermediate') {
-      return (
-        <>
-          <p>
-            <strong>{concept}</strong> can be understood by
-            examining its main purpose, important characteristics
-            and relationship with other concepts in the selected
-            study material.
-          </p>
-
-          <p>
-            At the intermediate level, the final AI-generated
-            response will include more subject-specific
-            terminology while still presenting the explanation
-            in an accessible way.
-          </p>
-        </>
-      )
-    }
-
-    return (
-      <>
-        <p>
-          An advanced explanation of{' '}
-          <strong>{concept}</strong> will provide greater
-          technical depth, discuss relevant relationships and
-          explain important terminology identified in the
-          uploaded source material.
-        </p>
-
-        <p>
-          The final implementation will use the project's
-          Generative AI service to produce this explanation while
-          keeping the uploaded document as the primary study
-          context.
-        </p>
-      </>
-    )
-  }
-
-  const getLevelLabel = () => {
-    if (explanationLevel === 'beginner') {
-      return 'Beginner'
-    }
-
-    if (explanationLevel === 'intermediate') {
+  const getLevelLabel = (level) => {
+    if (level === 'intermediate') {
       return 'Intermediate'
     }
 
-    return 'Advanced'
+    if (level === 'advanced') {
+      return 'Advanced'
+    }
+
+    return 'Beginner'
   }
 
   return (
@@ -214,29 +283,58 @@ function Explanation() {
               Study Material
             </label>
 
-            <select
-              id="explanation-document"
-              value={selectedDocument}
-              onChange={(event) => {
-                setSelectedDocument(event.target.value)
-                setGenerated(false)
-                setError('')
-              }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">
-                Select a document
-              </option>
+            {documentsLoading ? (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm text-blue-700">
+                  Loading your uploaded study materials...
+                </p>
+              </div>
+            ) : documents.length === 0 &&
+              !documentsError ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
 
-              {documents.map((document) => (
-                <option
-                  key={document.id}
-                  value={document.id}
+                <p className="font-medium text-amber-900">
+                  No uploaded study materials
+                </p>
+
+                <p className="mt-1 text-sm leading-6 text-amber-800">
+                  Upload a PDF, DOCX or TXT document before
+                  generating a concept explanation.
+                </p>
+
+                <Link
+                  to="/upload"
+                  className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
                 >
-                  {document.name}
+                  Upload Study Material
+                </Link>
+
+              </div>
+            ) : (
+              <select
+                id="explanation-document"
+                value={selectedDocument}
+                onChange={(event) => {
+                  setSelectedDocument(event.target.value)
+                  clearGeneratedExplanation()
+                  setError('')
+                }}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">
+                  Select a document
                 </option>
-              ))}
-            </select>
+
+                {documents.map((document) => (
+                  <option
+                    key={document.file_id}
+                    value={document.file_id}
+                  >
+                    {document.file_name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Explanation Level */}
@@ -253,7 +351,7 @@ function Explanation() {
               value={explanationLevel}
               onChange={(event) => {
                 setExplanationLevel(event.target.value)
-                setGenerated(false)
+                clearGeneratedExplanation()
                 setError('')
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -290,7 +388,7 @@ function Explanation() {
             value={concept}
             onChange={(event) => {
               setConcept(event.target.value)
-              setGenerated(false)
+              clearGeneratedExplanation()
               setError('')
             }}
             placeholder="e.g. Machine learning, database normalisation..."
@@ -303,6 +401,15 @@ function Explanation() {
           </p>
 
         </div>
+
+        {/* Document Error */}
+        {documentsError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {documentsError}
+            </p>
+          </div>
+        )}
 
         {/* AI Consent Status */}
         <div className="mt-6">
@@ -360,12 +467,17 @@ function Explanation() {
             type="button"
             onClick={handleGenerateExplanation}
             disabled={
+              documentsLoading ||
+              documents.length === 0 ||
               consentInitialLoading ||
-              consentStatus !== 'granted'
+              consentStatus !== 'granted' ||
+              generationLoading
             }
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Explain Concept
+            {generationLoading
+              ? 'Generating Explanation...'
+              : 'Explain Concept'}
           </button>
 
         </div>
@@ -373,7 +485,7 @@ function Explanation() {
       </div>
 
       {/* Generated Explanation */}
-      {generated && (
+      {generatedOutput && (
         <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
           <div className="border-b border-gray-200 pb-5">
@@ -381,71 +493,37 @@ function Explanation() {
             <div className="flex flex-wrap items-center gap-2">
 
               <h2 className="text-2xl font-semibold text-gray-900">
-                {concept}
+                {generatedOutput.concept || concept}
               </h2>
 
-              <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                AI Generated
-              </span>
+              {generatedOutput.is_ai_generated && (
+                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                  AI Generated
+                </span>
+              )}
 
               <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                {getLevelLabel()}
+                {getLevelLabel(
+                  generatedOutput.level ||
+                    explanationLevel
+                )}
               </span>
 
             </div>
 
             <p className="mt-2 text-sm text-gray-500">
-              Source: {selectedDocumentName}
+              Source:{' '}
+              {generatedOutput.file_name ||
+                selectedDocumentName}
             </p>
 
           </div>
 
-          {/* Mock Explanation */}
-          <div className="mt-6 space-y-4 leading-7 text-gray-700">
-            {getMockExplanation()}
-          </div>
-
-          {/* Example */}
-          <div className="mt-7 rounded-lg border border-gray-200 bg-gray-50 p-5">
-
-            <h3 className="font-semibold text-gray-900">
-              Example
-            </h3>
-
-            <p className="mt-2 text-sm leading-6 text-gray-700">
-              A relevant example from the study material can be
-              shown here to help the student connect the
-              explanation with a practical or academic situation.
+          {/* Real AI Explanation */}
+          <div className="mt-6">
+            <p className="whitespace-pre-wrap leading-7 text-gray-700">
+              {generatedOutput.content}
             </p>
-
-          </div>
-
-          {/* Important Points */}
-          <div className="mt-7">
-
-            <h3 className="text-lg font-semibold text-gray-900">
-              Important Points
-            </h3>
-
-            <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-700">
-
-              <li>
-                Focus on the main purpose and meaning of the
-                concept.
-              </li>
-
-              <li>
-                Review how the concept relates to other topics in
-                the source document.
-              </li>
-
-              <li>
-                Check technical definitions against the original
-                study material.
-              </li>
-
-            </ul>
-
           </div>
 
           {/* Responsible AI Warning */}
@@ -456,9 +534,8 @@ function Explanation() {
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              This explanation may contain inaccuracies or
-              omissions. Always verify important information
-              against your original uploaded study material.
+              {disclaimer ||
+                'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
             </p>
 
           </div>
