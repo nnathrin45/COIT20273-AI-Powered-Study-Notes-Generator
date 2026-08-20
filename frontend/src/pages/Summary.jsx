@@ -1,17 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { getConsentStatus } from '../services/consentService'
+import { getUploadedFiles } from '../services/uploadedService'
+import { generateAIContent } from '../services/aiService'
 
 function Summary() {
+  const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState('')
-  const [summaryLength, setSummaryLength] = useState('concise')
-  const [generated, setGenerated] = useState(false)
-  const [error, setError] = useState('')
+
+  const [documentsLoading, setDocumentsLoading] =
+    useState(true)
+  const [documentsError, setDocumentsError] = useState('')
 
   const [consentStatus, setConsentStatus] = useState(null)
   const [consentInitialLoading, setConsentInitialLoading] =
     useState(true)
   const [consentError, setConsentError] = useState('')
+
+  const [generationLoading, setGenerationLoading] =
+    useState(false)
+  const [generatedOutput, setGeneratedOutput] = useState(null)
+  const [disclaimer, setDisclaimer] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const loadConsent = async () => {
@@ -56,27 +66,52 @@ function Summary() {
     loadConsent()
   }, [])
 
-  // Temporary mock documents.
-  // These will later come from the backend/database.
-  const documents = [
-    {
-      id: 1,
-      name: 'Introduction to Artificial Intelligence.pdf',
-    },
-    {
-      id: 2,
-      name: 'Database Systems Week 4.docx',
-    },
-    {
-      id: 3,
-      name: 'Software Engineering Notes.txt',
-    },
-  ]
+  useEffect(() => {
+    const loadDocuments = async () => {
+      setDocumentsLoading(true)
+      setDocumentsError('')
 
-  const handleGenerateSummary = () => {
+      try {
+        const response = await getUploadedFiles()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setDocumentsError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setDocumentsError(
+              response.data?.message ||
+                'Unable to retrieve your uploaded study materials.'
+            )
+          }
+
+          return
+        }
+
+        setDocuments(response.data?.files ?? [])
+      } catch (documentFetchError) {
+        console.error(
+          'Uploaded files fetch error:',
+          documentFetchError
+        )
+
+        setDocumentsError(
+          'Unable to connect to the server to retrieve your uploaded study materials.'
+        )
+      } finally {
+        setDocumentsLoading(false)
+      }
+    }
+
+    loadDocuments()
+  }, [])
+
+  const handleGenerateSummary = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
-      setGenerated(false)
+      setGeneratedOutput(null)
+      setDisclaimer('')
       return
     }
 
@@ -84,19 +119,76 @@ function Summary() {
       setError(
         'Please grant AI processing consent before generating a summary.'
       )
-      setGenerated(false)
+      setGeneratedOutput(null)
+      setDisclaimer('')
       return
     }
 
+    setGenerationLoading(true)
     setError('')
-    setGenerated(true)
+    setGeneratedOutput(null)
+    setDisclaimer('')
+
+    try {
+      const response = await generateAIContent({
+        fileId: Number(selectedDocument),
+        outputType: 'summary',
+      })
+
+      if (!response.ok) {
+        if (
+          response.status === 403 &&
+          response.data?.code === 'CONSENT_REQUIRED'
+        ) {
+          setConsentStatus('revoked')
+          setError(
+            'AI processing consent is required. Please manage your consent from the Dashboard.'
+          )
+          return
+        }
+
+        if (response.status === 401) {
+          setError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+          return
+        }
+
+        if (response.status === 404) {
+          setError(
+            'The selected study material could not be found. Please select another document.'
+          )
+          return
+        }
+
+        setError(
+          response.data?.message ||
+            'Unable to generate the summary. Please try again.'
+        )
+        return
+      }
+
+      setGeneratedOutput(response.data?.output ?? null)
+      setDisclaimer(response.data?.disclaimer ?? '')
+    } catch (generationError) {
+      console.error(
+        'Summary generation error:',
+        generationError
+      )
+
+      setError(
+        'Unable to connect to the server. Please try again.'
+      )
+    } finally {
+      setGenerationLoading(false)
+    }
   }
 
   const selectedDocumentName =
     documents.find(
       (document) =>
-        document.id === Number(selectedDocument)
-    )?.name || ''
+        String(document.file_id) === selectedDocument
+    )?.file_name || ''
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -108,8 +200,8 @@ function Summary() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Create a clear study summary from one of your uploaded
-          documents.
+          Create a clear AI-generated study summary from one of
+          your uploaded documents.
         </p>
       </div>
 
@@ -120,23 +212,48 @@ function Summary() {
           Summary Settings
         </h2>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <div className="mt-6">
 
-          {/* Document Selection */}
-          <div>
-            <label
-              htmlFor="document"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Study Material
-            </label>
+          <label
+            htmlFor="document"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Study Material
+          </label>
 
+          {documentsLoading ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700">
+                Loading your uploaded study materials...
+              </p>
+            </div>
+          ) : documents.length === 0 &&
+            !documentsError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="font-medium text-amber-900">
+                No uploaded study materials
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Upload a PDF, DOCX or TXT document before
+                generating a summary.
+              </p>
+
+              <Link
+                to="/upload"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Upload Study Material
+              </Link>
+            </div>
+          ) : (
             <select
               id="document"
               value={selectedDocument}
               onChange={(event) => {
                 setSelectedDocument(event.target.value)
-                setGenerated(false)
+                setGeneratedOutput(null)
+                setDisclaimer('')
                 setError('')
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -147,44 +264,24 @@ function Summary() {
 
               {documents.map((document) => (
                 <option
-                  key={document.id}
-                  value={document.id}
+                  key={document.file_id}
+                  value={document.file_id}
                 >
-                  {document.name}
+                  {document.file_name}
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Summary Length */}
-          <div>
-            <label
-              htmlFor="summary-length"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Summary Length
-            </label>
-
-            <select
-              id="summary-length"
-              value={summaryLength}
-              onChange={(event) => {
-                setSummaryLength(event.target.value)
-                setGenerated(false)
-              }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="concise">
-                Concise
-              </option>
-
-              <option value="detailed">
-                Detailed
-              </option>
-            </select>
-          </div>
-
+          )}
         </div>
+
+        {/* Document Loading Error */}
+        {documentsError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {documentsError}
+            </p>
+          </div>
+        )}
 
         {/* AI Consent Status */}
         <div className="mt-6">
@@ -226,7 +323,7 @@ function Summary() {
           </div>
         )}
 
-        {/* Summary Error */}
+        {/* Generation Error */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -241,19 +338,24 @@ function Summary() {
             type="button"
             onClick={handleGenerateSummary}
             disabled={
+              documentsLoading ||
+              documents.length === 0 ||
               consentInitialLoading ||
-              consentStatus !== 'granted'
+              consentStatus !== 'granted' ||
+              generationLoading
             }
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Generate Summary
+            {generationLoading
+              ? 'Generating Summary...'
+              : 'Generate Summary'}
           </button>
         </div>
 
       </div>
 
       {/* Generated Summary */}
-      {generated && (
+      {generatedOutput && (
         <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
           <div className="flex flex-col gap-3 border-b border-gray-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
@@ -265,104 +367,28 @@ function Summary() {
                   Generated Summary
                 </h2>
 
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                  AI Generated
-                </span>
+                {generatedOutput.is_ai_generated && (
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                    AI Generated
+                  </span>
+                )}
 
               </div>
 
               <p className="mt-2 text-sm text-gray-500">
-                Source: {selectedDocumentName}
-              </p>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Length:{' '}
-                {summaryLength === 'concise'
-                  ? 'Concise'
-                  : 'Detailed'}
+                Source:{' '}
+                {generatedOutput.file_name ||
+                  selectedDocumentName}
               </p>
             </div>
 
           </div>
 
-          {/* Mock Summary Content */}
-          <div className="mt-6 space-y-6">
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Overview
-              </h3>
-
-              <p className="mt-2 leading-7 text-gray-700">
-                This is temporary sample summary content used to
-                demonstrate the frontend interface. The final
-                version will display a summary generated from the
-                selected uploaded study material using the
-                project's Generative AI service.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Key Points
-              </h3>
-
-              <ul className="mt-3 list-disc space-y-2 pl-6 text-gray-700">
-
-                <li>
-                  Important information from the source document
-                  will be identified and condensed.
-                </li>
-
-                <li>
-                  Key ideas will be presented in a clear format
-                  for study and revision.
-                </li>
-
-                <li>
-                  The summary will remain associated with the
-                  original uploaded study material.
-                </li>
-
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Key Concepts
-              </h3>
-
-              <div className="mt-3 grid gap-4 sm:grid-cols-2">
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-
-                  <p className="font-medium text-gray-900">
-                    Concept One
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-600">
-                    A short explanation of an important concept
-                    identified in the uploaded document.
-                  </p>
-
-                </div>
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-
-                  <p className="font-medium text-gray-900">
-                    Concept Two
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-600">
-                    Another important idea that the student may
-                    need to review.
-                  </p>
-
-                </div>
-
-              </div>
-            </section>
-
+          {/* Real AI Summary */}
+          <div className="mt-6">
+            <p className="whitespace-pre-wrap leading-7 text-gray-700">
+              {generatedOutput.content}
+            </p>
           </div>
 
           {/* Responsible AI Warning */}
@@ -376,9 +402,8 @@ function Summary() {
                 </h3>
 
                 <p className="mt-1 text-sm leading-6 text-amber-800">
-                  This summary may contain inaccuracies or
-                  omissions. Always verify important information
-                  against the original uploaded study material.
+                  {disclaimer ||
+                    'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
                 </p>
               </div>
 
