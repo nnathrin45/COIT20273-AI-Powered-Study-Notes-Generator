@@ -165,7 +165,9 @@ Generates AI content from a previously uploaded document and stores it. **Consen
 | Field | Value |
 |---|---|
 | `file_id` | ID of a document owned by the authenticated user |
-| `output_type` | `"summary"` (prose), `"flashcards"` or `"quiz"` (structured); `explanation` to follow (FR12) |
+| `output_type` | `"summary"` or `"explanation"` (prose); `"flashcards"` or `"quiz"` (structured) |
+| `concept` | **Required for `explanation` only** — the topic to explain (FR12.1) |
+| `level` | `explanation` only — `beginner` (default), `intermediate` or `advanced` (FR12.1) |
 
 **Success — `201`**
 
@@ -227,11 +229,29 @@ For `output_type: "quiz"` each record carries its options and the marked correct
 
 > Switch on `output_type` before reading `content`: it is a **string** for `summary` and an **array** for `flashcards` and `quiz`.
 
+**Explanation — requires a concept and accepts a level**
+
+```json
+{ "file_id": 12, "output_type": "explanation", "concept": "recursion", "level": "beginner" }
+```
+
+The response echoes both back alongside the prose content:
+
+```json
+{ "output_type": "explanation", "content": "...", "concept": "recursion", "level": "beginner", "is_ai_generated": true }
+```
+
+`level` materially changes the output: `beginner` defines every term and uses an analogy, `intermediate` assumes the basics and uses proper terminology, `advanced` is concise and covers mechanisms and limitations. Omitting `level` defaults to `beginner`.
+
+> If the concept does not appear in the document, the response says so rather than inventing an explanation. That is correct behaviour, not a failure — display it as returned.
+
 **Errors**
 
 | Status | `code` | When | Retryable |
 |---|---|---|---|
 | 400 | `MISSING_FILE_ID` | No `file_id` supplied | no |
+| 400 | `MISSING_CONCEPT` | `explanation` requested with no `concept` | no |
+| 400 | `INVALID_LEVEL` | `level` not one of the three permitted values | no |
 | 400 | `UNSUPPORTED_OUTPUT_TYPE` | `output_type` not supported | no |
 | 403 | `CONSENT_REQUIRED` | No consent, or most recent decision is `revoked` | no — prompt for consent |
 | 404 | `FILE_NOT_FOUND` | No such file **for this user** | no |

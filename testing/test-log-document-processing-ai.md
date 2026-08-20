@@ -51,7 +51,7 @@ Testing is currently manual. The project has no automated test framework yet; ad
 
 ---
 
-## 4. AI generation, quiz attempts and consent enforcement (FR9, FR10, FR11, FR17)
+## 4. AI generation, quiz attempts and consent enforcement (FR9–FR12, FR17)
 
 | ID | Requirement | Test | Expected | Result | Date |
 |---|---|---|---|---|---|
@@ -80,6 +80,13 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-38 | FR11.2 | Submit an attempt against a summary output | 400 `NOT_A_QUIZ` | **Pass** | 20 Aug |
 | T-39 | NFR3 | Another user submits an attempt to my quiz | 404 | **Pass** — query scoped by `user_id` | 20 Aug |
 | T-40 | NFR2 | Quiz attempt endpoints without a token | 401 | **Pass** | 20 Aug |
+| T-41 | FR12.1 | Generate a concept explanation at beginner level | 201, prose pitched for a beginner | **Pass** — 1,267 characters, defines terms and uses an analogy | 20 Aug |
+| T-42 | FR12.1 | Generate the same concept at advanced level | Noticeably different, more concise treatment | **Pass** — 722 characters, mechanism-focused, no analogy | 20 Aug |
+| T-43 | FR12.1 | Omit `level` | Defaults to `beginner` | **Pass** | 20 Aug |
+| T-44 | FR12.1 | Request an explanation with no concept | 400 `MISSING_CONCEPT` | **Pass** — blank/whitespace also rejected | 20 Aug |
+| T-45 | FR12.1 | Request an invalid level (`expert`) | 400 `INVALID_LEVEL` | **Pass** | 20 Aug |
+| T-46 | FR12.1, R1 | Request a concept absent from the document | States the concept is not present rather than inventing an explanation | **Pass** — key mitigation for risk R1 | 20 Aug |
+| T-47 | FR17.2 | Explanation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
 
 ---
 

@@ -93,8 +93,42 @@ Return JSON only, in exactly this shape:
 Study material:
 ---
 ${text}
+---`,
+
+  // FR12.1 - explanation pitched at a user-selected level
+  explanation: (text, { concept, level }) =>
+    `You are helping a university student understand a concept from their own study material.
+
+Explain this concept: ${concept}
+
+Pitch the explanation at ${LEVEL_GUIDANCE[level]}
+
+Rules:
+- Base the explanation on the study material below. Do not add facts from outside it.
+- If the concept does not appear in the material, say so plainly and explain only what the material does cover about it. Do not invent content.
+- Write in clear prose with short paragraphs. Do not use markdown headings.
+
+Study material:
+---
+${text}
 ---`
 };
+
+// FR12.1 - the three levels the interface offers, and what each one means for
+// the explanation produced
+const LEVEL_GUIDANCE = {
+  beginner:
+    "a beginner: assume no prior knowledge, define every term you use, keep " +
+    "sentences short, and use an everyday analogy if one fits the material.",
+  intermediate:
+    "an intermediate learner: assume familiarity with the basics, focus on how " +
+    "the parts relate to each other, and use the subject's proper terminology.",
+  advanced:
+    "an advanced learner: assume solid background knowledge, be precise and " +
+    "concise, and cover mechanisms, edge cases or limitations the material raises."
+};
+
+const LEVELS = Object.keys(LEVEL_GUIDANCE);
 
 // Output types that must be returned as JSON rather than prose. Each has a
 // parser that converts the model's response into the records the API returns.
@@ -170,14 +204,31 @@ const STRUCTURED = {
   }
 };
 
-// FR9.1 - build the prompt for the requested output type
-const buildPrompt = (text, outputType) => {
+// FR9.1 - build the prompt for the requested output type.
+// `options` carries per-type inputs: explanation uses { concept, level }.
+const buildPrompt = (text, outputType, options = {}) => {
   const template = PROMPTS[outputType];
 
   if (!template) {
     const error = new Error(`Unsupported output type: ${outputType}`);
     error.code = "UNSUPPORTED_OUTPUT_TYPE";
     throw error;
+  }
+
+  if (outputType === "explanation") {
+    const concept = typeof options.concept === "string" ? options.concept.trim() : "";
+
+    if (concept.length === 0) {
+      const error = new Error("A concept is required for an explanation");
+      error.code = "MISSING_CONCEPT";
+      throw error;
+    }
+
+    if (options.level && !LEVELS.includes(options.level)) {
+      const error = new Error(`Level must be one of: ${LEVELS.join(", ")}`);
+      error.code = "INVALID_LEVEL";
+      throw error;
+    }
   }
 
   // Truncate on a whitespace boundary so the prompt does not end mid-word
@@ -189,12 +240,15 @@ const buildPrompt = (text, outputType) => {
     input = (lastBreak > 0 ? cut.slice(0, lastBreak) : cut) + "\n\n[Material truncated for length.]";
   }
 
-  return template(input);
+  return template(input, {
+    concept: typeof options.concept === "string" ? options.concept.trim() : "",
+    level: options.level || "beginner"
+  });
 };
 
 // SR-AI1 to SR-AI3 - send the prompt to Gemini and return the generated text
-const generate = async (text, outputType) => {
-  const prompt = buildPrompt(text, outputType);
+const generate = async (text, outputType, options = {}) => {
+  const prompt = buildPrompt(text, outputType, options);
   const ai = getClient();
 
   const timeout = new Promise((_, reject) => {
@@ -253,6 +307,7 @@ const generate = async (text, outputType) => {
 module.exports = {
   buildPrompt,
   generate,
+  LEVELS,
   MAX_INPUT_CHARS,
   MODEL
 };
