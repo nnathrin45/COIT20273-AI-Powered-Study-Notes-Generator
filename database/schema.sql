@@ -51,3 +51,18 @@ CREATE TABLE IF NOT EXISTS ai_outputs (
   FOREIGN KEY (file_id) REFERENCES uploaded_files(file_id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+-- Quiz attempts: submitted answers and resulting score (FR11.2)
+-- Each attempt is a new row rather than an update, so a student can retake a
+-- quiz and the history remains available for the progress dashboard (FR14).
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+  attempt_id   INT AUTO_INCREMENT PRIMARY KEY,
+  output_id    INT NOT NULL,                     -- the quiz in ai_outputs
+  user_id      INT NOT NULL,
+  answers      LONGTEXT NOT NULL,                -- JSON array of submitted answers
+  score        INT NOT NULL,                     -- number answered correctly
+  total        INT NOT NULL,                     -- number of questions in the quiz
+  attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (output_id) REFERENCES ai_outputs(output_id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);

@@ -2,12 +2,12 @@ const db = require("../config/database");
 const { hasActiveConsent } = require("../services/consent.service");
 const { generate } = require("../services/ai.service");
 
-const SUPPORTED_TYPES = ["summary", "flashcards"];
+const SUPPORTED_TYPES = ["summary", "flashcards", "quiz"];
 
 // Types whose content is a structured record set rather than prose. Stored as
 // JSON text in ai_outputs.content and returned parsed so the interface does
 // not have to know the storage format.
-const STRUCTURED_TYPES = ["flashcards"];
+const STRUCTURED_TYPES = ["flashcards", "quiz"];
 
 // Generate AI content from a previously uploaded document (FR9-FR12, FR16, FR17)
 const generateOutput = async (req, res) => {
@@ -195,7 +195,145 @@ const getOutputsForFile = async (req, res) => {
   }
 };
 
+// FR11.2 - record a quiz attempt and return the score.
+// Marking happens on the server against the stored quiz, so a submitted answer
+// cannot be scored against anything the client supplies.
+const submitQuizAttempt = async (req, res) => {
+  try {
+    const { outputId } = req.params;
+    const { answers } = req.body;
+
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({
+        status: "error",
+        code: "INVALID_ANSWERS",
+        message: "answers must be an array, one entry per question in order"
+      });
+    }
+
+    // NFR3 - scoped to the requesting user
+    const [rows] = await db.execute(
+      `SELECT output_id, output_type, content
+       FROM ai_outputs
+       WHERE output_id = ? AND user_id = ?`,
+      [outputId, req.user.user_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        code: "OUTPUT_NOT_FOUND",
+        message: "Quiz not found"
+      });
+    }
+
+    if (rows[0].output_type !== "quiz") {
+      return res.status(400).json({
+        status: "error",
+        code: "NOT_A_QUIZ",
+        message: `Output ${outputId} is a ${rows[0].output_type}, not a quiz`
+      });
+    }
+
+    let questions;
+    try {
+      questions = JSON.parse(rows[0].content);
+    } catch {
+      return res.status(500).json({
+        status: "error",
+        code: "QUIZ_UNREADABLE",
+        message: "The stored quiz could not be read"
+      });
+    }
+
+    if (answers.length !== questions.length) {
+      return res.status(400).json({
+        status: "error",
+        code: "ANSWER_COUNT_MISMATCH",
+        message: `Expected ${questions.length} answers but received ${answers.length}`
+      });
+    }
+
+    // Unanswered questions are permitted and simply score zero, so a partial
+    // attempt is still recorded rather than rejected.
+    const results = questions.map((q, i) => {
+      const submitted = typeof answers[i] === "string" ? answers[i].trim() : null;
+      return {
+        question: q.question,
+        submitted,
+        correct_answer: q.correct_answer,
+        is_correct: submitted !== null && submitted === q.correct_answer
+      };
+    });
+
+    const score = results.filter((r) => r.is_correct).length;
+    const total = results.length;
+
+    const [saved] = await db.execute(
+      `INSERT INTO quiz_attempts (output_id, user_id, answers, score, total)
+       VALUES (?, ?, ?, ?, ?)`,
+      [rows[0].output_id, req.user.user_id, JSON.stringify(answers), score, total]
+    );
+
+    res.status(201).json({
+      status: "success",
+      message: "Quiz attempt recorded",
+      attempt: {
+        attempt_id: saved.insertId,
+        output_id: rows[0].output_id,
+        score,
+        total,
+        percentage: Math.round((score / total) * 100),
+        results
+      }
+    });
+
+  } catch (error) {
+    console.error("Quiz attempt error:", error);
+
+    res.status(500).json({
+      status: "error",
+      code: "QUIZ_ATTEMPT_FAILED",
+      message: "Unable to record the quiz attempt"
+    });
+  }
+};
+
+// FR11.2 / FR14 - previous attempts at a quiz, newest first
+const getQuizAttempts = async (req, res) => {
+  try {
+    const { outputId } = req.params;
+
+    const [rows] = await db.execute(
+      `SELECT attempt_id, output_id, score, total, attempted_at
+       FROM quiz_attempts
+       WHERE output_id = ? AND user_id = ?
+       ORDER BY attempted_at DESC, attempt_id DESC`,
+      [outputId, req.user.user_id]
+    );
+
+    res.json({
+      status: "success",
+      attempts: rows.map((r) => ({
+        ...r,
+        percentage: r.total > 0 ? Math.round((r.score / r.total) * 100) : 0
+      }))
+    });
+
+  } catch (error) {
+    console.error("Quiz attempts fetch error:", error);
+
+    res.status(500).json({
+      status: "error",
+      code: "QUIZ_ATTEMPTS_FETCH_ERROR",
+      message: "Unable to fetch quiz attempts"
+    });
+  }
+};
+
 module.exports = {
   generateOutput,
-  getOutputsForFile
+  getOutputsForFile,
+  submitQuizAttempt,
+  getQuizAttempts
 };
