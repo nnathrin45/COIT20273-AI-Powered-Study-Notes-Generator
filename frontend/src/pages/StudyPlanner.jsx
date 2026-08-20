@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { getConsentStatus } from '../services/consentService'
 
 function StudyPlanner() {
   const [subject, setSubject] = useState('')
@@ -8,6 +10,54 @@ function StudyPlanner() {
   const [studyDays, setStudyDays] = useState([])
   const [generated, setGenerated] = useState(false)
   const [error, setError] = useState('')
+
+  const [consentStatus, setConsentStatus] = useState(null)
+  const [consentInitialLoading, setConsentInitialLoading] =
+    useState(true)
+  const [consentError, setConsentError] = useState('')
+
+  useEffect(() => {
+    const loadConsent = async () => {
+      setConsentInitialLoading(true)
+      setConsentError('')
+
+      try {
+        const response = await getConsentStatus()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setConsentError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setConsentError(
+              response.data?.message ||
+                'Unable to retrieve your AI consent preference.'
+            )
+          }
+
+          return
+        }
+
+        setConsentStatus(
+          response.data?.consent?.status ?? null
+        )
+      } catch (consentFetchError) {
+        console.error(
+          'Consent fetch error:',
+          consentFetchError
+        )
+
+        setConsentError(
+          'Unable to connect to the server to retrieve your AI consent preference.'
+        )
+      } finally {
+        setConsentInitialLoading(false)
+      }
+    }
+
+    loadConsent()
+  }, [])
 
   const days = [
     'Monday',
@@ -51,7 +101,9 @@ function StudyPlanner() {
   const handleDayChange = (day) => {
     if (studyDays.includes(day)) {
       setStudyDays(
-        studyDays.filter((selectedDay) => selectedDay !== day)
+        studyDays.filter(
+          (selectedDay) => selectedDay !== day
+        )
       )
     } else {
       setStudyDays([...studyDays, day])
@@ -82,14 +134,29 @@ function StudyPlanner() {
       return
     }
 
-    if (!availableHours || Number(availableHours) <= 0) {
-      setError('Please enter your available study hours.')
+    if (
+      !availableHours ||
+      Number(availableHours) <= 0
+    ) {
+      setError(
+        'Please enter your available study hours.'
+      )
       setGenerated(false)
       return
     }
 
     if (studyDays.length === 0) {
-      setError('Please select at least one available study day.')
+      setError(
+        'Please select at least one available study day.'
+      )
+      setGenerated(false)
+      return
+    }
+
+    if (consentStatus !== 'granted') {
+      setError(
+        'Please grant AI processing consent before generating a study plan.'
+      )
       setGenerated(false)
       return
     }
@@ -103,7 +170,9 @@ function StudyPlanner() {
       return ''
     }
 
-    return new Date(`${deadline}T00:00:00`).toLocaleDateString()
+    return new Date(
+      `${deadline}T00:00:00`
+    ).toLocaleDateString()
   }
 
   return (
@@ -116,8 +185,8 @@ function StudyPlanner() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Create a personalised study schedule based on your subject,
-          topics, available time and deadline.
+          Create a personalised study schedule based on your
+          subject, topics, available time and deadline.
         </p>
       </div>
 
@@ -262,7 +331,47 @@ function StudyPlanner() {
 
         </div>
 
-        {/* Error */}
+        {/* AI Consent Status */}
+        <div className="mt-6">
+          {consentInitialLoading ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700">
+                Checking your AI processing consent...
+              </p>
+            </div>
+          ) : consentStatus !== 'granted' ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+
+              <p className="font-medium text-amber-900">
+                AI processing consent required
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Grant AI processing consent from your Dashboard
+                before generating AI study content.
+              </p>
+
+              <Link
+                to="/dashboard"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Manage AI Consent
+              </Link>
+
+            </div>
+          ) : null}
+        </div>
+
+        {/* Consent Error */}
+        {consentError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {consentError}
+            </p>
+          </div>
+        )}
+
+        {/* Planner Error */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -276,7 +385,11 @@ function StudyPlanner() {
 
           <button
             type="submit"
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+            disabled={
+              consentInitialLoading ||
+              consentStatus !== 'granted'
+            }
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Generate Study Plan
           </button>
@@ -407,9 +520,10 @@ function StudyPlanner() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-blue-800">
-              Spread your study sessions across your available days rather
-              than completing all sessions at once. Review difficult concepts
-              again after completing practice questions.
+              Spread your study sessions across your available
+              days rather than completing all sessions at once.
+              Review difficult concepts again after completing
+              practice questions.
             </p>
 
           </div>
@@ -422,10 +536,10 @@ function StudyPlanner() {
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              This study plan is a recommendation and may not account for every
-              academic requirement or personal circumstance. Review and adjust
-              the schedule based on your actual course requirements and
-              commitments.
+              This study plan is a recommendation and may not
+              account for every academic requirement or personal
+              circumstance. Review and adjust the schedule based
+              on your actual course requirements and commitments.
             </p>
 
           </div>
