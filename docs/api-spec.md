@@ -165,7 +165,9 @@ Generates AI content from a previously uploaded document and stores it. **Consen
 | Field | Value |
 |---|---|
 | `file_id` | ID of a document owned by the authenticated user |
-| `output_type` | `"summary"` (prose) or `"flashcards"` (structured); `quiz` and `explanation` to follow (FR11–FR12) |
+| `output_type` | `"summary"` or `"explanation"` (prose); `"flashcards"` or `"quiz"` (structured) |
+| `concept` | **Required for `explanation` only** — the topic to explain (FR12.1) |
+| `level` | `explanation` only — `beginner` (default), `intermediate` or `advanced` (FR12.1) |
 
 **Success — `201`**
 
@@ -208,13 +210,48 @@ For `output_type: "flashcards"` the `content` field is an array of records rathe
 
 Between 5 and 15 cards are returned depending on how much distinct content the document holds. `GET /api/ai/outputs/:fileId` returns the same parsed array, so the storage format never reaches the interface.
 
-> Switch on `output_type` before reading `content`: it is a **string** for `summary` and an **array** for `flashcards`.
+**Quiz — `content` is an array of questions**
+
+For `output_type: "quiz"` each record carries its options and the marked correct answer (FR11.1):
+
+```json
+{
+  "type": "multiple_choice",
+  "question": "What process converts liquid water into vapour?",
+  "options": ["Evaporation", "Condensation", "Precipitation", "Transpiration"],
+  "correct_answer": "Evaporation"
+}
+```
+
+`type` is `"multiple_choice"` (4 options) or `"true_false"` (options exactly `["True","False"]`). `correct_answer` always repeats one of the options word for word — questions where it does not are discarded server-side rather than returned. Between 5 and 10 questions are produced.
+
+> `correct_answer` is included in the response so the interface can mark answers locally, but scoring should use the attempt endpoint below so the result is recorded. Hide it until the student has answered.
+
+> Switch on `output_type` before reading `content`: it is a **string** for `summary` and an **array** for `flashcards` and `quiz`.
+
+**Explanation — requires a concept and accepts a level**
+
+```json
+{ "file_id": 12, "output_type": "explanation", "concept": "recursion", "level": "beginner" }
+```
+
+The response echoes both back alongside the prose content:
+
+```json
+{ "output_type": "explanation", "content": "...", "concept": "recursion", "level": "beginner", "is_ai_generated": true }
+```
+
+`level` materially changes the output: `beginner` defines every term and uses an analogy, `intermediate` assumes the basics and uses proper terminology, `advanced` is concise and covers mechanisms and limitations. Omitting `level` defaults to `beginner`.
+
+> If the concept does not appear in the document, the response says so rather than inventing an explanation. That is correct behaviour, not a failure — display it as returned.
 
 **Errors**
 
 | Status | `code` | When | Retryable |
 |---|---|---|---|
 | 400 | `MISSING_FILE_ID` | No `file_id` supplied | no |
+| 400 | `MISSING_CONCEPT` | `explanation` requested with no `concept` | no |
+| 400 | `INVALID_LEVEL` | `level` not one of the three permitted values | no |
 | 400 | `UNSUPPORTED_OUTPUT_TYPE` | `output_type` not supported | no |
 | 403 | `CONSENT_REQUIRED` | No consent, or most recent decision is `revoked` | no — prompt for consent |
 | 404 | `FILE_NOT_FOUND` | No such file **for this user** | no |
@@ -262,6 +299,70 @@ An empty `outputs` array means nothing has been generated yet — not an error.
 | Status | `code` | When |
 |---|---|---|
 | 500 | `AI_OUTPUT_FETCH_ERROR` | Database failure |
+
+---
+
+## Quiz attempt — `POST /api/ai/quiz/:outputId/attempt`
+
+*Owner: Member 3 · Added 20 Aug 2026*
+
+Submits answers to a generated quiz and records the score (FR11.2). **Marking happens on the server** against the stored quiz, so the client cannot influence the result.
+
+**Request** — one entry per question, in order. Use `null` for unanswered.
+
+```json
+{ "answers": ["Evaporation", "True", null] }
+```
+
+**Success — `201`**
+
+```json
+{
+  "status": "success",
+  "message": "Quiz attempt recorded",
+  "attempt": {
+    "attempt_id": 1,
+    "output_id": 3,
+    "score": 2,
+    "total": 3,
+    "percentage": 67,
+    "results": [
+      { "question": "...", "submitted": "Evaporation", "correct_answer": "Evaporation", "is_correct": true }
+    ]
+  }
+}
+```
+
+Every attempt is a new row, so a quiz can be retaken and the history is preserved for the progress dashboard (FR14).
+
+**Errors**
+
+| Status | `code` | When |
+|---|---|---|
+| 400 | `INVALID_ANSWERS` | `answers` is not an array |
+| 400 | `ANSWER_COUNT_MISMATCH` | Fewer or more answers than questions |
+| 400 | `NOT_A_QUIZ` | The output exists but is a summary or flashcard set |
+| 404 | `OUTPUT_NOT_FOUND` | No such output **for this user** |
+| 500 | `QUIZ_ATTEMPT_FAILED` | Database failure |
+
+---
+
+## Quiz attempt history — `GET /api/ai/quiz/:outputId/attempts`
+
+*Owner: Member 3 · Added 20 Aug 2026*
+
+Previous attempts at one quiz, newest first. Scoped to the authenticated user.
+
+```json
+{
+  "status": "success",
+  "attempts": [
+    { "attempt_id": 3, "output_id": 3, "score": 1, "total": 6, "percentage": 17, "attempted_at": "2026-08-20T..." }
+  ]
+}
+```
+
+An empty array means the quiz has not been attempted yet — not an error.
 
 ---
 
