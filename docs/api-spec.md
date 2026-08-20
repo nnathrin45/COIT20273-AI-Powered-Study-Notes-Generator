@@ -152,7 +152,7 @@ Uploading a file does **not** require consent — only sending content to Gemini
 
 ## AI generation — `POST /api/ai/generate`
 
-*Owner: Member 3 · Added 14 Aug 2026 · Gemini call not yet verified against a live API key*
+*Owner: Member 3 · Added 14 Aug 2026 · Verified against the live Gemini API 20 Aug 2026 (model `gemini-3.6-flash`)*
 
 Generates AI content from a previously uploaded document and stores it. **Consent is enforced here, not in the interface** — the request is refused server-side if the user's most recent consent decision is not `granted` (FR17.1).
 
@@ -165,7 +165,7 @@ Generates AI content from a previously uploaded document and stores it. **Consen
 | Field | Value |
 |---|---|
 | `file_id` | ID of a document owned by the authenticated user |
-| `output_type` | `"summary"` only at present; `flashcards`, `quiz`, `explanation` to follow (FR10–FR12) |
+| `output_type` | `"summary"` (prose) or `"flashcards"` (structured); `quiz` and `explanation` to follow (FR11–FR12) |
 
 **Success — `201`**
 
@@ -187,6 +187,29 @@ Generates AI content from a previously uploaded document and stores it. **Consen
 
 > `is_ai_generated` and `disclaimer` must both be surfaced in the interface (FR16.1). The label is not dismissible.
 
+**Flashcards — `content` is an array, not a string**
+
+For `output_type: "flashcards"` the `content` field is an array of records rather than prose (FR10.1):
+
+```json
+{
+  "status": "success",
+  "output": {
+    "output_id": 7,
+    "output_type": "flashcards",
+    "content": [
+      { "question": "Which organelle is the site of aerobic respiration?", "answer": "The mitochondrion." },
+      { "question": "What is the folded inner membrane called?", "answer": "Cristae." }
+    ],
+    "is_ai_generated": true
+  }
+}
+```
+
+Between 5 and 15 cards are returned depending on how much distinct content the document holds. `GET /api/ai/outputs/:fileId` returns the same parsed array, so the storage format never reaches the interface.
+
+> Switch on `output_type` before reading `content`: it is a **string** for `summary` and an **array** for `flashcards`.
+
 **Errors**
 
 | Status | `code` | When | Retryable |
@@ -196,7 +219,8 @@ Generates AI content from a previously uploaded document and stores it. **Consen
 | 403 | `CONSENT_REQUIRED` | No consent, or most recent decision is `revoked` | no — prompt for consent |
 | 404 | `FILE_NOT_FOUND` | No such file **for this user** | no |
 | 422 | `NO_READABLE_TEXT` | Stored file has no extracted text | no |
-| 502 | `AI_EMPTY_RESPONSE` | Gemini returned nothing | **yes** |
+| 502 | `AI_EMPTY_RESPONSE` | Gemini returned nothing, or no usable flashcards | **yes** |
+| 502 | `AI_MALFORMED_RESPONSE` | Structured output could not be parsed | **yes** |
 | 503 | `AI_NOT_CONFIGURED` | `GEMINI_API_KEY` not set on the server | no |
 | 504 | `AI_TIMEOUT` | No response within 60 s (NFR1) | **yes** |
 | 500 | `AI_GENERATION_FAILED` | Unexpected failure | **yes** |

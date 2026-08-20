@@ -2,7 +2,7 @@
 
 **Owner:** Member 3 (Natthapong Rinsakul, 12290114)
 **Scope:** upload validation, text extraction, consent recording and enforcement, AI generation
-**Period covered:** 10–14 Aug 2026
+**Period covered:** 10–20 Aug 2026
 
 This log records what has actually been executed against running code. Tests that have not been run are listed as such in section 5 rather than omitted, so the gap between verified and unverified behaviour stays visible.
 
@@ -15,9 +15,10 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | Item | Value |
 |---|---|
 | Runtime | Node.js v22.23.2 |
+| AI model | `gemini-3.6-flash` (set via `GEMINI_MODEL`) |
 | Database | MySQL, local instance, schema from `database/schema.sql` |
 | Backend port | 5099 used for testing to avoid the macOS AirPlay conflict on 5000 |
-| Method | `curl` against the running server, results confirmed in MySQL |
+| Method | `curl` against the running server, and `testing/verify-ai-generation.js` for the AI and consent cases; results confirmed in MySQL |
 
 ---
 
@@ -50,7 +51,7 @@ Testing is currently manual. The project has no automated test framework yet; ad
 
 ---
 
-## 4. AI generation and consent enforcement (FR9, FR17)
+## 4. AI generation and consent enforcement (FR9, FR10, FR17)
 
 | ID | Requirement | Test | Expected | Result | Date |
 |---|---|---|---|---|---|
@@ -61,6 +62,14 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-16 | — | `buildPrompt` with an unsupported output type | Throws `UNSUPPORTED_OUTPUT_TYPE` | **Pass** | 14 Aug |
 | T-17 | NFR1 | 100,000-character input | Truncated at 50,000 on a word boundary | **Pass** — no mid-word cut | 14 Aug |
 | T-18 | NFR5 | `generate()` with no API key configured | Throws `AI_NOT_CONFIGURED`; server does not crash | **Pass** | 14 Aug |
+| T-19 | FR9.1 | Live Gemini call returns a usable summary | Non-empty summary, `is_ai_generated` true, disclaimer present | **Pass** — 514 characters, grounded in the source text with no invented facts | 20 Aug |
+| T-20 | FR17.1 | Generation refused when no consent has been recorded | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
+| T-21 | FR17.1 | Generation permitted once consent is granted | 201 with generated content | **Pass** | 20 Aug |
+| T-22 | FR17.2 | Generation refused again after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
+| T-27 | FR10.1 | Generate flashcards from an uploaded document | 201 with an array of question/answer records | **Pass** — 6 cards, all answerable from the source text | 20 Aug |
+| T-28 | FR10.1 | Flashcard content stored as JSON and returned parsed by `GET /api/ai/outputs/:fileId` | Array returned, not a string | **Pass** | 20 Aug |
+| T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
+| T-30 | — | Request an output type that is not yet implemented (`quiz`) | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** | 20 Aug |
 
 ---
 
@@ -70,22 +79,18 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 | ID | Test | Blocked by |
 |---|---|---|
-| T-19 | Live Gemini call returns a usable summary | No `GEMINI_API_KEY` yet |
-| T-20 | Generation refused with 403 `CONSENT_REQUIRED` when consent is absent | Needs a seeded user, file and consent row |
-| T-21 | Generation succeeds after consent is granted | As above |
-| T-22 | Generation refused again after consent is revoked (FR17.2) | As above |
-| T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Requires a live key and a slow response |
-| T-24 | End-to-end time under 60 s for a 10-page document (NFR1) | Requires a live key |
+| T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response |
+| T-24 | End-to-end time under 60 s for a 10-page document (NFR1) | Needs three 10-page fixtures; a short document measured 27.3 s on 20 Aug |
 | T-25 | Extraction accuracy against 3 known source documents (FR8 metric) | Not yet performed |
 | T-26 | Scanned/image-only PDF returns 422 `NO_READABLE_TEXT` (FR8.4) | No scanned test document prepared |
 
-**T-20 to T-22 are the highest priority.** The project's own quality metric requires 100% of unconsented generation attempts to be refused, and that figure cannot be claimed until those three tests are executed.
+**Consent enforcement metric now met.** T-20, T-21 and T-22 were executed on 20 August via `testing/verify-ai-generation.js`. Both refusal paths — never consented, and consent revoked — returned 403 `CONSENT_REQUIRED`, and generation succeeded only while consent was granted. The quality metric requiring 100% of unconsented generation attempts to be refused is therefore satisfied for the summary output type, and will need re-running as each further output type is added.
 
 ---
 
 ## 6. Actions arising
 
-1. Obtain a Gemini API key and execute T-19 to T-24.
+1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. T-23 and T-24 remain.
 2. Prepare a scanned PDF as a fixture and execute T-26.
 3. Assemble three source documents with known content for the extraction-accuracy metric (T-25).
 4. Introduce an automated test framework so these cases run on every change rather than manually.
