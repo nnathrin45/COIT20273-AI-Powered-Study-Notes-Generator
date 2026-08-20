@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { getConsentStatus } from '../services/consentService'
 
 function Flashcards() {
   const [selectedDocument, setSelectedDocument] = useState('')
@@ -6,6 +8,54 @@ function Flashcards() {
   const [currentCard, setCurrentCard] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
   const [error, setError] = useState('')
+
+  const [consentStatus, setConsentStatus] = useState(null)
+  const [consentInitialLoading, setConsentInitialLoading] =
+    useState(true)
+  const [consentError, setConsentError] = useState('')
+
+  useEffect(() => {
+    const loadConsent = async () => {
+      setConsentInitialLoading(true)
+      setConsentError('')
+
+      try {
+        const response = await getConsentStatus()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setConsentError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setConsentError(
+              response.data?.message ||
+                'Unable to retrieve your AI consent preference.'
+            )
+          }
+
+          return
+        }
+
+        setConsentStatus(
+          response.data?.consent?.status ?? null
+        )
+      } catch (consentFetchError) {
+        console.error(
+          'Consent fetch error:',
+          consentFetchError
+        )
+
+        setConsentError(
+          'Unable to connect to the server to retrieve your AI consent preference.'
+        )
+      } finally {
+        setConsentInitialLoading(false)
+      }
+    }
+
+    loadConsent()
+  }, [])
 
   // Temporary mock documents.
   // These will later come from the backend.
@@ -55,12 +105,21 @@ function Flashcards() {
 
   const selectedDocumentName =
     documents.find(
-      (document) => document.id === Number(selectedDocument)
+      (document) =>
+        document.id === Number(selectedDocument)
     )?.name || ''
 
   const handleGenerate = () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setGenerated(false)
+      return
+    }
+
+    if (consentStatus !== 'granted') {
+      setError(
+        'Please grant AI processing consent before generating flashcards.'
+      )
       setGenerated(false)
       return
     }
@@ -95,8 +154,8 @@ function Flashcards() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Generate flashcards from your uploaded study materials and use them
-          for active recall practice.
+          Generate flashcards from your uploaded study materials
+          and use them for active recall practice.
         </p>
       </div>
 
@@ -122,6 +181,8 @@ function Flashcards() {
             onChange={(event) => {
               setSelectedDocument(event.target.value)
               setGenerated(false)
+              setCurrentCard(0)
+              setShowAnswer(false)
               setError('')
             }}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -142,6 +203,47 @@ function Flashcards() {
 
         </div>
 
+        {/* AI Consent Status */}
+        <div className="mt-6">
+          {consentInitialLoading ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700">
+                Checking your AI processing consent...
+              </p>
+            </div>
+          ) : consentStatus !== 'granted' ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+
+              <p className="font-medium text-amber-900">
+                AI processing consent required
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Grant AI processing consent from your Dashboard
+                before generating AI study content.
+              </p>
+
+              <Link
+                to="/dashboard"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Manage AI Consent
+              </Link>
+
+            </div>
+          ) : null}
+        </div>
+
+        {/* Consent Error */}
+        {consentError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {consentError}
+            </p>
+          </div>
+        )}
+
+        {/* Flashcard Error */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -150,11 +252,16 @@ function Flashcards() {
           </div>
         )}
 
+        {/* Generate Button */}
         <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={handleGenerate}
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+            disabled={
+              consentInitialLoading ||
+              consentStatus !== 'granted'
+            }
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Generate Flashcards
           </button>
@@ -247,25 +354,6 @@ function Flashcards() {
               ← Previous
             </button>
 
-            <div className="flex gap-2">
-              {flashcards.map((card, index) => (
-                <button
-                  key={card.id}
-                  type="button"
-                  onClick={() => {
-                    setCurrentCard(index)
-                    setShowAnswer(false)
-                  }}
-                  aria-label={`Go to flashcard ${index + 1}`}
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    currentCard === index
-                      ? 'bg-blue-600'
-                      : 'bg-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-
             <button
               type="button"
               onClick={handleNext}
@@ -277,7 +365,7 @@ function Flashcards() {
 
           </div>
 
-          {/* AI Warning */}
+          {/* Responsible AI Warning */}
           <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5">
 
             <h3 className="font-semibold text-amber-900">
@@ -285,9 +373,9 @@ function Flashcards() {
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              These flashcards may contain inaccuracies or omissions. Verify
-              important information against the original uploaded study
-              material.
+              These flashcards may contain inaccuracies or omissions.
+              Verify important information against your original
+              uploaded study material.
             </p>
 
           </div>

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { getConsentStatus } from '../services/consentService'
 
 function Quiz() {
   const [selectedDocument, setSelectedDocument] = useState('')
@@ -7,6 +9,54 @@ function Quiz() {
   const [answers, setAnswers] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+
+  const [consentStatus, setConsentStatus] = useState(null)
+  const [consentInitialLoading, setConsentInitialLoading] =
+    useState(true)
+  const [consentError, setConsentError] = useState('')
+
+  useEffect(() => {
+    const loadConsent = async () => {
+      setConsentInitialLoading(true)
+      setConsentError('')
+
+      try {
+        const response = await getConsentStatus()
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setConsentError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setConsentError(
+              response.data?.message ||
+                'Unable to retrieve your AI consent preference.'
+            )
+          }
+
+          return
+        }
+
+        setConsentStatus(
+          response.data?.consent?.status ?? null
+        )
+      } catch (consentFetchError) {
+        console.error(
+          'Consent fetch error:',
+          consentFetchError
+        )
+
+        setConsentError(
+          'Unable to connect to the server to retrieve your AI consent preference.'
+        )
+      } finally {
+        setConsentInitialLoading(false)
+      }
+    }
+
+    loadConsent()
+  }, [])
 
   // Temporary mock documents.
   const documents = [
@@ -30,7 +80,8 @@ function Quiz() {
     {
       id: 1,
       type: 'multiple-choice',
-      question: 'What is the main purpose of Artificial Intelligence?',
+      question:
+        'What is the main purpose of Artificial Intelligence?',
       options: [
         'To replace all computer hardware',
         'To enable systems to perform tasks requiring human-like intelligence',
@@ -42,7 +93,8 @@ function Quiz() {
     {
       id: 2,
       type: 'multiple-choice',
-      question: 'Which statement best describes machine learning?',
+      question:
+        'Which statement best describes machine learning?',
       options: [
         'A method for manually programming every possible outcome',
         'A method for storing files in a database',
@@ -71,12 +123,21 @@ function Quiz() {
 
   const selectedDocumentName =
     documents.find(
-      (document) => document.id === Number(selectedDocument)
+      (document) =>
+        document.id === Number(selectedDocument)
     )?.name || ''
 
   const handleGenerateQuiz = () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setGenerated(false)
+      return
+    }
+
+    if (consentStatus !== 'granted') {
+      setError(
+        'Please grant AI processing consent before generating a practice quiz.'
+      )
       setGenerated(false)
       return
     }
@@ -112,8 +173,12 @@ function Quiz() {
   }
 
   const handleSubmitQuiz = () => {
-    if (Object.keys(answers).length !== questions.length) {
-      setError('Please answer all questions before submitting the quiz.')
+    if (
+      Object.keys(answers).length !== questions.length
+    ) {
+      setError(
+        'Please answer all questions before submitting the quiz.'
+      )
       return
     }
 
@@ -149,8 +214,8 @@ function Quiz() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Generate a practice quiz from your uploaded study materials and test
-          your understanding.
+          Generate a practice quiz from your uploaded study
+          materials and test your understanding.
         </p>
       </div>
 
@@ -176,6 +241,7 @@ function Quiz() {
             onChange={(event) => {
               setSelectedDocument(event.target.value)
               setGenerated(false)
+              setCurrentQuestion(0)
               setAnswers({})
               setSubmitted(false)
               setError('')
@@ -198,6 +264,47 @@ function Quiz() {
 
         </div>
 
+        {/* AI Consent Status */}
+        <div className="mt-6">
+          {consentInitialLoading ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700">
+                Checking your AI processing consent...
+              </p>
+            </div>
+          ) : consentStatus !== 'granted' ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+
+              <p className="font-medium text-amber-900">
+                AI processing consent required
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                Grant AI processing consent from your Dashboard
+                before generating AI study content.
+              </p>
+
+              <Link
+                to="/dashboard"
+                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Manage AI Consent
+              </Link>
+
+            </div>
+          ) : null}
+        </div>
+
+        {/* Consent Error */}
+        {consentError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {consentError}
+            </p>
+          </div>
+        )}
+
+        {/* Quiz Error */}
         {error && !generated && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-sm text-red-700">
@@ -206,11 +313,16 @@ function Quiz() {
           </div>
         )}
 
+        {/* Generate Button */}
         <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={handleGenerateQuiz}
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+            disabled={
+              consentInitialLoading ||
+              consentStatus !== 'granted'
+            }
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Generate Quiz
           </button>
@@ -243,7 +355,8 @@ function Quiz() {
             </div>
 
             <p className="text-sm font-medium text-gray-500">
-              Question {currentQuestion + 1} of {questions.length}
+              Question {currentQuestion + 1} of{' '}
+              {questions.length}
             </p>
 
           </div>
@@ -252,7 +365,8 @@ function Quiz() {
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-              {questions[currentQuestion].type === 'true-false'
+              {questions[currentQuestion].type ===
+              'true-false'
                 ? 'True or False'
                 : 'Multiple Choice'}
             </p>
@@ -269,7 +383,8 @@ function Quiz() {
                     answers[currentQuestion] === optionIndex
 
                   const correct =
-                    questions[currentQuestion].correctAnswer === optionIndex
+                    questions[currentQuestion]
+                      .correctAnswer === optionIndex
 
                   let optionStyle =
                     'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
@@ -297,7 +412,9 @@ function Quiz() {
                     <button
                       key={option}
                       type="button"
-                      onClick={() => handleAnswer(optionIndex)}
+                      onClick={() =>
+                        handleAnswer(optionIndex)
+                      }
                       disabled={submitted}
                       className={`flex w-full items-start gap-3 rounded-lg border p-4 text-left transition ${optionStyle}`}
                     >
@@ -308,12 +425,15 @@ function Quiz() {
                             : 'border-gray-300 text-gray-600'
                         }`}
                       >
-                        {String.fromCharCode(65 + optionIndex)}
+                        {String.fromCharCode(
+                          65 + optionIndex
+                        )}
                       </div>
 
                       <span className="text-gray-800">
                         {option}
                       </span>
+
                     </button>
                   )
                 }
@@ -321,17 +441,19 @@ function Quiz() {
 
             </div>
 
-            {/* Answer feedback */}
+            {/* Answer Feedback */}
             {submitted && (
               <div className="mt-6 rounded-lg bg-gray-50 p-4">
 
                 {answers[currentQuestion] ===
-                questions[currentQuestion].correctAnswer ? (
+                questions[currentQuestion]
+                  .correctAnswer ? (
                   <p className="font-medium text-green-700">
                     Correct answer.
                   </p>
                 ) : (
                   <div>
+
                     <p className="font-medium text-red-700">
                       Incorrect answer.
                     </p>
@@ -339,11 +461,14 @@ function Quiz() {
                     <p className="mt-1 text-sm text-gray-700">
                       Correct answer:{' '}
                       {
-                        questions[currentQuestion].options[
-                          questions[currentQuestion].correctAnswer
+                        questions[currentQuestion]
+                          .options[
+                          questions[currentQuestion]
+                            .correctAnswer
                         ]
                       }
                     </p>
+
                   </div>
                 )}
 
@@ -374,7 +499,9 @@ function Quiz() {
                   <button
                     key={question.id}
                     type="button"
-                    onClick={() => setCurrentQuestion(index)}
+                    onClick={() =>
+                      setCurrentQuestion(index)
+                    }
                     className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium ${
                       currentQuestion === index
                         ? 'bg-blue-600 text-white'
@@ -394,7 +521,8 @@ function Quiz() {
               type="button"
               onClick={handleNext}
               disabled={
-                currentQuestion === questions.length - 1
+                currentQuestion ===
+                questions.length - 1
               }
               className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -403,6 +531,7 @@ function Quiz() {
 
           </div>
 
+          {/* Quiz Error */}
           {error && (
             <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
               <p className="text-sm text-red-700">
@@ -411,7 +540,7 @@ function Quiz() {
             </div>
           )}
 
-          {/* Submit */}
+          {/* Submit Quiz */}
           {!submitted && (
             <div className="mt-6 flex justify-end">
 
@@ -469,8 +598,9 @@ function Quiz() {
               </div>
 
               <p className="mt-5 text-sm text-gray-600">
-                Use the numbered question buttons above to review your answers
-                and compare them with the correct responses.
+                Use the numbered question buttons above to
+                review your answers and compare them with the
+                correct responses.
               </p>
 
             </div>
@@ -484,9 +614,10 @@ function Quiz() {
             </h3>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              Quiz questions and answers generated by AI may contain
-              inaccuracies or omissions. Verify important information against
-              your original uploaded study material.
+              Quiz questions and answers generated by AI may
+              contain inaccuracies or omissions. Verify
+              important information against your original
+              uploaded study material.
             </p>
 
           </div>
