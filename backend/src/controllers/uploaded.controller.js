@@ -62,8 +62,51 @@ const getUploadedFile = async (req, res) => {
     }
 };
 
+// Delete one uploaded file belonging to the authenticated user
+const deleteUploadedFile = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id || isNaN(Number(id))) {
+            return res.status(400).json({
+                status: "error",
+                code: "INVALID_FILE_ID",
+                message: "A valid file ID is required"
+            });
+        }
+
+        const [result] = await db.execute(
+            `DELETE FROM uploaded_files
+             WHERE file_id = ? AND user_id = ?`,
+            [id, req.user.user_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                status: "error",
+                code: "FILE_NOT_FOUND",
+                message: "File not found"
+            });
+        }
+
+        res.json({
+            status: "success",
+            message: "Uploaded file deleted successfully"
+        });
+
+    } catch (error) {
+        console.error("Delete uploaded file error:", error);
+
+        res.status(500).json({
+            status: "error",
+            code: "UPLOADED_FILE_DELETE_ERROR",
+            message: "Unable to delete uploaded file"
+        });
+    }
+};
 
 module.exports = {
     getUploadedFiles,
-    getUploadedFile
+    getUploadedFile,
+    deleteUploadedFile
 };
