@@ -195,8 +195,8 @@
       ]
     },
     {
-      "name": "1. Upload and text extraction (FR6, FR8) \u2014 Member 3",
-      "description": "Upload validation and text extraction. Validation is by file **extension**, not MIME type, because MIME type is client-supplied and inconsistent.",
+      "name": "1. Upload, extraction and document list (FR6, FR8)",
+      "description": "Upload validation and text extraction (Member 3), plus the uploaded-files list endpoint owned by Member 1.\n\nValidation is by file **extension**, not MIME type, because MIME type is client-supplied and inconsistent.",
       "item": [
         {
           "name": "Upload document (captures fileId)",
@@ -246,6 +246,45 @@
                   "console.log('Extracted characters:', b.text_length);",
                   "pm.collectionVariables.set('fileId', b.file.file_id);",
                   "console.log('fileId saved:', b.file.file_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my uploaded documents (Member 1's endpoint)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploaded",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploaded"
+              ]
+            },
+            "description": "Owned by Member 1 (added 20 Aug 2026, commit c7d49df). Returns every document belonging to the authenticated user, newest first, without the extracted text.\n\nIncluded here so the collection covers the full document workflow. The `file_id` values returned can be passed directly to POST /api/ai/generate."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('files is an array', () => pm.expect(b.files).to.be.an('array'));",
+                  "console.log('Documents found:', b.files.length);"
                 ]
               }
             }
