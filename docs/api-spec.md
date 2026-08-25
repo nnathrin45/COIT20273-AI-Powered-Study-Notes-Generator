@@ -26,9 +26,11 @@ Obtain the token from `POST /api/users/login`. Missing or invalid tokens return 
 
 ## Upload — `POST /api/upload`
 
-*Owner: Member 3 · Verified 11 Aug 2026*
+*Owner: Member 3 · Verified 11 Aug 2026 · `file_id` added to the response 25 Aug 2026*
 
 Uploads a document, extracts its text, and stores both.
+
+> `file_id` is returned so it can be passed directly to `POST /api/ai/generate` without a second lookup.
 
 **Request:** `multipart/form-data`, field name **`file`**
 
@@ -47,6 +49,7 @@ Uploads a document, extracts its text, and stores both.
   "status": "success",
   "message": "File uploaded and text extracted successfully",
   "file": {
+    "file_id": 12,
     "file_name": "lecture-week3.docx",
     "file_path": "src/uploads/1786433871694.docx"
   },

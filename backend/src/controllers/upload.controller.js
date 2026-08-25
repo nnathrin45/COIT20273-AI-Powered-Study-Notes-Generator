@@ -51,7 +51,7 @@ const uploadFile = async (req, res) => {
     }
 
     // Save file information and extracted text
-    await db.execute(
+    const [result] = await db.execute(
       `INSERT INTO uploaded_files
        (user_id, file_name, file_path, extracted_text)
        VALUES (?, ?, ?, ?)`,
@@ -67,6 +67,9 @@ const uploadFile = async (req, res) => {
       status: "success",
       message: "File uploaded and text extracted successfully",
       file: {
+        // Returned so the caller can pass it straight to POST /api/ai/generate
+        // without a second lookup
+        file_id: result.insertId,
         file_name: req.file.originalname,
         file_path: req.file.path
       },
