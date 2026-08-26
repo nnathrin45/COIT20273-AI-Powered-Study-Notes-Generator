@@ -403,3 +403,42 @@ Other endpoints owned by Member 2: `GET /api/health`, `GET /api/profile`, `/api/
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS study_notes_db;"
 mysql -u root -p study_notes_db < database/schema.sql
 ```
+
+## Uploaded Files — DELETE `/api/uploaded/:id`
+
+*Owner: Member 2 · Added 25 Aug 2026*
+
+Uploaded-file deletion was reviewed against the existing Saved Materials/Uploaded Files requirements.
+
+### Decision
+
+File deletion is required so an authenticated student can remove an uploaded study material from their saved uploaded-files collection.
+
+The project already exposes uploaded files under `/api/uploaded`, therefore the implemented endpoint uses:
+
+`DELETE /api/uploaded/:id`
+
+rather than introducing a separate `/api/files/:id` resource.
+
+### Authentication
+
+Requires:
+
+```text
+Authorization: Bearer <token>
+
+
+### Delete uploaded file — `DELETE /api/uploaded/:id`
+
+*Owner: Member 2 · Added 26 Aug 2026*
+
+Deletes an uploaded file belonging to the authenticated user.
+
+The endpoint requires JWT authentication. A user can only delete files where the
+`user_id` associated with the uploaded file matches the authenticated user's ID.
+
+**Request**
+
+```http
+DELETE /api/uploaded/:id
+Authorization: Bearer <JWT_TOKEN>
