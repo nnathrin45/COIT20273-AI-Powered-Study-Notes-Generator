@@ -1,0 +1,1221 @@
+{
+  "info": {
+    "name": "COIT20273 \u2014 AI-Powered Study Notes Generator API",
+    "description": "Shared API collection for the capstone project.\n\n**Owner of folders 1-4:** Member 3 (Natthapong Rinsakul) \u2014 Document Processing and AI Integration subsystems.\n**Folder 0** contains Member 2's authentication endpoints, included because a JWT is required to call anything else.\n\n## Setup\n1. Start the backend: `cd backend && PORT=5099 node src/server.js`\n2. Check the `baseUrl` collection variable matches your port.\n3. Run **0. Setup \u2192 Register**, then **Login**. The token is captured automatically into the `token` variable \u2014 no copying required.\n4. Run **1. Upload** with a file selected. `fileId` is captured automatically.\n5. Run **2. Consent \u2192 Grant consent** before any AI request (FR17.1).\n\n## Security note\nDo not commit a Postman *environment* containing a real JWT or GEMINI_API_KEY. Keep secrets in `backend/.env`, which is git-ignored.\n\nEndpoint contracts are documented in `docs/api-spec.md`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5099",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fileId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "outputId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "quizOutputId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Setup \u2014 authentication (Member 2's endpoints)",
+      "description": "Owned by Member 2. Included so the collection is usable end to end: every other request needs a JWT.",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Confirms the server is running. No authentication required."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register"
+              ]
+            },
+            "description": "Creates an account (FR1). Change the e-mail if it already exists.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Postman Test User\",\n  \"email\": \"postman-test@example.com\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 201 on success, 400 if the e-mail is already registered",
+                  "pm.test('registered or already exists', () =>",
+                  "  pm.expect([201, 400]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (captures token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "login"
+              ]
+            },
+            "description": "Returns a JWT (FR2). A test script saves it into the `token` collection variable, so later requests authenticate automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman-test@example.com\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "if (body.token) {",
+                  "  pm.collectionVariables.set('token', body.token);",
+                  "  console.log('Token saved to collection variable.');",
+                  "} else {",
+                  "  console.warn('No token in response \u2014 check the credentials.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Profile (verifies the token)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Returns the decoded user from the JWT. Use this to confirm the token works."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Upload, extraction and document list (FR6, FR8)",
+      "description": "Upload validation and text extraction (Member 3), plus the uploaded-files list endpoint owned by Member 1.\n\nValidation is by file **extension**, not MIME type, because MIME type is client-supplied and inconsistent.",
+      "item": [
+        {
+          "name": "Upload document (captures fileId)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "upload"
+              ]
+            },
+            "description": "Uploads a .pdf, .docx or .txt file, extracts its text and stores both.\n\n**Before sending:** open the Body tab and select a file for the `file` key \u2014 Postman cannot store the file path in a shared collection.\n\nMax 15 MB (FR6.2). The response includes `file_id`, which the test script captures into the `fileId` variable for the AI requests that follow.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a .pdf, .docx or .txt file (max 15 MB)"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('text was extracted', () =>",
+                  "  pm.expect(b.text_length).to.be.above(0));",
+                  "console.log('Extracted characters:', b.text_length);",
+                  "pm.collectionVariables.set('fileId', b.file.file_id);",
+                  "console.log('fileId saved:', b.file.file_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my uploaded documents (Member 1's endpoint)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploaded",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploaded"
+              ]
+            },
+            "description": "Owned by Member 1 (added 20 Aug 2026, commit c7d49df). Returns every document belonging to the authenticated user, newest first, without the extracted text.\n\nIncluded here so the collection covers the full document workflow. The `file_id` values returned can be passed directly to POST /api/ai/generate."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('files is an array', () => pm.expect(b.files).to.be.an('array'));",
+                  "console.log('Documents found:', b.files.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get uploaded document",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploaded/{{fileId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploaded",
+                "{{fileId}}"
+              ]
+            },
+            "description": "Returns the stored document and its extracted text. Scoped to the authenticated user \u2014 another user's file returns 404 (NFR3)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. AI consent (FR17, NFR11) \u2014 Member 3",
+      "description": "Consent is recorded as an append-only audit trail: each decision is a new row and current consent is the most recent one. Consent is required before any content is sent to Gemini, and is re-checked on every generation request.",
+      "item": [
+        {
+          "name": "Grant consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/consent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "consent"
+              ]
+            },
+            "description": "Records consent (FR17.1). Required before any AI generation succeeds.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get consent status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/consent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "consent"
+              ]
+            },
+            "description": "Returns the most recent decision. `consent: null` means the user has never decided \u2014 that is not an error, show the consent prompt."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/consent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "consent"
+              ]
+            },
+            "description": "Revokes consent (FR17.2). Further AI generation is refused with 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"revoked\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. AI generation (FR9-FR12, FR16) \u2014 Member 3",
+      "description": "Four output types. **Consent is enforced server-side**, not by the interface.\n\n`content` is a **string** for summary and explanation, and an **array** for flashcards and quiz \u2014 switch on `output_type` before reading it.",
+      "item": [
+        {
+          "name": "Generate summary (FR9)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Prose summary of the document's key concepts and definitions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('carries the AI-generated label (FR16.1)', () => {",
+                  "  pm.expect(b.output.is_ai_generated).to.be.true;",
+                  "  pm.expect(b.disclaimer).to.be.a('string');",
+                  "});",
+                  "pm.collectionVariables.set('outputId', b.output.output_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate flashcards (FR10)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Returns 5-15 question/answer records as an array.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"flashcards\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('content is an array of cards', () =>",
+                  "  pm.expect(b.output.content).to.be.an('array'));",
+                  "console.log('Cards generated:', b.output.content.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate quiz (FR11.1) \u2014 captures quizOutputId",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Returns 5-10 multiple-choice and true/false questions. Every `correct_answer` repeats one of that question's own options.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"quiz\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "const qs = b.output.content;",
+                  "pm.test('content is an array of questions', () =>",
+                  "  pm.expect(qs).to.be.an('array'));",
+                  "pm.test('every correct_answer is one of its own options', () => {",
+                  "  qs.forEach(q => pm.expect(q.options).to.include(q.correct_answer));",
+                  "});",
+                  "pm.collectionVariables.set('quizOutputId', b.output.output_id);",
+                  "console.log('Quiz output_id saved:', b.output.output_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate explanation (FR12.1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Requires a `concept`. `level` is optional and defaults to `beginner`; permitted values are beginner, intermediate and advanced.\n\nIf the concept is absent from the document, the response says so rather than inventing an explanation \u2014 that is correct behaviour, not a failure.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"explanation\",\n  \"concept\": \"recursion\",\n  \"level\": \"beginner\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test('echoes concept and level', () => {",
+                  "  pm.expect(b.output.concept).to.be.a('string');",
+                  "  pm.expect(b.output.level).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get generated content for a document (FR15)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/outputs/{{fileId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "outputs",
+                "{{fileId}}"
+              ]
+            },
+            "description": "Everything generated for one document, newest first. Structured types are returned parsed, so the storage format never reaches the interface. An empty array means nothing has been generated yet \u2014 not an error."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Quiz attempts and scoring (FR11.2) \u2014 Member 3",
+      "description": "Marking happens on the server against the stored quiz, so the client cannot influence its own score. Each attempt is a new row, so retakes are preserved for the progress dashboard (FR14).",
+      "item": [
+        {
+          "name": "Submit quiz attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/quiz/{{quizOutputId}}/attempt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "quiz",
+                "{{quizOutputId}}",
+                "attempt"
+              ]
+            },
+            "description": "One answer per question, in order. Use `null` for unanswered questions \u2014 partial attempts are recorded and score zero for those.\n\n**Edit the answers array** to match the quiz you generated; the count must equal the number of questions or the request returns 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    \"Evaporation\",\n    \"True\",\n    null\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const a = pm.response.json().attempt;",
+                  "console.log(`Score: ${a.score}/${a.total} (${a.percentage}%)`);",
+                  "pm.test('score never exceeds total', () =>",
+                  "  pm.expect(a.score).to.be.at.most(a.total));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get quiz attempt history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/quiz/{{quizOutputId}}/attempts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "quiz",
+                "{{quizOutputId}}",
+                "attempts"
+              ]
+            },
+            "description": "All attempts at one quiz, newest first, with score, total and percentage. Scoped to the authenticated user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Error cases (evidence for Report 2) \u2014 Member 3",
+      "description": "Each request here demonstrates a documented failure path. All errors share the shape `{ status, code, message }` \u2014 switch on `code`, not `message`. Retryable failures also carry `retryable: true` (NFR5).",
+      "item": [
+        {
+          "name": "403 CONSENT_REQUIRED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Run **2. Consent \u2192 Revoke consent** first. Demonstrates FR17.2: consent is re-checked on every request, and the check happens before the document is read, so no content is loaded for a user who has not agreed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('code is CONSENT_REQUIRED', () =>",
+                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 UNSUPPORTED_OUTPUT_TYPE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Only summary, flashcards, quiz and explanation are supported.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"podcast\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 MISSING_CONCEPT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "An explanation without a concept is rejected (FR12.1).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"explanation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('code is MISSING_CONCEPT', () =>",
+                  "  pm.expect(pm.response.json().code).to.eql('MISSING_CONCEPT'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 INVALID_LEVEL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "level must be beginner, intermediate or advanced.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"explanation\",\n  \"concept\": \"recursion\",\n  \"level\": \"expert\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 FILE_NOT_FOUND (ownership check)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "A file id that does not belong to the authenticated user returns 404, not 403 \u2014 the API does not reveal whether the file exists (NFR3).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": 999999,\n  \"output_type\": \"summary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "401 without a token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/outputs/{{fileId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "outputs",
+                "{{fileId}}"
+              ]
+            },
+            "description": "Every endpoint in folders 1-4 requires a JWT (NFR2)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 ANSWER_COUNT_MISMATCH",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/quiz/{{quizOutputId}}/attempt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "quiz",
+                "{{quizOutputId}}",
+                "attempt"
+              ]
+            },
+            "description": "The number of answers must equal the number of questions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    \"only-one-answer\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 NOT_A_QUIZ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/quiz/{{outputId}}/attempt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "quiz",
+                "{{outputId}}",
+                "attempt"
+              ]
+            },
+            "description": "`outputId` here points at the summary captured earlier, so this demonstrates that attempts can only be submitted against a quiz.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('code is NOT_A_QUIZ', () =>",
+                  "  pm.expect(pm.response.json().code).to.eql('NOT_A_QUIZ'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # API Specification
 
-Living document. Member 3 maintains the upload, consent and AI generation endpoints; Member 2 maintains authentication and notes. Please update your own sections.
+Living document. Member 3 maintains the upload, consent and AI generation endpoints; Member 2 maintains authentication and notes; Member 1 maintains the uploaded-files list. Please update your own sections.
 
 ## Base URL
 
@@ -26,9 +26,11 @@ Obtain the token from `POST /api/users/login`. Missing or invalid tokens return 
 
 ## Upload — `POST /api/upload`
 
-*Owner: Member 3 · Verified 11 Aug 2026*
+*Owner: Member 3 · Verified 11 Aug 2026 · `file_id` added to the response 25 Aug 2026*
 
 Uploads a document, extracts its text, and stores both.
+
+> `file_id` is returned so it can be passed directly to `POST /api/ai/generate` without a second lookup.
 
 **Request:** `multipart/form-data`, field name **`file`**
 
@@ -47,6 +49,7 @@ Uploads a document, extracts its text, and stores both.
   "status": "success",
   "message": "File uploaded and text extracted successfully",
   "file": {
+    "file_id": 12,
     "file_name": "lecture-week3.docx",
     "file_path": "src/uploads/1786433871694.docx"
   },
@@ -363,6 +366,36 @@ Previous attempts at one quiz, newest first. Scoped to the authenticated user.
 ```
 
 An empty array means the quiz has not been attempted yet — not an error.
+
+---
+
+## Uploaded files list — `GET /api/uploaded` — Member 1
+
+*Owner: Member 1 (Christian Jeff Labaddan) · Added 20 Aug 2026, commit `c7d49df`*
+
+Returns every document belonging to the authenticated user, newest first. Documented here from the implemented code so this specification stays complete; **please confirm or correct this section.**
+
+**Success — `200`**
+
+```json
+{
+  "status": "success",
+  "files": [
+    { "file_id": 12, "file_name": "lecture-week3.docx", "uploaded_at": "2026-08-20T09:15:02.000Z" }
+  ]
+}
+```
+
+`extracted_text` is deliberately not included — use `GET /api/uploaded/:id` for a single document with its text.
+
+An empty `files` array means nothing has been uploaded yet, not an error.
+
+| Status | `code` | When |
+|---|---|---|
+| 401 | — | Missing or invalid JWT |
+| 500 | `UPLOADED_FILES_FETCH_ERROR` | Database failure |
+
+> Useful for populating a document picker: the `file_id` returned here can be passed directly to `POST /api/ai/generate`.
 
 ---
 
