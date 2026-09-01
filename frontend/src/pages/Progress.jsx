@@ -371,7 +371,7 @@ function Progress() {
                 </p>
               </div>
 
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-600">
                 {activity.time}
               </p>
 
