@@ -29,6 +29,16 @@
       "key": "quizOutputId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "quizAnswers",
+      "value": "[]",
+      "type": "string"
+    },
+    {
+      "key": "quizAnswersPartial",
+      "value": "[]",
+      "type": "string"
     }
   ],
   "item": [
@@ -630,7 +640,13 @@
                   "  qs.forEach(q => pm.expect(q.options).to.include(q.correct_answer));",
                   "});",
                   "pm.collectionVariables.set('quizOutputId', b.output.output_id);",
-                  "console.log('Quiz output_id saved:', b.output.output_id);"
+                  "// Build answer arrays sized to THIS quiz. A fixed-length array caused",
+                  "// ANSWER_COUNT_MISMATCH when the quiz had more questions (reported by",
+                  "// Member 1, 2 Sep 2026).",
+                  "pm.collectionVariables.set('quizAnswers', JSON.stringify(qs.map(q => q.correct_answer)));",
+                  "const partial = qs.map((q, i) => (i === 0 ? q.correct_answer : null));",
+                  "pm.collectionVariables.set('quizAnswersPartial', JSON.stringify(partial));",
+                  "console.log(`Quiz ${b.output.output_id}: ${qs.length} questions, answers prepared.`);"
                 ]
               }
             }
@@ -754,10 +770,10 @@
                 "attempt"
               ]
             },
-            "description": "One answer per question, in order. Use `null` for unanswered questions \u2014 partial attempts are recorded and score zero for those.\n\n**Edit the answers array** to match the quiz you generated; the count must equal the number of questions or the request returns 400.",
+            "description": "One answer per question, in order. Use `null` for unanswered questions - partial attempts are recorded and score zero for those.\n\n`{{quizAnswers}}` is populated automatically by **Generate quiz**, sized to that quiz's question count, so this request works without editing. Run Generate quiz first.\n\nTo demonstrate partial scoring, swap `{{quizAnswers}}` for `{{quizAnswersPartial}}` - first question answered, the rest left null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"answers\": [\n    \"Evaporation\",\n    \"True\",\n    null\n  ]\n}",
+              "raw": "{\n  \"answers\": {{quizAnswers}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -775,6 +791,8 @@
                   "pm.test('201 Created', () => pm.response.to.have.status(201));",
                   "const a = pm.response.json().attempt;",
                   "console.log(`Score: ${a.score}/${a.total} (${a.percentage}%)`);",
+                  "pm.test('answer count matched the quiz', () =>",
+                  "  pm.expect(a.total).to.eql(JSON.parse(pm.collectionVariables.get('quizAnswers')).length));",
                   "pm.test('score never exceeds total', () =>",
                   "  pm.expect(a.score).to.be.at.most(a.total));"
                 ]
@@ -1136,7 +1154,7 @@
                 "attempt"
               ]
             },
-            "description": "The number of answers must equal the number of questions.",
+            "description": "Deliberately sends a single answer regardless of the quiz length, to demonstrate the validation. This is the one request where a fixed-length array is intentional.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"answers\": [\n    \"only-one-answer\"\n  ]\n}",
