@@ -261,11 +261,17 @@ The response echoes both back alongside the prose content:
 | 422 | `NO_READABLE_TEXT` | Stored file has no extracted text | no |
 | 502 | `AI_EMPTY_RESPONSE` | Gemini returned nothing, or no usable flashcards | **yes** |
 | 502 | `AI_MALFORMED_RESPONSE` | Structured output could not be parsed | **yes** |
+| 429 | `AI_QUOTA_EXCEEDED` | Gemini rate limit or daily free-tier quota reached | **yes** |
 | 503 | `AI_NOT_CONFIGURED` | `GEMINI_API_KEY` not set on the server | no |
+| 503 | `AI_UNAVAILABLE` | Gemini returned a 5xx | **yes** |
 | 504 | `AI_TIMEOUT` | No response within 60 s (NFR1) | **yes** |
 | 500 | `AI_GENERATION_FAILED` | Unexpected failure | **yes** |
 
 Retryable errors carry `"retryable": true`. The uploaded file and its extracted text are never deleted by a failed generation, so a retry needs no re-upload (NFR5).
+
+> **`429 AI_QUOTA_EXCEEDED` is a capacity limit, not a defect.** The Gemini free tier allows **20 generation requests per day** across the whole project. The response carries `retry_after_seconds` where the API supplies one, and distinguishes two cases in its message: a short rate-limit pause (retry in seconds) and the daily quota being exhausted (retry tomorrow). The uploaded document and its extracted text are retained either way, so nothing is lost.
+>
+> Only requests that reach Gemini consume quota. Validation failures — missing consent, unsupported type, missing concept, invalid level, file not found — are rejected before the API is called and cost nothing.
 
 > **`403 CONSENT_REQUIRED` is expected, not a bug.** Consent is re-checked on every request because it can be revoked at any time (FR17.2). Prompt the user, `POST /api/consent`, then retry.
 

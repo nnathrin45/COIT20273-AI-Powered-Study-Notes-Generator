@@ -247,6 +247,54 @@ const buildPrompt = (text, outputType, options = {}) => {
 };
 
 // SR-AI1 to SR-AI3 - send the prompt to Gemini and return the generated text
+// Translate an error from the Gemini SDK into one of our own codes.
+// Without this, a rate limit and a genuine bug both surface as a generic
+// failure, so the interface cannot tell the user that waiting will help.
+// Added 3 Sep 2026 after the free-tier daily quota (20 requests) was reached
+// during Postman testing — project risk R3.
+const classifyUpstreamError = (error) => {
+  // Errors we raised ourselves already carry a code; pass them straight through
+  if (error.code) {
+    return error;
+  }
+
+  const status = error.status || (error.response && error.response.status);
+  const text = String(error.message || "");
+
+  // 429 - rate limited or daily quota exhausted. Both clear with time, so the
+  // retry delay is extracted where the API supplies one.
+  if (status === 429 || text.includes("RESOURCE_EXHAUSTED")) {
+    const seconds = readRetryDelay(text);
+    const quotaExhausted = text.includes("PerDay") || text.includes("per day");
+
+    const err = new Error("Gemini quota or rate limit reached");
+    err.code = "AI_QUOTA_EXCEEDED";
+    err.retryAfterSeconds = seconds;
+    err.quotaExhausted = quotaExhausted;
+    return err;
+  }
+
+  // 5xx from Google - the service is unavailable rather than our request being
+  // wrong, so a retry is worth offering
+  if (status >= 500 && status < 600) {
+    const err = new Error("Gemini service is unavailable");
+    err.code = "AI_UNAVAILABLE";
+    return err;
+  }
+
+  return error;
+};
+
+// The API reports a retry delay as e.g. "retryDelay":"22s" or
+// "Please retry in 22.8s". Returns whole seconds, or null if absent.
+const readRetryDelay = (text) => {
+  const match =
+    text.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/) ||
+    text.match(/retry in (\d+(?:\.\d+)?)\s*s/i);
+
+  return match ? Math.ceil(Number(match[1])) : null;
+};
+
 const generate = async (text, outputType, options = {}) => {
   const prompt = buildPrompt(text, outputType, options);
   const ai = getClient();
@@ -269,7 +317,12 @@ const generate = async (text, outputType, options = {}) => {
     config: isStructured ? { responseMimeType: "application/json" } : {}
   });
 
-  const response = await Promise.race([request, timeout]);
+  let response;
+  try {
+    response = await Promise.race([request, timeout]);
+  } catch (error) {
+    throw classifyUpstreamError(error);
+  }
 
   const generated = (response.text || "").trim();
 

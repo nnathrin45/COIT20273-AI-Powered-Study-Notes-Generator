@@ -145,6 +145,34 @@ const generateOutput = async (req, res) => {
       });
     }
 
+    // R3 - the free tier allows a limited number of requests per day. This is
+    // retryable, but the wait may be minutes or until the quota resets, so it is
+    // reported separately from a transient failure.
+    if (error.code === "AI_QUOTA_EXCEEDED") {
+      return res.status(429).json({
+        status: "error",
+        code: "AI_QUOTA_EXCEEDED",
+        message: error.quotaExhausted
+          ? "The daily AI usage limit has been reached. Your document has been " +
+            "saved and you can generate content again tomorrow."
+          : "The AI service is receiving too many requests right now. " +
+            "Please wait a moment and try again.",
+        retryable: true,
+        ...(error.retryAfterSeconds
+          ? { retry_after_seconds: error.retryAfterSeconds }
+          : {})
+      });
+    }
+
+    if (error.code === "AI_UNAVAILABLE") {
+      return res.status(503).json({
+        status: "error",
+        code: "AI_UNAVAILABLE",
+        message: "The AI service is temporarily unavailable. Please try again shortly.",
+        retryable: true
+      });
+    }
+
     if (error.code === "AI_EMPTY_RESPONSE") {
       return res.status(502).json({
         status: "error",
