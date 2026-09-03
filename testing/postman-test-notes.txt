@@ -1,0 +1,5 @@
+Software engineering is the systematic development and maintenance of software systems.
+
+System architecture describes the high-level structure of a software system, including components, services, databases and communication between them.
+
+Testing helps verify that software behaves according to its requirements.

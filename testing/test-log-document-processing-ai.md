@@ -87,6 +87,8 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-45 | FR12.1 | Request an invalid level (`expert`) | 400 `INVALID_LEVEL` | **Pass** | 20 Aug |
 | T-46 | FR12.1, R1 | Request a concept absent from the document | States the concept is not present rather than inventing an explanation | **Pass** — key mitigation for risk R1 | 20 Aug |
 | T-47 | FR17.2 | Explanation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
+| T-48 | FR6 | Upload response returns `file_id` | `file.file_id` present and usable directly in `POST /api/ai/generate` | **Pass** — removes a lookup step for the frontend | 25 Aug |
+| T-49 | NFR3 | `GET /api/uploaded` (Member 1's endpoint) returns only the authenticated user's documents | Other user sees an empty list | **Pass** — verified while documenting the endpoint; not my code | 25 Aug |
 
 ---
 
