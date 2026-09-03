@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "COIT20273 \u2014 AI-Powered Study Notes Generator API",
-    "description": "Shared API collection for the capstone project.\n\n**Owner of folders 1-4:** Member 3 (Natthapong Rinsakul) \u2014 Document Processing and AI Integration subsystems.\n**Folder 0** contains Member 2's authentication endpoints, included because a JWT is required to call anything else.\n\n## Setup\n1. Start the backend: `cd backend && PORT=5099 node src/server.js`\n2. Check the `baseUrl` collection variable matches your port.\n3. Run **0. Setup \u2192 Register**, then **Login**. The token is captured automatically into the `token` variable \u2014 no copying required.\n4. Run **1. Upload** with a file selected. `fileId` is captured automatically.\n5. Run **2. Consent \u2192 Grant consent** before any AI request (FR17.1).\n\n## Security note\nDo not commit a Postman *environment* containing a real JWT or GEMINI_API_KEY. Keep secrets in `backend/.env`, which is git-ignored.\n\nEndpoint contracts are documented in `docs/api-spec.md`.",
+    "description": "Shared API collection for the capstone project.\n\n**Owner of folders 1-4:** Member 3 (Natthapong Rinsakul) \u2014 Document Processing and AI Integration subsystems.\n**Folder 0** contains Member 2's authentication endpoints, included because a JWT is required to call anything else.\n\n## Setup\n1. Start the backend: `cd backend && PORT=5099 node src/server.js`\n2. Check the `baseUrl` collection variable matches your port.\n3. Run **0. Setup \u2192 Register**, then **Login**. The token is captured automatically into the `token` variable \u2014 no copying required.\n4. Run **1. Upload** with a file selected. `fileId` is captured automatically.\n5. Run **2. Consent \u2192 Grant consent** before any AI request (FR17.1).\n\n## Security note\nDo not commit a Postman *environment* containing a real JWT or GEMINI_API_KEY. Keep secrets in `backend/.env`, which is git-ignored.\n\nEndpoint contracts are documented in `docs/api-spec.md`.\n\n## Postman settings for the Collection Runner\nFound during the first full run on 3 September 2026:\n\n- **Select a file, not a folder**, for the upload request, or Postman reports `EISDIR: illegal operation on a directory`.\n- Enable **Settings \u2192 General \u2192 Read files outside working directory**, or the upload returns 400 because Postman detaches the local file path.\n- Uncheck **Stop run if an error occurs** in the Runner, since folder 5 deliberately produces error responses.\n- Consent state is handled automatically: folder 2 restores it, and folder 5's CONSENT_REQUIRED request revokes and restores it around itself. No request needs to be unchecked.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -444,7 +444,7 @@
                 "consent"
               ]
             },
-            "description": "Revokes consent (FR17.2). Further AI generation is refused with 403.",
+            "description": "Revokes consent (FR17.2). The next request restores it so folder 3 can run \u2014 the refusal behaviour itself is proved in folder 5, which manages its own state.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"revoked\"\n}",
@@ -463,6 +463,58 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grant consent again (restore state)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/consent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "consent"
+              ]
+            },
+            "description": "Re-grants consent so the collection leaves this folder in a state the AI requests in folder 3 can use. Without this the run order would revoke consent and every generation request would return 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"granted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('consent is granted again', () =>",
+                  "  pm.expect(pm.response.json().consent.status).to.eql('granted'));"
                 ]
               }
             }
@@ -861,7 +913,7 @@
                 "generate"
               ]
             },
-            "description": "Run **2. Consent \u2192 Revoke consent** first. Demonstrates FR17.2: consent is re-checked on every request, and the check happens before the document is read, so no content is loaded for a user who has not agreed.",
+            "description": "Proves FR17.1 and FR17.2: generation is refused when consent is not currently granted.\n\nThis request is **self-contained** \u2014 a pre-request script revokes consent first, and the test script restores it afterwards. It therefore passes regardless of run order and leaves the collection usable for a re-run.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
@@ -875,13 +927,42 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Revoke consent so this request tests what it claims to test.",
+                  "// Without this the outcome depends on run order (found 3 Sep 2026).",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "  },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'revoked' }) }",
+                  "}, (err) => { if (err) { console.error('Could not revoke consent:', err); } });"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
                   "pm.test('code is CONSENT_REQUIRED', () =>",
-                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));"
+                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));",
+                  "// Restore consent so the collection can be re-run without manual steps",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "  },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'granted' }) }",
+                  "}, () => console.log('Consent restored.'));"
                 ]
               }
             }
