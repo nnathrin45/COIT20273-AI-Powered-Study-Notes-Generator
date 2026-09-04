@@ -89,6 +89,24 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-47 | FR17.2 | Explanation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
 | T-48 | FR6 | Upload response returns `file_id` | `file.file_id` present and usable directly in `POST /api/ai/generate` | **Pass** — removes a lookup step for the frontend | 25 Aug |
 | T-49 | NFR3 | `GET /api/uploaded` (Member 1's endpoint) returns only the authenticated user's documents | Other user sees an empty list | **Pass** — verified while documenting the endpoint; not my code | 25 Aug |
+| T-50 | FR11.2 | Quiz attempt request sizes its answer array to the generated quiz | Attempt accepted without manual editing | **Pass** — after fixing a defect in the Postman collection (see below) | 2 Sep |
+| T-51 | FR11.2 | Partial attempt via the collection's `quizAnswersPartial` variable | Recorded, unanswered questions score zero | **Pass** — 1 of 6 | 2 Sep |
+| T-52 | NFR5, R3 | Gemini daily quota exhausted during generation | 429 `AI_QUOTA_EXCEEDED` with a retry hint, not a generic 500 | **Pass** — verified against a real quota error; `retry_after_seconds: 33` | 3 Sep |
+| T-53 | NFR5 | Error classifier applied to upstream failures | 429 daily, 429 rate-limit, 503, own errors and unknown errors each classified correctly | **Pass** — 5 cases | 3 Sep |
+
+**Independent verification by Member 1, 2 September 2026.** Christian Jeff imported the shared Postman collection and independently confirmed authentication, upload and extraction, the uploaded-files list, consent, all four AI content types, quiz scoring and history, and all eight error cases. This is the first verification of these endpoints by someone other than their author.
+
+**Defect found by Member 1 in the Postman collection.** The quiz-attempt request carried a fixed three-entry answers array, while generated quizzes contain five to ten questions, so the request failed with `400 ANSWER_COUNT_MISMATCH`. The API behaved correctly — the fault was in the collection, not the endpoint. Fixed on 2 September: the quiz generation step now builds an answer array sized to that quiz and stores it in the `quizAnswers` variable, so the attempt request works without editing. A `quizAnswersPartial` variable was added to demonstrate partial scoring, and the deliberate mismatch case in folder 5 remains fixed-length by design.
+
+**Transient failure observed by Member 1.** One explanation request returned `500 AI_GENERATION_FAILED` and succeeded immediately on retry. This is the documented behaviour for a retryable failure (NFR5) and the uploaded file was retained, so no work was lost. The underlying cause was not captured because the server log was on Member 1's machine. Recorded as an observation; if it recurs, mapping transient upstream errors to a more specific code than the generic catch-all would improve diagnostics.
+
+**Project risk R3 materialised on 3 September 2026.** During a full Postman collection run, all four AI generation requests failed. Investigation showed the cause was HTTP 429 from Gemini: the free tier permits 20 generation requests per day per model, and the day's allowance had been consumed by earlier testing. The quiz-attempt failures in the same run were a downstream consequence, as the quiz output ID was never set.
+
+The application code was not at fault, but the error handling was inadequate: a rate limit surfaced as a generic `500 AI_GENERATION_FAILED`, giving no indication that waiting would resolve it. This also explains the single transient failure reported by Member 1 on 2 September, which succeeded on retry.
+
+Fixed the same day. Upstream errors are now classified: 429 returns `AI_QUOTA_EXCEEDED` with `retry_after_seconds` and a message distinguishing a short rate-limit pause from the daily quota being exhausted; Gemini 5xx returns `AI_UNAVAILABLE`. Both are marked retryable and neither discards the uploaded document (NFR5).
+
+**Practical constraint recorded for planning:** a full collection run consumes 4 requests, so approximately 5 runs per day are available on the free tier. Validation failures do not consume quota. This should be considered when scheduling the final demonstration.
 
 ---
 
