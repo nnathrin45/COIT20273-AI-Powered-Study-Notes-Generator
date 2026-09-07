@@ -93,6 +93,7 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-51 | FR11.2 | Partial attempt via the collection's `quizAnswersPartial` variable | Recorded, unanswered questions score zero | **Pass** — 1 of 6 | 2 Sep |
 | T-52 | NFR5, R3 | Gemini daily quota exhausted during generation | 429 `AI_QUOTA_EXCEEDED` with a retry hint, not a generic 500 | **Pass** — verified against a real quota error; `retry_after_seconds: 33` | 3 Sep |
 | T-53 | NFR5 | Error classifier applied to upstream failures | 429 daily, 429 rate-limit, 503, own errors and unknown errors each classified correctly | **Pass** — 5 cases | 3 Sep |
+| T-54 | All above | Full Postman collection run, 26 requests across 6 folders | All assertions pass | **Pass** — 35 of 35 assertions, 0 failures | 7 Sep |
 
 **Independent verification by Member 1, 2 September 2026.** Christian Jeff imported the shared Postman collection and independently confirmed authentication, upload and extraction, the uploaded-files list, consent, all four AI content types, quiz scoring and history, and all eight error cases. This is the first verification of these endpoints by someone other than their author.
 
@@ -107,6 +108,14 @@ The application code was not at fault, but the error handling was inadequate: a 
 Fixed the same day. Upstream errors are now classified: 429 returns `AI_QUOTA_EXCEEDED` with `retry_after_seconds` and a message distinguishing a short rate-limit pause from the daily quota being exhausted; Gemini 5xx returns `AI_UNAVAILABLE`. Both are marked retryable and neither discards the uploaded document (NFR5).
 
 **Practical constraint recorded for planning:** a full collection run consumes 4 requests, so approximately 5 runs per day are available on the free tier. Validation failures do not consume quota. This should be considered when scheduling the final demonstration.
+
+**First fully clean end-to-end run, 7 September 2026.** The complete Postman collection executed with all 35 assertions passing: authentication, upload and extraction, the uploaded-files list, consent grant/revoke/restore, all four AI content types, quiz scoring and history, and all eight error cases. This is the first run in which every endpoint and every documented error code was verified in a single pass.
+
+Two collection defects were found and fixed to reach this point, neither of them faults in the API:
+
+1. **Run-order dependency.** Three folder 5 cases — `MISSING_CONCEPT`, `INVALID_LEVEL` and `FILE_NOT_FOUND` — are evaluated after the consent guard in the controller, so they require consent to be granted. The `CONSENT_REQUIRED` case ran before them and restored consent through an asynchronous call, which is not guaranteed to complete before the next request begins. `CONSENT_REQUIRED` was moved to the end of the folder so nothing following it depends on consent state.
+
+2. **File access from the Collection Runner.** Selecting the upload fixture directly from the repository appeared to work — the filename was shown in the request — but the Runner could not read it and returned `400 NO_FILE`, which cascaded into every request depending on `fileId`. Enabling *Read files outside working directory* was not sufficient. Copying the fixture into the Postman working directory resolved it. The collection now documents this, and the upload request reports the cause explicitly rather than a bare status mismatch.
 
 ---
 
