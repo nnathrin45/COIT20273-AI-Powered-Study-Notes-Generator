@@ -884,90 +884,8 @@
     },
     {
       "name": "5. Error cases (evidence for Report 2) \u2014 Member 3",
-      "description": "Each request here demonstrates a documented failure path. All errors share the shape `{ status, code, message }` \u2014 switch on `code`, not `message`. Retryable failures also carry `retryable: true` (NFR5).",
+      "description": "Each request demonstrates a documented failure path. All errors share the shape `{ status, code, message }` - switch on `code`, not `message`. Retryable failures also carry `retryable: true` (NFR5).\n\n**Order matters here.** The consent guard runs before the file and input checks in the controller, so the requests that expect 400 or 404 need consent to be granted. The CONSENT_REQUIRED case therefore runs last, after everything that depends on consent.\n\nNone of these requests consume Gemini quota - all are rejected before the API is called.",
       "item": [
-        {
-          "name": "403 CONSENT_REQUIRED",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/ai/generate",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "generate"
-              ]
-            },
-            "description": "Proves FR17.1 and FR17.2: generation is refused when consent is not currently granted.\n\nThis request is **self-contained** \u2014 a pre-request script revokes consent first, and the test script restores it afterwards. It therefore passes regardless of run order and leaves the collection usable for a re-run.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Revoke consent so this request tests what it claims to test.",
-                  "// Without this the outcome depends on run order (found 3 Sep 2026).",
-                  "pm.sendRequest({",
-                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
-                  "  method: 'POST',",
-                  "  header: {",
-                  "    'Content-Type': 'application/json',",
-                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
-                  "  },",
-                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'revoked' }) }",
-                  "}, (err) => { if (err) { console.error('Could not revoke consent:', err); } });"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
-                  "pm.test('code is CONSENT_REQUIRED', () =>",
-                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));",
-                  "// Restore consent so the collection can be re-run without manual steps",
-                  "pm.sendRequest({",
-                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
-                  "  method: 'POST',",
-                  "  header: {",
-                  "    'Content-Type': 'application/json',",
-                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
-                  "  },",
-                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'granted' }) }",
-                  "}, () => console.log('Consent restored.'));"
-                ]
-              }
-            }
-          ]
-        },
         {
           "name": "400 UNSUPPORTED_OUTPUT_TYPE",
           "request": {
@@ -1309,6 +1227,88 @@
                   "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
                   "pm.test('code is NOT_A_QUIZ', () =>",
                   "  pm.expect(pm.response.json().code).to.eql('NOT_A_QUIZ'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 CONSENT_REQUIRED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Proves FR17.1 and FR17.2: generation is refused when consent is not currently granted.\n\n**Deliberately placed last in this folder.** A pre-request script revokes consent, and the test script restores it afterwards. Because the restore is asynchronous, running this earlier could leave consent revoked when the next request fires \u2014 and MISSING_CONCEPT, INVALID_LEVEL and FILE_NOT_FOUND are all checked *after* the consent guard in the controller, so they would return 403 instead of their expected codes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Revoke consent so this request tests what it claims to test.",
+                  "// Without this the outcome depends on run order (found 3 Sep 2026).",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "  },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'revoked' }) }",
+                  "}, (err) => { if (err) { console.error('Could not revoke consent:', err); } });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('code is CONSENT_REQUIRED', () =>",
+                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));",
+                  "// Restore consent so the collection can be re-run without manual steps",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "  },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'granted' }) }",
+                  "}, () => console.log('Consent restored.'));"
                 ]
               }
             }
