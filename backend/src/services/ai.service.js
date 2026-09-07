@@ -362,5 +362,11 @@ module.exports = {
   generate,
   LEVELS,
   MAX_INPUT_CHARS,
-  MODEL
+  MODEL,
+
+  // Exposed for automated testing. These are pure functions, so they can be
+  // verified without a server, a database or a call to the Gemini API — which
+  // matters because the free tier allows only 20 requests per day (risk R3).
+  parseStructured: STRUCTURED,
+  classifyUpstreamError
 };
