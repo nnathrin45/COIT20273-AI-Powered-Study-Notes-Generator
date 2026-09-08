@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "COIT20273 \u2014 AI-Powered Study Notes Generator API",
-    "description": "Shared API collection for the capstone project.\n\n**Owner of folders 1-4:** Member 3 (Natthapong Rinsakul) \u2014 Document Processing and AI Integration subsystems.\n**Folder 0** contains Member 2's authentication endpoints, included because a JWT is required to call anything else.\n\n## Setup\n1. Start the backend: `cd backend && PORT=5099 node src/server.js`\n2. Check the `baseUrl` collection variable matches your port.\n3. Run **0. Setup \u2192 Register**, then **Login**. The token is captured automatically into the `token` variable \u2014 no copying required.\n4. Run **1. Upload** with a file selected. `fileId` is captured automatically.\n5. Run **2. Consent \u2192 Grant consent** before any AI request (FR17.1).\n\n## Security note\nDo not commit a Postman *environment* containing a real JWT or GEMINI_API_KEY. Keep secrets in `backend/.env`, which is git-ignored.\n\nEndpoint contracts are documented in `docs/api-spec.md`.\n\n## Postman settings for the Collection Runner\nFound during the first full run on 3 September 2026:\n\n- **Select a file, not a folder**, for the upload request, or Postman reports `EISDIR: illegal operation on a directory`.\n- Enable **Settings \u2192 General \u2192 Read files outside working directory**, or the upload returns 400 because Postman detaches the local file path.\n- Uncheck **Stop run if an error occurs** in the Runner, since folder 5 deliberately produces error responses.\n- Consent state is handled automatically: folder 2 restores it, and folder 5's CONSENT_REQUIRED request revokes and restores it around itself. No request needs to be unchecked.",
+    "description": "Shared API collection for the capstone project.\n\n**Owner of folders 1-4:** Member 3 (Natthapong Rinsakul) \u2014 Document Processing and AI Integration subsystems.\n**Folder 0** contains Member 2's authentication endpoints, included because a JWT is required to call anything else.\n\n## Setup\n1. Start the backend: `cd backend && PORT=5099 node src/server.js`\n2. Check the `baseUrl` collection variable matches your port.\n3. Run **0. Setup \u2192 Register**, then **Login**. The token is captured automatically into the `token` variable \u2014 no copying required.\n4. **Copy `testing/fixtures/sample-study-material.txt` into your Postman working directory** (Settings > General > Location, default `~/Postman/files`), then open **1. Upload document > Body** and click **Select Files** to choose it from there. Selecting it straight from the repository causes the Collection Runner to fail with `400 NO_FILE`, even with *Read files outside working directory* enabled. The selection is also cleared by every import, so it must be redone after importing.\n5. Run **2. Consent \u2192 Grant consent** before any AI request (FR17.1).\n\n## Security note\nDo not commit a Postman *environment* containing a real JWT or GEMINI_API_KEY. Keep secrets in `backend/.env`, which is git-ignored.\n\nEndpoint contracts are documented in `docs/api-spec.md`.\n\n## Postman settings for the Collection Runner\nFound during the first full run on 3 September 2026:\n\n- **Select a file, not a folder**, for the upload request, or Postman reports `EISDIR: illegal operation on a directory`.\n- Enable **Settings \u2192 General \u2192 Read files outside working directory**, or the upload returns 400 because Postman detaches the local file path.\n- Uncheck **Stop run if an error occurs** in the Runner, since folder 5 deliberately produces error responses.\n- Consent state is handled automatically: folder 2 restores it, and folder 5's CONSENT_REQUIRED request revokes and restores it around itself. No request needs to be unchecked.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -229,7 +229,7 @@
                 "upload"
               ]
             },
-            "description": "Uploads a .pdf, .docx or .txt file, extracts its text and stores both.\n\n**Before sending:** open the Body tab and select a file for the `file` key \u2014 Postman cannot store the file path in a shared collection.\n\nMax 15 MB (FR6.2). The response includes `file_id`, which the test script captures into the `fileId` variable for the AI requests that follow.",
+            "description": "Uploads a .pdf, .docx or .txt file, extracts its text and stores both.\n\n### Selecting the file\nCopy `testing/fixtures/sample-study-material.txt` into **your Postman working directory** first, then select it from there via the Body tab.\n\nFind your working directory at **Settings > General > Location** (it defaults to `~/Postman/files`).\n\nSelecting the file directly from the repository appears to work - the filename shows in the Body tab - but the row carries a warning triangle, and the Collection Runner then fails to read it, returning `400 NO_FILE`. Enabling *Read files outside working directory* is not sufficient on its own. Confirmed on 7 September 2026: copying the file into the working directory resolved it and the full collection passed.\n\nThe selection is cleared whenever the collection is imported, so it must be reselected after each import.\n\nMax 15 MB (FR6.2). On success the response includes `file_id`, captured into the `fileId` variable for the requests that follow.",
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -249,13 +249,24 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
-                  "const b = pm.response.json();",
-                  "pm.test('text was extracted', () =>",
-                  "  pm.expect(b.text_length).to.be.above(0));",
-                  "console.log('Extracted characters:', b.text_length);",
-                  "pm.collectionVariables.set('fileId', b.file.file_id);",
-                  "console.log('fileId saved:', b.file.file_id);"
+                  "// Postman clears the file selection on import, and cannot read a file that",
+                  "// sits outside the working directory when run from the Collection Runner.",
+                  "// Both surface here as 400 NO_FILE, so name the cause rather than reporting",
+                  "// a bare status mismatch that cascades into every later request.",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) { body = {}; }",
+                  "",
+                  "if (pm.response.code === 400 && body.code === 'NO_FILE') {",
+                  "  const msg = 'Postman did not send a file. Copy testing/fixtures/sample-study-material.txt into your Postman working directory (Settings > General > Location, default ~/Postman/files), then reselect it in this request under Body > Select Files.';",
+                  "  console.error(msg);",
+                  "  pm.test('Postman sent the selected file', () => { throw new Error(msg); });",
+                  "} else {",
+                  "  pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "  pm.test('text was extracted', () => pm.expect(body.text_length).to.be.above(0));",
+                  "  pm.collectionVariables.set('fileId', body.file.file_id);",
+                  "  console.log('fileId saved:', body.file.file_id,",
+                  "              '| characters extracted:', body.text_length);",
+                  "}"
                 ]
               }
             }
@@ -567,6 +578,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Stop early with a clear reason if the upload did not run",
+                  "const fid = pm.collectionVariables.get('fileId');",
+                  "if (!fid) {",
+                  "  throw new Error('fileId is not set - run \"Upload document\" first, ' +",
+                  "                  'and make sure a file is selected in its Body tab.');",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -624,6 +649,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Stop early with a clear reason if the upload did not run",
+                  "const fid = pm.collectionVariables.get('fileId');",
+                  "if (!fid) {",
+                  "  throw new Error('fileId is not set - run \"Upload document\" first, ' +",
+                  "                  'and make sure a file is selected in its Body tab.');",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -678,6 +717,20 @@
           },
           "response": [],
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Stop early with a clear reason if the upload did not run",
+                  "const fid = pm.collectionVariables.get('fileId');",
+                  "if (!fid) {",
+                  "  throw new Error('fileId is not set - run \"Upload document\" first, ' +",
+                  "                  'and make sure a file is selected in its Body tab.');",
+                  "}"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -744,6 +797,20 @@
           },
           "response": [],
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Stop early with a clear reason if the upload did not run",
+                  "const fid = pm.collectionVariables.get('fileId');",
+                  "if (!fid) {",
+                  "  throw new Error('fileId is not set - run \"Upload document\" first, ' +",
+                  "                  'and make sure a file is selected in its Body tab.');",
+                  "}"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -884,90 +951,8 @@
     },
     {
       "name": "5. Error cases (evidence for Report 2) \u2014 Member 3",
-      "description": "Each request here demonstrates a documented failure path. All errors share the shape `{ status, code, message }` \u2014 switch on `code`, not `message`. Retryable failures also carry `retryable: true` (NFR5).",
+      "description": "Each request demonstrates a documented failure path. All errors share the shape `{ status, code, message }` - switch on `code`, not `message`. Retryable failures also carry `retryable: true` (NFR5).\n\n**Order matters here.** The consent guard runs before the file and input checks in the controller, so the requests that expect 400 or 404 need consent to be granted. The CONSENT_REQUIRED case therefore runs last, after everything that depends on consent.\n\nNone of these requests consume Gemini quota - all are rejected before the API is called.",
       "item": [
-        {
-          "name": "403 CONSENT_REQUIRED",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/ai/generate",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "generate"
-              ]
-            },
-            "description": "Proves FR17.1 and FR17.2: generation is refused when consent is not currently granted.\n\nThis request is **self-contained** \u2014 a pre-request script revokes consent first, and the test script restores it afterwards. It therefore passes regardless of run order and leaves the collection usable for a re-run.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Revoke consent so this request tests what it claims to test.",
-                  "// Without this the outcome depends on run order (found 3 Sep 2026).",
-                  "pm.sendRequest({",
-                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
-                  "  method: 'POST',",
-                  "  header: {",
-                  "    'Content-Type': 'application/json',",
-                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
-                  "  },",
-                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'revoked' }) }",
-                  "}, (err) => { if (err) { console.error('Could not revoke consent:', err); } });"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
-                  "pm.test('code is CONSENT_REQUIRED', () =>",
-                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));",
-                  "// Restore consent so the collection can be re-run without manual steps",
-                  "pm.sendRequest({",
-                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
-                  "  method: 'POST',",
-                  "  header: {",
-                  "    'Content-Type': 'application/json',",
-                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
-                  "  },",
-                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'granted' }) }",
-                  "}, () => console.log('Consent restored.'));"
-                ]
-              }
-            }
-          ]
-        },
         {
           "name": "400 UNSUPPORTED_OUTPUT_TYPE",
           "request": {
@@ -1309,6 +1294,88 @@
                   "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
                   "pm.test('code is NOT_A_QUIZ', () =>",
                   "  pm.expect(pm.response.json().code).to.eql('NOT_A_QUIZ'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 CONSENT_REQUIRED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "generate"
+              ]
+            },
+            "description": "Proves FR17.1 and FR17.2: generation is refused when consent is not currently granted.\n\n**Deliberately placed last in this folder.** A pre-request script revokes consent, and the test script restores it afterwards. Because the restore is asynchronous, running this earlier could leave consent revoked when the next request fires \u2014 and MISSING_CONCEPT, INVALID_LEVEL and FILE_NOT_FOUND are all checked *after* the consent guard in the controller, so they would return 403 instead of their expected codes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{fileId}}\",\n  \"output_type\": \"summary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Revoke consent so this request tests what it claims to test.",
+                  "// Without this the outcome depends on run order (found 3 Sep 2026).",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "  },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'revoked' }) }",
+                  "}, (err) => { if (err) { console.error('Could not revoke consent:', err); } });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('code is CONSENT_REQUIRED', () =>",
+                  "  pm.expect(pm.response.json().code).to.eql('CONSENT_REQUIRED'));",
+                  "// Restore consent so the collection can be re-run without manual steps",
+                  "pm.sendRequest({",
+                  "  url: pm.collectionVariables.get('baseUrl') + '/api/consent',",
+                  "  method: 'POST',",
+                  "  header: {",
+                  "    'Content-Type': 'application/json',",
+                  "    'Authorization': 'Bearer ' + pm.collectionVariables.get('token')",
+                  "  },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ status: 'granted' }) }",
+                  "}, () => console.log('Consent restored.'));"
                 ]
               }
             }
