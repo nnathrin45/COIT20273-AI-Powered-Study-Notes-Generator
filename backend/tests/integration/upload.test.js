@@ -10,6 +10,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("fs");
+const path = require("path");
 
 const {
   startServer, stopServer, request, createUser, uploadBuffer, cleanup
@@ -114,6 +116,43 @@ test("rejects a document with no readable text (FR8.4)", async () => {
     res.data.message,
     /text-based document/i,
     "message should tell the student what to do about it"
+  );
+});
+
+test("rejects a scanned, image-only PDF (FR8.4, SR-DP4, T-26)", async () => {
+  const { token } = await createUser();
+
+  // Three pages of scanned text as images, with no text layer at all. OCR is
+  // out of scope per the Proposal, so rejection is the correct behaviour.
+  const scanned = fs.readFileSync(
+    path.join(__dirname, "..", "..", "..", "testing", "fixtures", "scanned-no-text.pdf")
+  );
+
+  const res = await uploadBuffer(token, "scanned-no-text.pdf", scanned);
+
+  assert.strictEqual(res.status, 422);
+  assert.strictEqual(res.data.code, "NO_READABLE_TEXT");
+  assert.match(res.data.message, /text-based document/i);
+});
+
+test("extracted PDF text carries no pdf-parse page markers (T-26)", async () => {
+  const { token } = await createUser();
+
+  // Regression guard for the defect T-26 exposed: pdf-parse appends
+  // "-- 1 of 3 --" to every page by default, which both defeated the FR8.4
+  // check above and was sent to Gemini as part of the study material.
+  const document = fs.readFileSync(
+    path.join(__dirname, "..", "..", "..", "testing", "fixtures", "two-page-text.pdf")
+  );
+
+  const upload = await uploadBuffer(token, "two-page-text.pdf", document);
+  assert.strictEqual(upload.status, 201);
+
+  const fetched = await request("GET", `/api/uploaded/${upload.data.file.file_id}`, { token });
+  assert.doesNotMatch(
+    fetched.data.file.extracted_text,
+    /--\s*\d+\s+of\s+\d+\s*--/,
+    "page boundary markers should not appear in the stored text"
   );
 });
 

@@ -34,9 +34,28 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-06 | FR6.1 | Upload `.docx` via curl (`application/octet-stream`) | 201 — accepted | **Pass** — confirms extension-based validation was the correct choice | 11 Aug |
 | T-07 | NFR5 | Send a request with no file attached | 400 `NO_FILE`, no crash | **Pass** | 11 Aug |
 | T-08 | NFR3 | Request another user's file via `GET /api/uploaded/:id` | 404 | **Pass** — query is scoped by `user_id` | 11 Aug |
+| T-26 | FR8.4, SR-DP4 | Upload a scanned, image-only PDF | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — rejected after a defect in the guard was fixed, see below | 10 Sep |
 
 **Defect found and fixed during T-06.** Validation originally checked the MIME type, which caused valid `.docx` uploads from curl to be rejected because curl sends `application/octet-stream`. Changed to extension-based validation (commit `f80c2f4`) and documented in `docs/api-spec.md`.
 
+
+**Defect found and fixed during T-26, 10 September 2026.** The scanned-PDF case was executed for the first time using a new fixture, `testing/fixtures/scanned-no-text.pdf` — three pages of study notes rasterised to bilevel images with no text layer at all. The upload was **accepted with 201** instead of being rejected.
+
+The cause was not the guard itself but what reached it. `pdf-parse` appends a page boundary marker to the text of every page by default, of the form `-- 1 of 3 --`. For the scanned document those markers were the *entire* extracted result:
+
+```
+"\n\n-- 1 of 3 --\n\n\n\n-- 2 of 3 --\n\n\n\n-- 3 of 3 --\n\n"
+```
+
+44 characters of text, none of it from the document. The FR8.4 check in `upload.controller.js` tests `extracted_text.trim().length === 0`, which could therefore never be true for any PDF, however empty. Had this reached the demonstration, a student uploading a photographed or scanned handout would have received a successful upload followed by a summary generated from nothing.
+
+The same markers were also being stored in `extracted_text` and sent to Gemini as part of the study material for every text-based PDF.
+
+Fixed by passing an empty `pageJoiner` to `getText()` in `pdf.service.js`, which is the library's supported way to disable the markers; pages remain separated by a blank line. The scanned fixture now extracts 0 characters and is rejected with 422 `NO_READABLE_TEXT`, and extracted text from a real PDF is unchanged apart from the markers being gone.
+
+Two regression tests were added to `backend/tests/integration/upload.test.js`: one uploading the scanned fixture and asserting the 422, and one asserting that no page marker survives into stored text. The suite now stands at 55 tests, all passing.
+
+This is the clearest argument so far for the automated framework introduced under issue #21: the manual `.pdf` case T-03 passed on 11 August and would have gone on passing, because a PDF with a text layer never exposes the fault.
 ---
 
 ## 3. Authentication and security (supporting NFR2)
@@ -128,7 +147,6 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 | T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response |
 | T-24 | End-to-end time under 60 s for a 10-page document (NFR1) | Needs three 10-page fixtures; a short document measured 27.3 s on 20 Aug |
 | T-25 | Extraction accuracy against 3 known source documents (FR8 metric) | Not yet performed |
-| T-26 | Scanned/image-only PDF returns 422 `NO_READABLE_TEXT` (FR8.4) | No scanned test document prepared |
 
 **Consent enforcement metric now met.** T-20, T-21 and T-22 were executed on 20 August via `testing/verify-ai-generation.js`. Both refusal paths — never consented, and consent revoked — returned 403 `CONSENT_REQUIRED`, and generation succeeded only while consent was granted. The quality metric requiring 100% of unconsented generation attempts to be refused is therefore satisfied for the summary output type, and will need re-running as each further output type is added.
 
@@ -137,7 +155,7 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 ## 6. Actions arising
 
 1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. T-23 and T-24 remain.
-2. Prepare a scanned PDF as a fixture and execute T-26.
+2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
 3. Assemble three source documents with known content for the extraction-accuracy metric (T-25).
 4. Introduce an automated test framework so these cases run on every change rather than manually.
 5. Create `backend/src/uploads/` on any new machine before testing uploads — the directory is gitignored and does not arrive with a clone, so the first upload otherwise fails with `ENOENT`.
