@@ -1,80 +1,70 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getProgress } from '../services/progressService'
 
 function Progress() {
   const [period, setPeriod] = useState('all')
+  const [progress, setProgress] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Temporary mock data.
-  // This will later come from the backend/database.
+  useEffect(() => {
+    const loadProgress = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const response = await getProgress(period)
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setError(
+              response.data?.message ||
+                'Unable to load your progress.'
+            )
+          }
+
+          return
+        }
+
+        setProgress(response.data?.progress || null)
+      } catch (loadError) {
+        console.error('Progress load error:', loadError)
+
+        setError(
+          'Unable to connect to the server. Please try again.'
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProgress()
+  }, [period])
+
   const stats = {
-    uploadedMaterials: 6,
-    summariesGenerated: 8,
-    flashcardsReviewed: 42,
-    quizzesCompleted: 7,
-    averageScore: 81,
-    studyPlansCreated: 3,
+    uploadedMaterials: progress?.total_files ?? 0,
+    summariesGenerated: progress?.summaries_generated ?? 0,
+    flashcardsGenerated: progress?.flashcards_generated ?? 0,
+    quizzesGenerated: progress?.quizzes_generated ?? 0,
+    explanationsGenerated: progress?.explanations_generated ?? 0,
+    quizzesCompleted: progress?.total_quiz_attempts ?? 0,
+    averageScore: progress?.average_percentage ?? 0,
+    studyPlansCreated: progress?.total_study_plans ?? 0,
   }
 
-  const quizHistory = [
-    {
-      id: 1,
-      title: 'Artificial Intelligence Fundamentals',
-      score: 9,
-      total: 10,
-      percentage: 90,
-      date: '11 Aug 2026',
-    },
-    {
-      id: 2,
-      title: 'Database Normalisation',
-      score: 7,
-      total: 10,
-      percentage: 70,
-      date: '10 Aug 2026',
-    },
-    {
-      id: 3,
-      title: 'Software Architecture',
-      score: 8,
-      total: 10,
-      percentage: 80,
-      date: '9 Aug 2026',
-    },
-    {
-      id: 4,
-      title: 'Machine Learning Basics',
-      score: 17,
-      total: 20,
-      percentage: 85,
-      date: '8 Aug 2026',
-    },
-  ]
+  const quizHistory = progress?.recent_attempts ?? []
+  const recentActivity = progress?.recent_activity ?? []
 
-  const recentActivity = [
-    {
-      id: 1,
-      action: 'Completed a practice quiz',
-      detail: 'Artificial Intelligence Fundamentals',
-      time: 'Today',
-    },
-    {
-      id: 2,
-      action: 'Reviewed flashcards',
-      detail: 'AI Fundamentals Flashcards',
-      time: 'Today',
-    },
-    {
-      id: 3,
-      action: 'Generated a summary',
-      detail: 'Database Systems Week 4',
-      time: 'Yesterday',
-    },
-    {
-      id: 4,
-      action: 'Created a study plan',
-      detail: 'Software Engineering',
-      time: '2 days ago',
-    },
-  ]
+  const questionAccuracy =
+    progress?.total_questions > 0
+      ? Math.round(
+          (progress.total_correct / progress.total_questions) * 100
+        )
+      : 0
 
   const getScoreStyle = (percentage) => {
     if (percentage >= 80) {
@@ -86,6 +76,28 @@ function Progress() {
     }
 
     return 'bg-red-100 text-red-700'
+  }
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) {
+      return ''
+    }
+
+    return new Date(dateValue).toLocaleDateString()
+  }
+
+  const getActivityLabel = (activityType) => {
+    const labels = {
+      quiz_attempt: 'Completed a practice quiz',
+      ai_summary: 'Generated a summary',
+      ai_flashcards: 'Generated flashcards',
+      ai_quiz: 'Generated a quiz',
+      ai_explanation: 'Generated an explanation',
+      upload: 'Uploaded study material',
+      study_plan: 'Created a study plan',
+    }
+
+    return labels[activityType] || 'Study activity'
   }
 
   return (
@@ -117,7 +129,8 @@ function Progress() {
             id="progress-period"
             value={period}
             onChange={(event) => setPeriod(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
             <option value="all">
               All Time
@@ -135,9 +148,28 @@ function Progress() {
 
       </div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm text-blue-700">
+            Loading your progress...
+          </p>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-700">
+            {error}
+          </p>
+        </div>
+      )}
+
       {/* Main Statistics */}
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
 
+        {/* Uploaded Materials */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">
             Uploaded Materials
@@ -152,20 +184,22 @@ function Progress() {
           </p>
         </div>
 
+        {/* Flashcards Generated */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">
-            Flashcards Reviewed
+            Flashcards Generated
           </p>
 
           <p className="mt-2 text-3xl font-bold text-gray-900">
-            {stats.flashcardsReviewed}
+            {stats.flashcardsGenerated}
           </p>
 
           <p className="mt-1 text-sm text-gray-500">
-            Active recall reviews
+            Generated study sets
           </p>
         </div>
 
+        {/* Quizzes Completed */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">
             Quizzes Completed
@@ -180,6 +214,7 @@ function Progress() {
           </p>
         </div>
 
+        {/* Average Quiz Score */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">
             Average Quiz Score
@@ -190,15 +225,16 @@ function Progress() {
           </p>
 
           <p className="mt-1 text-sm text-gray-500">
-            Overall performance
+            Average attempt result
           </p>
         </div>
 
       </div>
 
       {/* Additional Activity Stats */}
-      <div className="mt-5 grid gap-5 md:grid-cols-2">
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
 
+        {/* Generated Study Resources */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
           <h2 className="text-lg font-semibold text-gray-900">
@@ -207,6 +243,7 @@ function Progress() {
 
           <div className="mt-5 grid grid-cols-2 gap-4">
 
+            {/* Summaries */}
             <div className="rounded-lg bg-gray-50 p-4">
               <p className="text-sm text-gray-500">
                 Summaries
@@ -217,6 +254,7 @@ function Progress() {
               </p>
             </div>
 
+            {/* Study Plans */}
             <div className="rounded-lg bg-gray-50 p-4">
               <p className="text-sm text-gray-500">
                 Study Plans
@@ -227,38 +265,88 @@ function Progress() {
               </p>
             </div>
 
+            {/* Quizzes Generated */}
+            <div className="rounded-lg bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">
+                Quizzes Generated
+              </p>
+
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {stats.quizzesGenerated}
+              </p>
+            </div>
+
+            {/* Explanations */}
+            <div className="rounded-lg bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">
+                Explanations
+              </p>
+
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {stats.explanationsGenerated}
+              </p>
+            </div>
+
           </div>
 
         </div>
 
+        {/* Quiz Accuracy */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
           <h2 className="text-lg font-semibold text-gray-900">
-            Overall Progress
+            Quiz Question Accuracy
           </h2>
 
           <div className="mt-5">
 
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-gray-700">
-                Study Activity
+                Correct Answers
               </span>
 
               <span className="font-semibold text-gray-900">
-                72%
+                {questionAccuracy}%
               </span>
             </div>
 
             <div className="mt-2 h-3 overflow-hidden rounded-full bg-gray-200">
               <div
                 className="h-full rounded-full bg-blue-600"
-                style={{ width: '72%' }}
+                style={{
+                  width: `${questionAccuracy}%`,
+                }}
               />
             </div>
 
             <p className="mt-3 text-sm text-gray-500">
-              Progress is currently based on temporary sample activity data.
+              Correct answers across quiz attempts for the selected time
+              period.
             </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-4">
+
+              <div className="rounded-lg bg-gray-50 p-4">
+                <p className="text-sm text-gray-500">
+                  Correct
+                </p>
+
+                <p className="mt-1 text-xl font-bold text-gray-900">
+                  {progress?.total_correct ?? 0}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-gray-50 p-4">
+                <p className="text-sm text-gray-500">
+                  Questions
+                </p>
+
+                <p className="mt-1 text-xl font-bold text-gray-900">
+                  {progress?.total_questions ?? 0}
+                </p>
+              </div>
+
+            </div>
 
           </div>
 
@@ -307,14 +395,25 @@ function Progress() {
 
             <tbody className="divide-y divide-gray-200">
 
+              {!loading && quizHistory.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="4"
+                    className="px-6 py-8 text-center text-sm text-gray-500"
+                  >
+                    No quiz attempts found for this time period.
+                  </td>
+                </tr>
+              )}
+
               {quizHistory.map((quiz) => (
                 <tr
-                  key={quiz.id}
+                  key={quiz.attempt_id}
                   className="hover:bg-gray-50"
                 >
 
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {quiz.title}
+                    {quiz.quiz_title}
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-600">
@@ -332,7 +431,7 @@ function Progress() {
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {quiz.date}
+                    {formatDate(quiz.attempted_at)}
                   </td>
 
                 </tr>
@@ -353,17 +452,27 @@ function Progress() {
           Recent Activity
         </h2>
 
+        <p className="mt-1 text-sm text-gray-500">
+          Your latest study actions for the selected time period.
+        </p>
+
         <div className="mt-5 divide-y divide-gray-200">
 
-          {recentActivity.map((activity) => (
+          {!loading && recentActivity.length === 0 && (
+            <p className="py-4 text-sm text-gray-500">
+              No recent activity found for this time period.
+            </p>
+          )}
+
+          {recentActivity.map((activity, index) => (
             <div
-              key={activity.id}
+              key={`${activity.activity_type}-${activity.occurred_at}-${index}`}
               className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
             >
 
               <div>
                 <p className="font-medium text-gray-900">
-                  {activity.action}
+                  {getActivityLabel(activity.activity_type)}
                 </p>
 
                 <p className="mt-1 text-sm text-gray-500">
@@ -372,29 +481,13 @@ function Progress() {
               </div>
 
               <p className="text-sm text-gray-600">
-                {activity.time}
+                {formatDate(activity.occurred_at)}
               </p>
 
             </div>
           ))}
 
         </div>
-
-      </div>
-
-      {/* Development Notice */}
-      <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-5">
-
-        <h3 className="font-semibold text-blue-900">
-          Development Preview
-        </h3>
-
-        <p className="mt-1 text-sm leading-6 text-blue-800">
-          The progress information displayed on this page currently uses
-          temporary sample data. The final version will retrieve the logged-in
-          student's quiz results, reviewed materials and study activity from
-          the backend and database.
-        </p>
 
       </div>
 
