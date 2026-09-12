@@ -1,0 +1,138 @@
+{
+  "startedAt": "2026-09-12T04:10:07.677Z",
+  "extraction": [
+    {
+      "doc": "doc1",
+      "format": "TXT",
+      "pass": true,
+      "pageMarkers": 0,
+      "sourceLines": 123,
+      "recovered": 123,
+      "missing": [],
+      "headings": 18,
+      "missingHeadings": [],
+      "sourceWords": 4248,
+      "extractedWords": 4248,
+      "sourceChars": 27912,
+      "extractedChars": 27912
+    },
+    {
+      "doc": "doc2",
+      "format": "DOCX",
+      "pass": true,
+      "pageMarkers": 0,
+      "sourceLines": 114,
+      "recovered": 114,
+      "missing": [],
+      "headings": 15,
+      "missingHeadings": [],
+      "sourceWords": 3976,
+      "extractedWords": 3976,
+      "sourceChars": 24949,
+      "extractedChars": 25175
+    },
+    {
+      "doc": "doc3",
+      "format": "PDF",
+      "pass": true,
+      "pageMarkers": 0,
+      "sourceLines": 101,
+      "recovered": 101,
+      "missing": [],
+      "headings": 13,
+      "missingHeadings": [],
+      "sourceWords": 3707,
+      "extractedWords": 3707,
+      "sourceChars": 23754,
+      "extractedChars": 23663
+    }
+  ],
+  "scanned": {
+    "pass": true,
+    "extractedLength": 0,
+    "status": 422,
+    "code": "NO_READABLE_TEXT",
+    "message": "No readable text could be extracted from this file. Scanned or image-only documents are not supported. Please upload a text-based document."
+  },
+  "timing": [
+    {
+      "doc": "doc1",
+      "format": "TXT",
+      "uploadMs": 7,
+      "generateMs": 20170,
+      "endToEndMs": 20177
+    },
+    {
+      "doc": "doc2",
+      "format": "DOCX",
+      "uploadMs": 25,
+      "generateMs": 27485,
+      "endToEndMs": 27510
+    },
+    {
+      "doc": "doc3",
+      "format": "PDF",
+      "uploadMs": 59,
+      "generateMs": 42967,
+      "endToEndMs": 43026
+    }
+  ],
+  "outputs": [
+    {
+      "doc": "doc1",
+      "outputType": "summary",
+      "content": "Software testing evaluates a system or its components to determine whether specified requirements are satisfied, providing stakeholders with information about product quality. Testing can demonstrate the presence of defects but cannot prove their absence, making exhaustive testing impossible. Key definitions include an error (the human mistake), a defect or fault (the flaw in the system), and a failure (the observable incorrect behavior). Verification assesses whether a product conforms to its specifications, whereas validation confirms that it meets actual user needs. Early testing is economically essential because defect correction costs rise sharply later in the lifecycle. Core testing principles highlight that testing is context-dependent, defects tend to cluster in specific modules (Pareto principle), test suites suffer from the pesticide paradox if not updated, and fixing bugs is useless if the final system is unusable (the absence of errors fallacy).\n\nTesting is organized into four main levels: unit testing (examining isolated components using stubs and mocks), integration testing (verifying interactions between components via top-down, bottom-up, or big-bang strategies), system testing (evaluating the complete integrated system), and acceptance testing (confirming suitability for users via alpha, beta, or user acceptance testing). Black box test design techniques derive tests from specifications without examining code structure and include equivalence partitioning, boundary value analysis, decision tables, state transition testing, and use case testing. White box techniques derive tests from internal code structure and evaluate statement, decision, condition, and path coverage, though high code coverage indicates what has not been tested rather than high test quality.\n\nNon-functional testing measures characteristics such as usability, security, compatibility, accessibility, reliability, and performance (which includes load, stress, soak, and spike testing). Quality Assurance is process-oriented and preventive, whereas Quality Control is product-oriented and detective. Testing activities combine static testing, which evaluates work products without code execution via informal reviews, author-led walkthroughs, technical reviews, and formal inspections, with dynamic testing, which requires code execution to observe failures.\n\nRisk-based testing prioritizes effort by assessing the likelihood and impact of potential failures, capturing findings in a risk register to guide release decisions. Testing relies on test plans, detailed test cases with expected results recorded in advance, entry and exit criteria, and traceability to link requirements to tests. Defects move through a managed lifecycle from creation and triage to fix confirmation and closure. Defect reports independently track severity (technical impact) and priority (urgency to fix). Estimations and progress are evaluated using metrics like defect density, defect removal efficiency, and mean time to repair, though metrics must be interpreted in context to avoid distortion.\n\nDevelopment lifecycle integration varies from traditional models like the V-model to Agile practices such as continuous integration, Test-Driven Development (red-green-refactor), and shift-left or shift-right strategies. Teams combine scripted testing for repeatability with exploratory testing managed in time-boxed sessions for concurrent learning and design. While confirmation testing checks specific bug fixes, regression testing re-runs tests to ensure changes have not broken existing functionality. Regression suites are prime candidates for test automation, which should follow the test automation pyramid and address flaky tests. Specialized areas include web application and API testing (exercising services directly to catch issues like insecure direct object references) and generative AI testing, which requires property checking, testing application logic separate from the model using stubs, manual content accuracy reviews, and strict privacy consent management.",
+      "concepts": [
+        "defect",
+        "failure",
+        "verification",
+        "validation",
+        "exhaustive",
+        "regression",
+        "boundary",
+        "coverage",
+        "quality assurance",
+        "review"
+      ]
+    },
+    {
+      "doc": "doc2",
+      "outputType": "summary",
+      "content": "The relational model, introduced by Edgar Codd in 1970, represents data as relations, commonly viewed as tables. A relation consists of a heading containing named attributes with specific domains, and a body containing tuples, which are sets of attribute values. The degree of a relation refers to its number of attributes, while its cardinality is its number of tuples. Because a relation body is a set, duplicate rows and ordering do not exist in the model. Domains define the valid set of values and meaning for attributes. A null marker represents an absent value, which leads to three-valued logic when evaluating conditions.\n\nKeys uniquely identify rows and establish relationships. A superkey is any set of attributes that uniquely identifies tuples, while a candidate key is a minimal superkey. The primary key is the candidate key chosen to identify tuples, and its attributes cannot contain nulls according to entity integrity. Remaining candidate keys are alternate keys. Keys consisting of multiple attributes are composite keys. Natural keys are derived from real-world data, whereas surrogate keys are system-generated identifiers. Foreign keys reference primary keys in other relations to enforce referential integrity, which ensures child records do not reference non-existent parents. Referential actions like cascade, set null, restrict, no action, and set default dictate how changes to referenced keys propagate.\n\nDatabase integrity is maintained through domain constraints, unique constraints, entity integrity, referential integrity, and business rules. Business rules that must hold under all circumstances belong in the database layer, enforced via constraints or triggers, rather than solely in the application layer. \n\nEntity-Relationship (ER) diagrams model system requirements independently of database software. They consist of entities (things to store data about), attributes (properties of entities), and relationships (associations between entities). Attributes can be simple, composite, single-valued, multi-valued, or derived. Relationships have a degree (unary, binary, ternary), cardinality (one-to-one, one-to-many, many-to-many), and participation (mandatory or optional). Weak entities rely on an owner entity for identification and include the owner's key in their own identifier.\n\nWhen mapping ER models to relational tables, strong entities become tables with their attributes as columns and identifiers as primary keys. One-to-many relationships put a foreign key on the many side. Many-to-many relationships require a junction table with a primary key composed of the foreign keys of both participating entities. One-to-one relationships place a unique foreign key on one side, ideally where participation is optional. Multi-valued attributes map to separate tables, while weak entities map to tables with composite primary keys composed of their owner's key and their own partial key. Supertype and subtype structures can be mapped into a single table, separate tables per subtype, or a main supertype table linked to individual subtype tables.\n\nFunctional dependency occurs when the values of one set of attributes (the determinant) uniquely determine the values of another. A full functional dependency relies on the whole determinant, a partial dependency relies on part of a composite determinant, and a transitive dependency occurs through a non-key attribute. Functional dependencies reflect underlying business rules rather than dynamic row data. Reasoning about dependencies uses Armstrong’s axioms: reflexivity, augmentation, and transitivity. The complete set of attributes determined by a set is its closure; if an attribute set's closure includes all attributes in the relation, it is a superkey.\n\nNormalisation organises attributes to eliminate insertion, deletion, and update anomalies while reducing redundancy. First normal form (1NF) requires atomic attribute values. Second normal form (2NF) requires 1NF and the removal of partial dependencies. Third normal form (3NF) requires 2NF and the removal of transitive dependencies. Boyce-Codd normal form (BCNF) strengthens 3NF by requiring every determinant to be a candidate key. Higher forms include fourth normal form (4NF for multi-valued dependencies) and fifth normal form (5NF for join dependencies). Decompositions should be lossless to allow exact reconstruction, and ideally dependency-preserving. \n\nDenormalisation intentionally introduces redundancy to enhance read performance, shifting work to writes and introducing risk of data inconsistency. Physical database design involves selecting appropriate storage engines, index strategies, row clustering, partitioning, collations, and narrow data types to optimise storage and processing. \n\nIndexes are auxiliary balanced-tree structures that speed up data retrieval at the expense of slower writes and added storage. A table can have only one clustered index, which dictates physical row order, but multiple secondary (non-clustered) indexes. Composite indexes cover multiple columns and serve queries filtering on leading prefixes. Covering indexes contain all requested query columns, avoiding main table reads. Indexes are ineffective on low-selectivity columns or when conditions apply functions to indexed columns.\n\nTransactions are atomic units of work ending in a commit or rollback, adhering to the ACID properties: Atomicity, Consistency, Isolation, and Durability. Isolation levels (Read Uncommitted, Read Committed, Repeatable Read, and Serialisable) mitigate concurrency phenomena like dirty reads, non-repeatable reads, and phantom reads. Concurrency control can be optimistic (checking conflicts at commit using versions) or pessimistic (locking in advance). Deadlocks occur when transactions block each other, requiring the system to abort one transaction.\n\nSQL is divided into Data Definition Language (DDL), Data Manipulation Language (DML), and Data Control Language (DCL). Logical query execution evaluates clauses in the order of FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, and LIMIT. Joins include inner, left outer, right outer, full outer, and cross joins. WHERE filters rows before aggregation, while HAVING filters groups after aggregation. Most aggregate functions ignore nulls, except COUNT(*). Subqueries can be uncorrelated or correlated.\n\nDatabase security relies on the principle of least privilege, data minimisation, and using parameterised queries to prevent SQL injection. Passwords must be stored using slow, salted hashing algorithms. Maintenance involves testing backups against Recovery Point Objectives (RPO) and Recovery Time Objectives (RTO), as well as managing schema updates using versioned migration scripts.\n\nViews are stored queries that simplify complex SQL, restrict access to columns or rows, and decouple applications from underlying schema changes. Materialised views store computed results for speed but require refreshing. Stored procedures execute saved blocks of statements to reduce network traffic and centralise business logic. Triggers execute automatically on table inserts, updates, or deletes to enforce invariants and audit trails, though complex chains of triggers can hide side effects.\n\nData systems split into operational databases (OLTP) and analytical databases (OLAP). OLTP systems feature short, highly normalised transactions focused on write consistency. OLAP systems feature long, denormalised analytical queries over large datasets. OLAP typically uses star schemas with a central fact table surrounded by dimension tables, or snowflake schemas with normalised dimensions. Fact tables must have a clearly defined grain. Slowly Changing Dimensions manage source changes via Type 1 (overwrite), Type 2 (add row with dates/flags to preserve history), or Type 3 (add prior value columns). Extract, Transform, and Load (ETL) processes clean and reshape source data for analysis.",
+      "concepts": [
+        "relation",
+        "primary key",
+        "foreign key",
+        "normal form",
+        "dependency",
+        "integrity",
+        "transaction",
+        "index",
+        "entity",
+        "junction"
+      ]
+    },
+    {
+      "doc": "doc3",
+      "outputType": "summary",
+      "content": "Computer networks consist of connected devices that exchange data using layered architectures. In a layered system, each layer provides a service to the layer above it and consumes services from the layer below, allowing protocols to be updated independently. Encapsulation is the process where each layer adds its header to data during transmission, which is removed in reverse order upon receipt. The theoretical Open Systems Interconnection (OSI) model features seven layers (physical, data link, network, transport, session, presentation, and application), whereas the practical TCP/IP model combines these into four layers (link, internet, transport, and application).\n\nAddressing identifies devices within and across networks. A Media Access Control (MAC) address is a 48-bit identifier assigned to an interface for communication within a single network segment. An Internet Protocol (IP) address is used for routing across wider networks; IPv4 uses 32-bit addresses, while 128-bit IPv6 addresses resolve IPv4 address exhaustion. Subnet masks separate an IP address into network and host portions. Within a subnet, an address with all host bits set to zero identifies the network, and all host bits set to one serves as the broadcast address. Network Address Translation (NAT) allows multiple devices with private IP addresses to share a single public IP address.\n\nThe Domain Name System (DNS) is a distributed, hierarchical database that translates human-readable domain names into IP addresses. Name resolution proceeds recursively through root, top-level domain, and authoritative servers. DNS record types include A (IPv4), AAAA (IPv6), CNAME (aliases), MX (mail servers), NS (name servers), and TXT (verification and policy data). Caching efficiency and update visibility are governed by each record's Time to Live (TTL) value.\n\nTransport protocols handle communication between application processes using port numbers. The Transmission Control Protocol (TCP) is reliable, ordered, and connection-oriented, establishing connections through a three-way handshake (SYN, SYN-ACK, ACK) and managing traffic via flow and congestion control. The User Datagram Protocol (UDP) is a lightweight, connectionless, best-effort protocol that sacrifices reliability and ordering to minimize latency, making it ideal for real-time traffic like live voice and video.\n\nThe Hypertext Transfer Protocol (HTTP) is a stateless application-layer protocol where requests contain a method, target path, headers, and optional body, and responses return a numeric status code. HTTP methods carry specific operational semantics: GET retrieves resources safely without altering state; PUT and DELETE are idempotent state-modifying requests; and POST is neither safe nor idempotent. Response status codes indicate outcomes grouped into ranges: 2xx (success), 3xx (redirection), 4xx (client error, such as 401 for unauthenticated access and 403 for unauthorized access), and 5xx (server error).\n\nRepresentational State Transfer (REST) is an architectural style for application interfaces emphasizing stateless interactions, uniform interfaces, resource-oriented URI paths, and standard HTTP methods. Data representations are commonly formatted in JSON. REST APIs use explicit media types, structured error responses, and versioning strategies to maintain client compatibility over time.\n\nWeb security relies on Transport Layer Security (TLS) to encrypt traffic, verify data integrity, and authenticate servers using digital certificates issued by Certificate Authorities (CAs). Browsers enforce the Same-Origin Policy (SOP) to isolate data between different origins (scheme, host, and port), which can be selectively relaxed via Cross-Origin Resource Sharing (CORS) response headers. Common security threats include SQL injection, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF). JSON Web Tokens (JWTs) provide signed, stateless claims that are readable but protected against tampering.\n\nNetwork performance depends on bandwidth (maximum theoretical transfer rate), throughput (actual data delivery rate), latency (delay, bound by the speed of light), round-trip time (RTT), jitter (latency variation), and packet loss. Web performance can be optimized using browser and proxy caching, text compression, content delivery networks (CDNs), and by reducing required round trips.\n\nNetwork infrastructure relies on specific hardware devices and physical topologies. Physical-layer hubs repeat signals across a single collision domain, whereas data-link switches forward traffic to specific ports, isolating collision domains. Network-layer routers direct packets between networks and define broadcast domain boundaries. Network security and traffic management are supported by firewalls, load balancers, and reverse proxies. Star topologies dominate local networks due to link-fault isolation, while full mesh topologies offer maximum resilience at high cost.\n\nWireless Local Area Networks (IEEE 802.11) transmit over shared, half-duplex radio frequencies across 2.4 GHz and 5 GHz bands. Because wireless devices cannot detect collisions reliably while transmitting, they use listen-before-transmit mechanisms and optional Request-to-Send/Clear-to-Send (RTS/CTS) exchanges to solve the hidden node problem. Security protocols have evolved from WEP to WPA2 and WPA3 to protect pre-shared key handshakes against offline attacks.\n\nTroubleshooting network issues requires a bottom-up approach through the protocol layers. Utilities such as ping verify reachability and RTT, traceroute maps hop-by-hop paths, DNS tools isolate name resolution from basic IP connectivity, and browser developer tools or packet capture tools inspect application headers and raw network frames.\n\nClient-server software architectures commonly use a three-tier design separating presentation, application business logic, and database storage. Designing application tiers to be stateless allows scalable horizontal deployment behind load balancers. Asynchronous background workers prevent request timeouts on long tasks, and circuit breakers protect system availability by halting calls to failing third-party dependencies.",
+      "concepts": [
+        "layer",
+        "address",
+        "domain name",
+        "transmission control protocol",
+        "hypertext transfer protocol",
+        "encapsulation",
+        "subnet",
+        "latency",
+        "certificate",
+        "stateless"
+      ]
+    }
+  ],
+  "nfr1": {
+    "averageMs": 30237.666666666668,
+    "slowestMs": 43026,
+    "pass": true
+  }
+}
