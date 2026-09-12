@@ -1,0 +1,200 @@
+COMPUTER NETWORKS AND WEB COMMUNICATION
+Study Notes - Unit COIT20273 Revision Set C
+
+SECTION 1: LAYERED NETWORK ARCHITECTURE
+
+A computer network is a set of devices connected by communication links so that they can exchange data. Networks are designed in layers, where each layer provides a service to the layer above it and consumes the service of the layer below, without either layer needing to know how the other is implemented.
+
+Layering allows a protocol at one layer to be replaced without disturbing the others. A connection can move from copper to fibre to radio at the physical layer while the applications running above are entirely unaffected.
+
+The Open Systems Interconnection reference model defines seven layers. From the bottom these are the physical layer, the data link layer, the network layer, the transport layer, the session layer, the presentation layer and the application layer.
+
+The physical layer transmits raw bits over a medium and defines voltages, connectors and timing. The data link layer organises bits into frames and provides addressing within a single network segment. The network layer moves packets between networks and handles routing and logical addressing. The transport layer provides communication between processes, with or without reliability. The session layer manages dialogues between applications. The presentation layer handles data representation, encoding and encryption. The application layer provides the protocols that applications use directly.
+
+The Internet protocol suite, commonly called the TCP/IP model, has four layers: the link layer, the internet layer, the transport layer and the application layer. It collapses the top three layers of the reference model into a single application layer, and it describes actual practice, whereas the seven-layer model is primarily a teaching and reference framework.
+
+Encapsulation is the mechanism that makes layering work. Each layer adds its own header to the data it receives from above, and the receiving device removes headers in the reverse order. The unit of data is called a segment at the transport layer, a packet at the network layer and a frame at the data link layer.
+
+SECTION 2: ADDRESSING
+
+A media access control address is a forty-eight bit identifier assigned to a network interface, normally at manufacture, and it is used for addressing within a single network segment. It is written as six pairs of hexadecimal digits.
+
+An internet protocol address identifies an interface within the wider network and is used for routing between networks. Version four addresses are thirty-two bits, written as four decimal octets separated by dots, giving approximately four thousand three hundred million possible addresses. Version six addresses are one hundred and twenty-eight bits, written as eight groups of four hexadecimal digits, and were introduced because the version four space is exhausted.
+
+An address divides into a network portion and a host portion. The subnet mask, or its equivalent prefix length notation, indicates how many leading bits form the network portion. A prefix length of twenty-four means the first twenty-four bits identify the network and the remaining eight identify the host within it.
+
+Within any subnet, the address with all host bits set to zero identifies the network itself and the address with all host bits set to one is the broadcast address, so the number of assignable host addresses is two raised to the number of host bits, less two.
+
+Several ranges are reserved for private use and are not routed on the public internet. These are the ten dot range, the one hundred and seventy-two dot sixteen range through to thirty-one, and the one hundred and ninety-two dot one hundred and sixty-eight range. The loopback address one hundred and twenty-seven dot zero dot zero dot one always refers to the local device.
+
+Network address translation allows many devices using private addresses to share a single public address, by rewriting addresses and port numbers as traffic crosses the boundary. It conserved the version four address space substantially, at the cost of breaking the assumption that any host can be reached directly by any other.
+
+SECTION 3: THE DOMAIN NAME SYSTEM
+
+The domain name system translates human-readable names into network addresses. It is a distributed hierarchical database, and no single server holds the whole of it.
+
+The hierarchy is read from right to left. The root sits above the top-level domains such as com, org and the country codes, below which sit second-level domains and any further subdomains.
+
+Resolution normally proceeds recursively. The client asks its configured resolver, which queries a root server, then the appropriate top-level domain server, then the authoritative server for the domain, and returns the final answer to the client.
+
+Records held in the system include the A record mapping a name to a version four address, the AAAA record mapping a name to a version six address, the CNAME record making one name an alias for another, the MX record identifying mail servers, the NS record identifying authoritative name servers, and the TXT record holding arbitrary text used for verification and policy purposes.
+
+Every record carries a time to live, which tells resolvers how long they may cache the answer. Caching is what makes the system perform acceptably, and it is also why a change to a record is not visible everywhere immediately. Reducing the time to live in advance of a planned change shortens the period of inconsistency.
+
+SECTION 4: TRANSPORT PROTOCOLS
+
+The transmission control protocol provides a reliable, ordered, connection-oriented byte stream. It establishes a connection through a three-way handshake in which the client sends a synchronise segment, the server replies with synchronise-acknowledge, and the client sends acknowledge.
+
+Reliability is achieved through sequence numbers and acknowledgements. Data that is not acknowledged within a computed timeout is retransmitted. Segments arriving out of order are reordered by sequence number before delivery to the application.
+
+Flow control prevents a fast sender from overwhelming a slow receiver, and is implemented through a receive window advertised by the receiver in every acknowledgement. Congestion control prevents a sender from overwhelming the network, and is implemented through a congestion window that grows while delivery succeeds and shrinks sharply when loss is detected.
+
+The user datagram protocol provides a connectionless, best-effort datagram service with no handshake, no acknowledgement, no retransmission and no ordering guarantee. Its header is eight bytes against at least twenty for the transmission control protocol.
+
+The choice between them is a trade between reliability and latency. File transfer, electronic mail and web traffic require every byte and use the reliable protocol. Live voice and video prefer the connectionless protocol, because a retransmitted audio sample arriving late is useless, and a small gap concealed by the codec is preferable to a stalled stream.
+
+A port number identifies the process at each end. The combination of source address, source port, destination address and destination port uniquely identifies a connection. Ports below one thousand and twenty-four are well known and include twenty-two for secure shell, twenty-five for mail transfer, fifty-three for the domain name system, eighty for unencrypted web traffic and four hundred and forty-three for encrypted web traffic.
+
+SECTION 5: THE HYPERTEXT TRANSFER PROTOCOL
+
+The hypertext transfer protocol is a stateless request and response protocol at the application layer. Stateless means the server retains no memory of previous requests, so any continuity between requests must be carried in the requests themselves.
+
+A request consists of a method, a target path, a protocol version, a set of headers, and optionally a body. A response consists of a status line containing a numeric code, a set of headers, and optionally a body.
+
+The GET method retrieves a resource and must not change server state. The POST method submits data and typically creates a resource. The PUT method replaces a resource in full, while PATCH modifies part of it. The DELETE method removes a resource.
+
+A method is safe if it does not modify state, and idempotent if performing it several times has the same effect as performing it once. GET is both safe and idempotent. PUT and DELETE are idempotent but not safe. POST is neither, which is why a browser warns before resubmitting a form.
+
+Status codes are grouped by their first digit. The two hundred range indicates success, including two hundred for a general success and two hundred and one for a resource created. The three hundred range indicates redirection. The four hundred range indicates a client error, including four hundred for a malformed request, four hundred and one for missing or invalid authentication, four hundred and three for authenticated but not permitted, four hundred and four for not found, four hundred and fifteen for an unsupported media type, four hundred and twenty-two for a well-formed request that cannot be processed, and four hundred and twenty-nine for too many requests. The five hundred range indicates a server error, including five hundred for a general failure and five hundred and three for a service unavailable.
+
+The distinction between four hundred and one and four hundred and three matters in practice: the first says the identity is unknown, the second says the identity is known but insufficient.
+
+SECTION 6: REPRESENTATIONAL STATE TRANSFER
+
+Representational state transfer is an architectural style for designing networked applications, not a protocol or a standard.
+
+Its constraints are that the interface is uniform, that the interaction is stateless, that responses declare whether they are cacheable, that the system is layered, and that the architecture follows a client-server separation.
+
+Resources are identified by paths that name things rather than actions. A path naming a collection of documents, and a path naming one document within that collection by its identifier, are preferred to paths naming operations such as retrieving or deleting a document.
+
+The method carries the verb, so the same path supports several operations distinguished by the method used. Encoding the verb in the path as well as the method is redundant.
+
+Representations are commonly encoded as JavaScript object notation, which supports objects, arrays, strings, numbers, booleans and null. The media type declared in the content type header tells the recipient how to interpret the body.
+
+An application programming interface should return machine-readable error codes alongside the status code, because the status code alone is often too coarse for the client to act upon. Three different causes of a four hundred and twenty-two response require three different messages to the user, and the client can only distinguish them if the response says which occurred.
+
+Versioning allows an interface to change without breaking existing clients, whether through a path segment, a header, or a media type parameter.
+
+SECTION 7: WEB SECURITY
+
+Transport layer security encrypts traffic between client and server, provides integrity so that modification in transit is detectable, and authenticates the server through a certificate issued by a trusted authority. The secure form of the hypertext transfer protocol is that protocol carried over transport layer security.
+
+A certificate binds a public key to a name and is signed by a certificate authority. The client validates the chain from the presented certificate to an authority it already trusts, and checks the name, the validity dates and the revocation status.
+
+The same-origin policy restricts a document loaded from one origin from reading data from a different origin, where an origin is the combination of scheme, host and port. It is the foundation of browser security.
+
+Cross-origin resource sharing relaxes that policy in a controlled way. The server declares which origins may read its responses through response headers, and for requests that are not simple the browser first sends a preflight request using the OPTIONS method to ask whether the actual request is permitted. Cross-origin errors are enforced by the browser, not by the server, which is why the request often reaches the server successfully and the response is nonetheless withheld from the script.
+
+Injection attacks arise when data supplied by a user is interpreted as code. Structured query language injection targets the database and is prevented by parameterised queries. Cross-site scripting targets the browser and is prevented by encoding output according to the context in which it appears, supported by a content security policy.
+
+Cross-site request forgery causes a browser to send an authenticated request the user did not intend, and is countered by anti-forgery tokens and by same-site cookie attributes.
+
+A JSON web token is a signed, self-describing token consisting of a header, a payload of claims, and a signature, each encoded and separated by dots. The signature proves the token was issued by the holder of the signing key and has not been altered. The payload is encoded but not encrypted, so it must never carry secrets. Tokens should be given a short lifetime, because a stateless token cannot be revoked before it expires unless additional server-side state is reintroduced.
+
+SECTION 8: NETWORK PERFORMANCE
+
+Bandwidth is the maximum rate at which data can be transferred, measured in bits per second. Throughput is the rate actually achieved, which is always lower because of protocol overhead, contention and loss.
+
+Latency is the time taken for data to travel from source to destination. Round-trip time is the time for a request and its response, and it is what a user perceives. Latency has a floor imposed by the speed of light in the medium, which no amount of additional bandwidth can reduce.
+
+Jitter is the variation in latency between successive packets, and it matters more than absolute latency for real-time audio and video.
+
+Packet loss is the proportion of packets that fail to arrive. For a reliable transport, loss is repaired by retransmission at the cost of delay, and it also causes the congestion window to contract, so a small loss rate can reduce throughput dramatically.
+
+Common techniques for improving perceived web performance include caching at the browser and at intermediate proxies, compressing text-based responses, reducing the number of round trips required to render a page, serving content from a distribution network geographically closer to the user, and deferring work that is not needed for the initial view.
+
+Caching is controlled by response headers that state how long a response may be reused and whether it may be stored by shared caches. Validation headers allow a client holding a stale copy to ask whether it is still current and to receive a short not-modified response instead of the whole body.
+
+SECTION 9: NETWORK DEVICES AND TOPOLOGIES
+
+A hub repeats an incoming signal to every port and operates at the physical layer. It creates a single collision domain and is obsolete in modern networks.
+
+A switch forwards frames only to the port associated with the destination address, using a table it learns by observing source addresses. It operates at the data link layer and places each port in its own collision domain.
+
+A router forwards packets between different networks using a routing table, operating at the network layer. It is the boundary of a broadcast domain.
+
+A firewall filters traffic against a rule set. A stateless filter examines each packet independently, while a stateful filter tracks connections and can permit return traffic for a connection it previously allowed.
+
+A load balancer distributes incoming requests across several servers, and may operate at the transport layer on addresses and ports, or at the application layer on the content of the request.
+
+A proxy makes requests on behalf of clients. A reverse proxy sits in front of servers and presents a single endpoint, commonly handling encryption termination, caching and load distribution.
+
+Physical topologies include the bus, ring, star, mesh and tree. The star, in which every device connects to a central switch, dominates modern local networks because a single failed link affects only one device. A full mesh offers the greatest resilience but requires a number of links that grows with the square of the number of nodes.
+
+SECTION 10: WIRELESS AND MOBILE NETWORKING
+
+A wireless local area network transmits over radio rather than cable, and is standardised by the eight hundred and two dot eleven family. Successive generations have raised throughput by using wider channels, more efficient modulation, and multiple antennas transmitting several spatial streams simultaneously.
+
+Two frequency bands are in common use. The two point four gigahertz band travels further and penetrates walls better, but it is crowded, shared with many household devices, and offers few non-overlapping channels. The five gigahertz band offers far more channels and higher throughput over shorter distances.
+
+Wireless media are shared and half duplex, so devices cannot transmit and receive simultaneously on the same channel. Collisions cannot be detected reliably by a transmitting station, so wireless networks avoid collisions in advance rather than detecting them afterwards, by listening before transmitting and waiting a random interval.
+
+The hidden node problem occurs when two stations can each reach the access point but cannot hear each other, so neither detects that the other is transmitting. An optional request-to-send and clear-to-send exchange reserves the medium and mitigates it.
+
+Wireless security has passed through several generations. Wired equivalent privacy is broken and must not be used. Protected access version two with a pre-shared key remains widespread, while version three improves the handshake so that a captured exchange cannot be used to attack a weak password offline.
+
+Signal strength, interference from neighbouring networks, and the number of stations sharing a channel all affect achieved throughput, which is invariably a fraction of the nominal rate quoted for the standard.
+
+SECTION 11: NETWORK TROUBLESHOOTING
+
+Troubleshooting proceeds most reliably by working up the layers, because a fault at a lower layer produces confusing symptoms at every layer above it. Confirming that the interface is up and has an address precedes any investigation of an application.
+
+The ping utility sends an echo request and reports whether a reply returns and how long it took. It establishes basic reachability and gives a measure of round-trip time and loss. A device that does not reply is not necessarily unreachable, because echo requests are frequently blocked by firewalls.
+
+The traceroute utility reports the sequence of routers along a path by sending packets with increasing time-to-live values and recording which device reports each expiry. It identifies where along a path a connection fails or slows.
+
+Name resolution is checked separately from connectivity, because a name that fails to resolve produces a failure indistinguishable at the application from a server that is down. Resolving the name to an address and then connecting to the address directly separates the two cases.
+
+Port-level checks establish whether a service is listening and reachable, distinguishing a service that has not started from a network path that is blocked.
+
+Browser developer tools show the full request and response for web traffic, including headers, status codes and timings, and are the fastest route to diagnosing cross-origin failures, caching behaviour and authentication problems.
+
+Packet capture tools record traffic on the wire and are the last resort when higher-level tools disagree with each other, showing exactly what was sent rather than what was intended.
+
+SECTION 12: CLIENT-SERVER APPLICATION ARCHITECTURE
+
+In a client-server architecture the client initiates requests and the server responds. A two-tier design places the application logic in the client and has it communicate directly with a database.
+
+A three-tier design separates presentation, application logic and data storage. The presentation tier runs in the browser, the application tier runs on a server and holds the business rules, and the data tier holds the database. The presentation tier never reaches the database directly, which allows the rules to be enforced in exactly one place and permits the storage layer to change without altering the interface.
+
+This separation is what allows a single application server to serve a web browser, a mobile application and a scheduled integration through the same interface, applying the same authorisation rules to each.
+
+A stateless application tier stores no session data in memory between requests, which allows any instance to serve any request and therefore allows instances to be added or removed freely behind a load balancer. Where session state is unavoidable it is held in a shared store rather than in the memory of one instance.
+
+Asynchronous processing removes long-running work from the request path. The request records the work and returns immediately with an identifier, and a background worker performs the task while the client polls for the result or is notified when it completes. This keeps request timeouts short and prevents a slow upstream dependency from consuming all available connections.
+
+Systems that depend on a third-party service inherit its failure modes and its limits. A rate limit, a quota, a timeout and an outage are distinct conditions and should be distinguished in the errors returned, because only some of them are worth retrying. A circuit breaker stops sending requests to a dependency that is failing, allowing it to recover and failing fast in the meantime rather than exhausting resources on requests that cannot succeed.
+
+SECTION 13: SUMMARY OF KEY DEFINITIONS
+
+Layering divides network functions so that each layer serves the one above and uses the one below. Encapsulation adds a header per layer on sending and removes them in reverse on receiving.
+
+The reference model has seven layers; the internet protocol suite has four and describes actual practice.
+
+A media access control address identifies an interface within a segment; an internet protocol address identifies an interface for routing between networks.
+
+The subnet mask separates the network portion of an address from the host portion. The all-zeros host address names the network and the all-ones host address is the broadcast address.
+
+The domain name system is a distributed hierarchy translating names to addresses, with caching governed by the time to live on each record.
+
+The transmission control protocol is reliable, ordered and connection-oriented, established by a three-way handshake. The user datagram protocol is connectionless and best-effort, and is preferred where late data is useless.
+
+The hypertext transfer protocol is stateless. GET is safe and idempotent; PUT and DELETE are idempotent but not safe; POST is neither.
+
+Four hundred and one means the identity is unknown; four hundred and three means the identity is known but not permitted.
+
+The same-origin policy prevents one origin from reading another's data, and cross-origin resource sharing relaxes it through server-declared headers, enforced by the browser.
+
+A JSON web token is signed but not encrypted, so its payload must never contain secrets.
+
+Bandwidth is the maximum rate; throughput is the achieved rate; latency is the delay and has a floor set by physics.

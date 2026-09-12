@@ -88,6 +88,7 @@ This is the clearest argument so far for the automated framework introduced unde
 | T-27 | FR10.1 | Generate flashcards from an uploaded document | 201 with an array of question/answer records | **Pass** — 6 cards, all answerable from the source text | 20 Aug |
 | T-28 | FR10.1 | Flashcard content stored as JSON and returned parsed by `GET /api/ai/outputs/:fileId` | Array returned, not a string | **Pass** | 20 Aug |
 | T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
+| T-24 | NFR1 | End-to-end summary generation timed across three ~10-page documents | Average under 60 s, no single run over 90 s | **Pass** — six measurements over two rounds, mean 28.7 s, slowest 43.0 s | 10 & 12 Sep |
 | T-30 | — | Request an output type that is not yet implemented | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** — tested with `quiz` before it was implemented | 20 Aug |
 | T-31 | FR11.1 | Generate a practice quiz from an uploaded document | 201 with questions, options and marked answers | **Pass** — 6 questions | 20 Aug |
 | T-32 | FR11.1 | Quiz contains both multiple-choice and true/false questions | Both types present | **Pass** — 3 multiple-choice, 3 true/false | 20 Aug |
@@ -136,6 +137,25 @@ Two collection defects were found and fixed to reach this point, neither of them
 
 2. **File access from the Collection Runner.** Selecting the upload fixture directly from the repository appeared to work — the filename was shown in the request — but the Runner could not read it and returned `400 NO_FILE`, which cascaded into every request depending on `fileId`. Enabling *Read files outside working directory* was not sufficient. Copying the fixture into the Postman working directory resolved it. The collection now documents this, and the upload request reports the cause explicitly rather than a bare status mismatch.
 
+
+**NFR1 measured, 10 and 12 September 2026 (T-24).** Three fixtures of approximately ten pages were prepared, one per supported format, each generated from a plain-text source held in `testing/fixtures/source/`: `known-doc1-software-testing.txt` (9 pages, 27,912 characters), `known-doc2-database-design.docx` (8 pages, 25,175 characters) and `known-doc3-computer-networks.pdf` (8 pages, 23,663 characters). Summary generation was timed end to end — upload, extraction, storage, generation and response — by `testing/run-verification-suite.js`.
+
+| Document | Format | Round 1, 10 Sep | Round 2, 12 Sep |
+|---|---|---|---|
+| doc1 software testing | TXT | 25.7 s | 20.2 s |
+| doc2 database design | DOCX | 30.5 s | 27.5 s |
+| doc3 computer networks | PDF | 25.1 s | 43.0 s |
+| **Average** | | **27.1 s** | **30.2 s** |
+
+Across all six measurements the mean is 28.7 s, the median 26.6 s, the range 20.2 s to 43.0 s and the standard deviation 7.8 s. **NFR1 is met**: both rounds average well under the 60 s metric, and no single run approached the 90 s ceiling.
+
+Two observations worth carrying into the report.
+
+**Extraction is not the cost; the model is.** Upload and extraction completed in 0.0–0.1 s for every document, including the 27,912-character TXT. End-to-end time is therefore Gemini's response time almost in its entirety, and document size within this range is a weak predictor of it — the largest document was the fastest in round 2, and the same PDF took 25.1 s in one round and 43.0 s in the other. The variation is upstream load, not anything the application controls.
+
+**The 90 s ceiling cannot actually be reached.** `ai.service.js` abandons a request at `REQUEST_TIMEOUT_MS` = 60 s and returns `AI_TIMEOUT` (NFR5). Any generation that would have breached the 90 s ceiling is therefore aborted at 60 s and surfaces as a failure rather than as a slow success. The ceiling is structurally satisfied, but the metric that matters in practice is the 60 s timeout, and the slowest observed run of 43.0 s sits only about 1.4 times below it. Given a standard deviation of 7.8 s, an occasional `AI_TIMEOUT` under upstream load is plausible and should be expected rather than treated as a defect. This is the same boundary T-23 is written against and strengthens the case for executing it.
+
+Two rounds were run on separate dates deliberately. Round 1 preceded the `pageJoiner` fix of 10 September, so its PDF figure was measured against extraction that still carried page markers; round 2 confirms the result on the current code. Raw timings for each round are retained in `testing/verification-results-2026-09-10.json` and `testing/verification-results-2026-09-12.json`.
 ---
 
 ## 5. Not yet verified
@@ -144,8 +164,7 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 | ID | Test | Blocked by |
 |---|---|---|
-| T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response |
-| T-24 | End-to-end time under 60 s for a 10-page document (NFR1) | Needs three 10-page fixtures; a short document measured 27.3 s on 20 Aug |
+| T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response. T-24 showed the slowest real run at 43.0 s, so the boundary is closer than assumed |
 | T-25 | Extraction accuracy against 3 known source documents (FR8 metric) | Not yet performed |
 
 **Consent enforcement metric now met.** T-20, T-21 and T-22 were executed on 20 August via `testing/verify-ai-generation.js`. Both refusal paths — never consented, and consent revoked — returned 403 `CONSENT_REQUIRED`, and generation succeeded only while consent was granted. The quality metric requiring 100% of unconsented generation attempts to be refused is therefore satisfied for the summary output type, and will need re-running as each further output type is added.
@@ -154,7 +173,7 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 ## 6. Actions arising
 
-1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. T-23 and T-24 remain.
+1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ Completed 12 September. T-23 remains.
 2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
 3. Assemble three source documents with known content for the extraction-accuracy metric (T-25).
 4. Introduce an automated test framework so these cases run on every change rather than manually.
