@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
-import { getConsentStatus } from '../services/consentService'
+import {
+  createStudyPlan,
+  getStudyPlans,
+  deleteStudyPlan,
+} from '../services/studyPlanService'
 
 function StudyPlanner() {
   const [subject, setSubject] = useState('')
@@ -10,53 +13,43 @@ function StudyPlanner() {
   const [studyDays, setStudyDays] = useState([])
   const [generated, setGenerated] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedPlanId, setSavedPlanId] = useState(null)
+  const [savedPlans, setSavedPlans] = useState([])
+  const [plansLoading, setPlansLoading] = useState(true)
+  const [plansError, setPlansError] = useState('')
+  const [plansSuccess, setPlansSuccess] = useState('')
+  const [deletingPlanId, setDeletingPlanId] = useState(null)
+  const loadStudyPlans = async () => {
+    setPlansLoading(true)
+    setPlansError('')
 
-  const [consentStatus, setConsentStatus] = useState(null)
-  const [consentInitialLoading, setConsentInitialLoading] =
-    useState(true)
-  const [consentError, setConsentError] = useState('')
+    try {
+      const response = await getStudyPlans()
+
+      if (!response.ok) {
+        setPlansError(
+          response.data?.message ||
+            'Unable to load your saved study plans.'
+        )
+        return
+      }
+
+      setSavedPlans(response.data?.plans || [])
+    } catch (loadError) {
+      console.error('Study plans load error:', loadError)
+
+      setPlansError(
+        'Unable to connect to the server to load your study plans.'
+      )
+    } finally {
+      setPlansLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadConsent = async () => {
-      setConsentInitialLoading(true)
-      setConsentError('')
-
-      try {
-        const response = await getConsentStatus()
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            setConsentError(
-              'Your login session is missing or invalid. Please sign in again.'
-            )
-          } else {
-            setConsentError(
-              response.data?.message ||
-                'Unable to retrieve your AI consent preference.'
-            )
-          }
-
-          return
-        }
-
-        setConsentStatus(
-          response.data?.consent?.status ?? null
-        )
-      } catch (consentFetchError) {
-        console.error(
-          'Consent fetch error:',
-          consentFetchError
-        )
-
-        setConsentError(
-          'Unable to connect to the server to retrieve your AI consent preference.'
-        )
-      } finally {
-        setConsentInitialLoading(false)
-      }
-    }
-
-    loadConsent()
+    loadStudyPlans()
   }, [])
 
   const days = [
@@ -69,8 +62,7 @@ function StudyPlanner() {
     'Sunday',
   ]
 
-  // Temporary mock study plan.
-  // This will later be generated using backend/Gemini data.
+  // Default suggested study sessions stored with each study plan.
   const mockPlan = [
     {
       id: 1,
@@ -113,66 +105,172 @@ function StudyPlanner() {
     setError('')
   }
 
-  const handleGeneratePlan = (event) => {
-    event.preventDefault()
+  const handleGeneratePlan = async (event) => {
+  event.preventDefault()
 
-    if (!subject.trim()) {
-      setError('Please enter a subject.')
-      setGenerated(false)
-      return
-    }
+  setError('')
+  setSuccess('')
+  setSavedPlanId(null)
 
-    if (!topic.trim()) {
-      setError('Please enter a topic or study goal.')
-      setGenerated(false)
-      return
-    }
+  if (!subject.trim()) {
+    setError('Please enter a subject.')
+    setGenerated(false)
+    return
+  }
 
-    if (!deadline) {
-      setError('Please select a deadline.')
-      setGenerated(false)
-      return
-    }
+  if (!topic.trim()) {
+    setError('Please enter a topic or study goal.')
+    setGenerated(false)
+    return
+  }
 
-    if (
-      !availableHours ||
-      Number(availableHours) <= 0
-    ) {
+  if (!deadline) {
+    setError('Please select a deadline.')
+    setGenerated(false)
+    return
+  }
+
+  if (
+    !availableHours ||
+    Number(availableHours) <= 0
+  ) {
+    setError(
+      'Please enter your available study hours.'
+    )
+    setGenerated(false)
+    return
+  }
+
+  if (studyDays.length === 0) {
+    setError(
+      'Please select at least one available study day.'
+    )
+    setGenerated(false)
+    return
+  }
+
+  const planData = {
+    sessions: mockPlan,
+    recommendation:
+      'Spread your study sessions across your available days rather than completing all sessions at once. Review difficult concepts again after completing practice questions.',
+  }
+
+  try {
+    setIsSaving(true)
+
+    const response = await createStudyPlan({
+        subject: subject.trim(),
+        topic: topic.trim(),
+        deadline,
+        available_hours: Number(availableHours),
+        study_days: studyDays,
+        plan_data: planData,
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+        } else {
+          setError(
+            response.data?.message ||
+              'Unable to create the study plan.'
+          )
+        }
+
+        setGenerated(false)
+        return
+      }
+
+      setSavedPlanId(response.data?.plan_id ?? null)
+      setGenerated(true)
+      setSuccess('Study plan created and saved successfully.')
+
+      await loadStudyPlans()
+
+    } catch (saveError) {
+      console.error('Study plan save error:', saveError)
+
       setError(
-        'Please enter your available study hours.'
+        'Unable to connect to the server. Please try again.'
       )
       setGenerated(false)
-      return
+    } finally {
+      setIsSaving(false)
     }
-
-    if (studyDays.length === 0) {
-      setError(
-        'Please select at least one available study day.'
-      )
-      setGenerated(false)
-      return
-    }
-
-    if (consentStatus !== 'granted') {
-      setError(
-        'Please grant AI processing consent before generating a study plan.'
-      )
-      setGenerated(false)
-      return
-    }
-
-    setError('')
-    setGenerated(true)
   }
 
   const formatDeadline = () => {
-    if (!deadline) {
+      if (!deadline) {
+        return ''
+      }
+
+      return new Date(
+        `${deadline}T00:00:00`
+      ).toLocaleDateString()
+    }
+
+    const handleDeletePlan = async (planId) => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this study plan?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setPlansError('')
+    setPlansSuccess('')
+    setDeletingPlanId(planId)
+
+    try {
+      const response = await deleteStudyPlan(planId)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setPlansError(
+            'Your login session is missing or invalid. Please sign in again.'
+          )
+        } else {
+          setPlansError(
+            response.data?.message ||
+              'Unable to delete the study plan.'
+          )
+        }
+
+        return
+      }
+
+      setSavedPlans((currentPlans) =>
+        currentPlans.filter(
+          (plan) => plan.plan_id !== planId
+        )
+      )
+
+      if (savedPlanId === planId) {
+        setSavedPlanId(null)
+        setGenerated(false)
+      }
+
+      setPlansSuccess('Study plan deleted successfully.')
+    } catch (deleteError) {
+      console.error('Study plan delete error:', deleteError)
+
+      setPlansError(
+        'Unable to connect to the server. Please try again.'
+      )
+    } finally {
+      setDeletingPlanId(null)
+    }
+  }
+
+  const formatStoredDeadline = (storedDeadline) => {
+    if (!storedDeadline) {
       return ''
     }
 
-    return new Date(
-      `${deadline}T00:00:00`
-    ).toLocaleDateString()
+    return new Date(storedDeadline).toLocaleDateString()
   }
 
   return (
@@ -331,46 +429,6 @@ function StudyPlanner() {
 
         </div>
 
-        {/* AI Consent Status */}
-        <div className="mt-6">
-          {consentInitialLoading ? (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm text-blue-700">
-                Checking your AI processing consent...
-              </p>
-            </div>
-          ) : consentStatus !== 'granted' ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-
-              <p className="font-medium text-amber-900">
-                AI processing consent required
-              </p>
-
-              <p className="mt-1 text-sm leading-6 text-amber-800">
-                Grant AI processing consent from your Dashboard
-                before generating AI study content.
-              </p>
-
-              <Link
-                to="/dashboard"
-                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Manage AI Consent
-              </Link>
-
-            </div>
-          ) : null}
-        </div>
-
-        {/* Consent Error */}
-        {consentError && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-700">
-              {consentError}
-            </p>
-          </div>
-        )}
-
         {/* Planner Error */}
         {error && (
           <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -380,25 +438,34 @@ function StudyPlanner() {
           </div>
         )}
 
+        {/* Planner Success */}
+        {success && (
+          <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="text-sm text-green-700">
+              {success}
+              {savedPlanId && (
+                <span> Plan ID: {savedPlanId}</span>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Generate Button */}
         <div className="mt-6 flex justify-end">
 
           <button
             type="submit"
-            disabled={
-              consentInitialLoading ||
-              consentStatus !== 'granted'
-            }
+            disabled={isSaving}
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Generate Study Plan
+            {isSaving ? 'Creating...' : 'Create Study Plan'}
           </button>
 
         </div>
 
       </form>
 
-      {/* Generated Study Plan */}
+      {/* Newly Created Study Plan */}
       {generated && (
         <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
@@ -407,11 +474,11 @@ function StudyPlanner() {
             <div className="flex flex-wrap items-center gap-2">
 
               <h2 className="text-2xl font-semibold text-gray-900">
-                Your Study Plan
+                Your Saved Study Plan
               </h2>
 
-              <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-                AI Generated
+              <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                Saved
               </span>
 
             </div>
@@ -472,11 +539,11 @@ function StudyPlanner() {
 
           </div>
 
-          {/* Mock Schedule */}
+          {/* Suggested Schedule */}
           <div className="mt-7">
 
             <h3 className="text-lg font-semibold text-gray-900">
-              Recommended Sessions
+              Suggested Sessions
             </h3>
 
             <div className="mt-4 space-y-4">
@@ -528,25 +595,133 @@ function StudyPlanner() {
 
           </div>
 
-          {/* AI Warning */}
-          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
-
-            <h3 className="font-semibold text-amber-900">
-              AI-Generated Content
-            </h3>
-
-            <p className="mt-1 text-sm leading-6 text-amber-800">
-              This study plan is a recommendation and may not
-              account for every academic requirement or personal
-              circumstance. Review and adjust the schedule based
-              on your actual course requirements and commitments.
-            </p>
-
-          </div>
-
         </div>
       )}
 
+      {/* Saved Study Plans */}
+      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Saved Study Plans
+        </h2>
+
+        <p className="mt-2 text-sm text-gray-600">
+          Review study plans saved to your account.
+        </p>
+
+        {plansLoading && (
+          <p className="mt-5 text-sm text-gray-600">
+            Loading saved study plans...
+          </p>
+        )}
+
+        {plansError && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {plansError}
+            </p>
+          </div>
+        )}
+
+        {plansSuccess && (
+          <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="text-sm text-green-700">
+              {plansSuccess}
+            </p>
+          </div>
+        )}
+
+        {!plansLoading &&
+          !plansError &&
+          savedPlans.length === 0 && (
+            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-5">
+              <p className="text-sm text-gray-600">
+                You do not have any saved study plans yet.
+              </p>
+            </div>
+          )}
+
+        {!plansLoading &&
+          savedPlans.length > 0 && (
+            <div className="mt-6 space-y-4">
+
+              {savedPlans.map((plan) => (
+                <div
+                  key={plan.plan_id}
+                  className="rounded-lg border border-gray-200 p-5"
+                >
+
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        {plan.subject}
+                      </h3>
+
+                      <p className="mt-1 text-sm text-gray-600">
+                        {plan.topic}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+
+                      <span className="w-fit rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                        Saved
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePlan(plan.plan_id)}
+                        disabled={deletingPlanId === plan.plan_id}
+                        className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-400"
+                      >
+                        {deletingPlanId === plan.plan_id
+                          ? 'Deleting...'
+                          : 'Delete'}
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-4 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
+
+                    <p>
+                      <span className="font-medium text-gray-800">
+                        Deadline:
+                      </span>{' '}
+                      {formatStoredDeadline(plan.deadline)}
+                    </p>
+
+                    <p>
+                      <span className="font-medium text-gray-800">
+                        Available time:
+                      </span>{' '}
+                      {plan.available_hours} hours per week
+                    </p>
+
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+
+                    {(plan.study_days || []).map((day) => (
+                      <span
+                        key={`${plan.plan_id}-${day}`}
+                        className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700"
+                      >
+                        {day}
+                      </span>
+                    ))}
+
+                  </div>
+
+                </div>
+              ))}
+
+            </div>
+          )}
+
+      </div>
     </div>
   )
 }
