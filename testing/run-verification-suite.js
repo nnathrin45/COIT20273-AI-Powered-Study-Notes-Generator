@@ -338,8 +338,31 @@ const runTimingAndGeneration = async (token) => {
 /* ------------------------------------------------------------------ *
  * #24 - grounding signals, then a written record for manual review
  * ------------------------------------------------------------------ */
-const asText = (content) =>
-  typeof content === "string" ? content : JSON.stringify(content);
+// Flashcards and quizzes are returned as records, not prose. Stringifying them
+// whole would drag the JSON structure into the comparison: on the first run the
+// quiz scored 51.6% "vocabulary overlap" purely because keys and values ran
+// together into tokens like "typemultiple" and "choicequestion", none of which
+// occur in any source document. Only the human-readable string values are
+// compared, which is the content a reviewer would actually check.
+const asText = (content) => {
+  if (typeof content === "string") return content;
+
+  const collected = [];
+
+  const walk = (node) => {
+    if (typeof node === "string") {
+      collected.push(node);
+    } else if (Array.isArray(node)) {
+      node.forEach(walk);
+    } else if (node && typeof node === "object") {
+      Object.values(node).forEach(walk);
+    }
+  };
+
+  walk(content);
+
+  return collected.join("\n");
+};
 
 // Proportion of the output's substantive vocabulary that also occurs in the
 // source. This is a signal, not a verdict: a low figure points the reviewer at
@@ -440,7 +463,16 @@ const runAccuracyReview = () => {
     lines.push("");
   }
 
-  const target = path.join(__dirname, "ai-accuracy-review.md");
+  // Dated and never overwritten, for the same reason as the raw results: once a
+  // review has been read and signed off it is evidence, and a later run must
+  // not replace it.
+  const stamp = results.startedAt.slice(0, 10);
+
+  let target = path.join(__dirname, `ai-accuracy-review-${stamp}.md`);
+
+  for (let run = 2; fs.existsSync(target); run += 1) {
+    target = path.join(__dirname, `ai-accuracy-review-${stamp}-run${run}.md`);
+  }
   fs.writeFileSync(target, lines.join("\n"));
   log(`\nOutputs written to ${path.relative(REPO, target)} for manual review.`);
 };
@@ -497,8 +529,15 @@ const main = async () => {
 
   // Dated, so successive runs accumulate as evidence rather than replacing one
   // another. NFR1 is claimed from more than a single measurement.
+  // Dated, and never overwriting an earlier run from the same day, so results
+  // already recorded as evidence cannot be lost to a later re-run.
   const stamp = results.startedAt.slice(0, 10);
-  const resultsPath = path.join(__dirname, `verification-results-${stamp}.json`);
+
+  let resultsPath = path.join(__dirname, `verification-results-${stamp}.json`);
+
+  for (let run = 2; fs.existsSync(resultsPath); run += 1) {
+    resultsPath = path.join(__dirname, `verification-results-${stamp}-run${run}.json`);
+  }
   fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
   log(`Raw results written to ${path.relative(REPO, resultsPath)}`);
 };

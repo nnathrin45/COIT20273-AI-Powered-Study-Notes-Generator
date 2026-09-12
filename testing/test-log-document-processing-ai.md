@@ -89,6 +89,7 @@ This is the clearest argument so far for the automated framework introduced unde
 | T-28 | FR10.1 | Flashcard content stored as JSON and returned parsed by `GET /api/ai/outputs/:fileId` | Array returned, not a string | **Pass** | 20 Aug |
 | T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
 | T-24 | NFR1 | End-to-end summary generation timed across three ~10-page documents | Average under 60 s, no single run over 90 s | **Pass** — six measurements over two rounds, mean 28.7 s, slowest 43.0 s | 10 & 12 Sep |
+| T-30 | FR9–FR12, R1 | AI output accuracy reviewed against documents with known content | At least 4 of 5 outputs accurate, no invented facts | **Pass** — 5 of 5 accurate, no invented facts in any output | 12 Sep |
 | T-30 | — | Request an output type that is not yet implemented | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** — tested with `quiz` before it was implemented | 20 Aug |
 | T-31 | FR11.1 | Generate a practice quiz from an uploaded document | 201 with questions, options and marked answers | **Pass** — 6 questions | 20 Aug |
 | T-32 | FR11.1 | Quiz contains both multiple-choice and true/false questions | Both types present | **Pass** — 3 multiple-choice, 3 true/false | 20 Aug |
@@ -156,6 +157,24 @@ Two observations worth carrying into the report.
 **The 90 s ceiling cannot actually be reached.** `ai.service.js` abandons a request at `REQUEST_TIMEOUT_MS` = 60 s and returns `AI_TIMEOUT` (NFR5). Any generation that would have breached the 90 s ceiling is therefore aborted at 60 s and surfaces as a failure rather than as a slow success. The ceiling is structurally satisfied, but the metric that matters in practice is the 60 s timeout, and the slowest observed run of 43.0 s sits only about 1.4 times below it. Given a standard deviation of 7.8 s, an occasional `AI_TIMEOUT` under upstream load is plausible and should be expected rather than treated as a defect. This is the same boundary T-23 is written against and strengthens the case for executing it.
 
 Two rounds were run on separate dates deliberately. Round 1 preceded the `pageJoiner` fix of 10 September, so its PDF figure was measured against extraction that still carried page markers; round 2 confirms the result on the current code. Raw timings for each round are retained in `testing/verification-results-2026-09-10.json` and `testing/verification-results-2026-09-12.json`.
+
+**AI output accuracy reviewed, 12 September 2026 (T-30, risk R1).** The quality metric for R1 requires at least 4 of 5 generated outputs to be verified accurate against source material with no invented facts. Five outputs were generated from the three known-content fixtures — a summary from each, plus flashcards from the DOCX and a practice quiz from the PDF — and each was read against its source in full. The outputs, the automated signals and the written verdict for each are retained in `testing/ai-accuracy-review-2026-09-12.md`.
+
+| Output | Format | Length | Verdict |
+|---|---|---|---|
+| doc1 summary | TXT | 1,056 words | Accurate |
+| doc2 summary | DOCX | 935 words | Accurate |
+| doc3 summary | PDF | 1,064 words | Accurate |
+| doc2 flashcards | DOCX | 11 cards | Accurate |
+| doc3 quiz | PDF | 7 questions | Accurate |
+
+**5 of 5 accurate, against a metric of 4 of 5.** No output asserted a fact absent from its source. Verification concentrated on the details most likely to be got wrong rather than on general impressions: in doc3, the 48-bit MAC address, 32-bit IPv4 and 128-bit IPv6, the eight-byte UDP header, and the host-address formula; in doc2, the SQL logical evaluation order, aggregate functions ignoring nulls except `COUNT(*)`, and the BCNF determinant rule; in doc1, all seven testing principles and the direction of the coverage implication. All correct. Every quiz answer was verifiable from the source and every `correct_answer` repeated one of its own options word for word, so all seven questions were scoreable.
+
+**The one deviation found, recorded because it qualifies the result.** The doc3 summary introduced standard terminology that appears nowhere in its source — CSMA/CA, WPA2, WPA3, WEP and CDN — as labels for mechanisms the source describes only in longhand. Every label is correctly applied, so no statement is false, and a student would be helped rather than misled. But the prompt instructs the model to use only information present in the material, and this vocabulary comes from the model's own knowledge. The useful conclusion for the report is narrow and worth stating plainly: the grounding instruction constrained *claims* reliably across all five outputs, and constrained *vocabulary* less reliably. R1 is therefore mitigated rather than eliminated, which is also why the AI-generated disclaimer (FR16.1) remains necessary.
+
+**On the automated signals.** The suite reports a vocabulary-overlap percentage and a key-concept count beside each output. These proved useful only for directing attention, not for judging quality. Overlap sits between 55.7% and 80.7% across the five outputs, and the terms counted as absent from the source are overwhelmingly ordinary paraphrase — *determine*, *providing*, *whereas* — which is exactly what a good summary in the model's own words should produce. Concept coverage is length-sensitive: the quiz scored 2 of 10 because seven questions address seven points of a whole document, which is correct behaviour rather than a defect. Both figures are retained as evidence of what was checked, but the verdict in every case rests on reading the output against the source.
+
+A defect in the signal itself was found and fixed before the review: flashcards and quizzes were being stringified as raw JSON, so keys and values ran together into tokens such as `typemultiple` and `choicequestion`, none of which occur in any source. The first quiz measured 51.6% overlap for this reason alone; comparing only the human-readable string values raised it to 80.7%. The earlier figure was an artefact of the measurement, not of the output.
 ---
 
 ## 5. Not yet verified
@@ -173,7 +192,7 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 ## 6. Actions arising
 
-1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ Completed 12 September. T-23 remains.
+1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-30 accuracy reviewed against R1.~~ Completed 12 September. T-23 remains.
 2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
 3. Assemble three source documents with known content for the extraction-accuracy metric (T-25).
 4. Introduce an automated test framework so these cases run on every change rather than manually.
