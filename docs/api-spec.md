@@ -390,6 +390,9 @@ Returns every document belonging to the authenticated user, newest first. Docume
     { "file_id": 12, "file_name": "lecture-week3.docx", "uploaded_at": "2026-08-20T09:15:02.000Z" }
   ]
 }
+
+> Useful for populating a document picker: the `file_id` returned here can be passed directly to `POST /api/ai/generate`.
+
 ```
 
 `extracted_text` is deliberately not included — use `GET /api/uploaded/:id` for a single document with its text.
@@ -402,6 +405,52 @@ An empty `files` array means nothing has been uploaded yet, not an error.
 | 500 | `UPLOADED_FILES_FETCH_ERROR` | Database failure |
 
 > Useful for populating a document picker: the `file_id` returned here can be passed directly to `POST /api/ai/generate`.
+
+---
+
+## Delete uploaded file — `DELETE /api/uploaded/:id`
+
+*Owner: Member 2 · Completed and verified by Member 1 (Christian Jeff Labaddan) · 13 Sep 2026*
+
+Deletes one uploaded study material belonging to the authenticated user.
+
+### Authentication
+
+Requires:
+
+```text
+Authorization: Bearer <JWT_TOKEN>
+```
+
+The file must belong to the authenticated user. Files belonging to another user are treated as not found.
+
+### Success — `200`
+
+```json
+{
+  "status": "success",
+  "message": "Uploaded file deleted successfully",
+  "file": {
+    "file_id": 13,
+    "file_name": "lecture-week3.docx"
+  }
+}
+```
+
+Successful deletion removes the uploaded-file database record and attempts to remove the corresponding physical file from the application's upload directory.
+
+Related database records are removed through the existing foreign-key cascade relationships.
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| 400 | `INVALID_FILE_ID` | File ID is missing, non-numeric or invalid |
+| 401 | — | JWT is missing or invalid |
+| 404 | `FILE_NOT_FOUND` | File does not exist or belongs to another user |
+| 500 | `UPLOADED_FILE_DELETE_ERROR` | Unexpected deletion failure |
+
+Returning `404 FILE_NOT_FOUND` for another user's file prevents disclosure of file ownership or existence.
 
 ---
 
