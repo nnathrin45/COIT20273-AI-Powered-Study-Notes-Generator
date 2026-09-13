@@ -5,6 +5,7 @@ import {
   getConsentStatus,
   updateConsentStatus,
 } from '../services/consentService'
+import { getProgress } from '../services/progressService'
 
 function Dashboard() {
   const [consentStatus, setConsentStatus] = useState(null)
@@ -14,7 +15,11 @@ function Dashboard() {
   const [consentLoading, setConsentLoading] = useState(false)
   const [consentError, setConsentError] = useState('')
 
-    useEffect(() => {
+  const [progress, setProgress] = useState(null)
+  const [progressLoading, setProgressLoading] = useState(true)
+  const [progressError, setProgressError] = useState('')
+
+  useEffect(() => {
     const loadConsent = async () => {
       setConsentInitialLoading(true)
       setConsentError('')
@@ -59,6 +64,47 @@ function Dashboard() {
     }
 
     loadConsent()
+  }, [])
+
+  useEffect(() => {
+    const loadProgress = async () => {
+      setProgressLoading(true)
+      setProgressError('')
+
+      try {
+        const response = await getProgress('all')
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setProgressError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setProgressError(
+              response.data?.message ||
+                'Unable to load your dashboard statistics.'
+            )
+          }
+
+          return
+        }
+
+        setProgress(response.data?.progress || null)
+      } catch (progressLoadError) {
+        console.error(
+          'Dashboard progress load error:',
+          progressLoadError
+        )
+
+        setProgressError(
+          'Unable to connect to the server to load your dashboard statistics.'
+        )
+      } finally {
+        setProgressLoading(false)
+      }
+    }
+
+    loadProgress()
   }, [])
 
   const handleConsentChange = async (newStatus) => {
@@ -115,26 +161,36 @@ function Dashboard() {
     }
   }
 
-  const stats = [
+  const statsUnavailable =
+    progressLoading || Boolean(progressError)
 
+  const stats = [
     {
       title: 'Study Materials',
-      value: '0',
+      value: statsUnavailable
+        ? '—'
+        : progress?.total_files ?? 0,
       description: 'Uploaded documents',
     },
     {
       title: 'Flashcards',
-      value: '0',
-      description: 'Generated cards',
+      value: statsUnavailable
+        ? '—'
+        : progress?.flashcards_generated ?? 0,
+      description: 'Generated study sets',
     },
     {
       title: 'Quizzes Completed',
-      value: '0',
+      value: statsUnavailable
+        ? '—'
+        : progress?.total_quiz_attempts ?? 0,
       description: 'Practice attempts',
     },
     {
       title: 'Average Score',
-      value: '0%',
+      value: statsUnavailable
+        ? '—'
+        : `${progress?.average_percentage ?? 0}%`,
       description: 'Quiz performance',
     },
   ]
@@ -173,6 +229,28 @@ function Dashboard() {
           </div>
         ))}
       </div>
+
+      {progressLoading && (
+        <div
+          className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4"
+          role="status"
+        >
+          <p className="text-sm text-blue-700">
+            Loading your dashboard statistics...
+          </p>
+        </div>
+      )}
+
+      {progressError && (
+        <div
+          className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+          role="alert"
+        >
+          <p className="text-sm text-red-700">
+            {progressError}
+          </p>
+        </div>
+      )}
 
       {/* Quick actions */}
       <div className="mt-8">
@@ -235,7 +313,7 @@ function Dashboard() {
 
         </div>
       </div>
-      
+
       {/* AI Privacy and Consent */}
       <div className="mt-8">
         <div className="mb-4">
@@ -266,7 +344,10 @@ function Dashboard() {
         )}
 
         {consentError && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div
+            className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4"
+            role="alert"
+          >
             <p className="text-sm text-red-700">
               {consentError}
             </p>

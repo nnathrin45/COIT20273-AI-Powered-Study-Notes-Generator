@@ -21,6 +21,7 @@ function Flashcards() {
   const [generationLoading, setGenerationLoading] =
     useState(false)
   const [error, setError] = useState('')
+  const [retryableError, setRetryableError] = useState(false)
 
   const [consentStatus, setConsentStatus] = useState(null)
   const [consentInitialLoading, setConsentInitialLoading] =
@@ -122,6 +123,7 @@ function Flashcards() {
   const handleGenerate = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setRetryableError(false)
       clearGeneratedFlashcards()
       return
     }
@@ -130,12 +132,14 @@ function Flashcards() {
       setError(
         'Please grant AI processing consent before generating flashcards.'
       )
+      setRetryableError(false)
       clearGeneratedFlashcards()
       return
     }
 
     setGenerationLoading(true)
     setError('')
+    setRetryableError(false)
     clearGeneratedFlashcards()
 
     try {
@@ -153,6 +157,7 @@ function Flashcards() {
           setError(
             'AI processing consent is required. Please manage your consent from the Dashboard.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -160,6 +165,7 @@ function Flashcards() {
           setError(
             'Your login session is missing or invalid. Please sign in again.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -167,6 +173,7 @@ function Flashcards() {
           setError(
             'The selected study material could not be found. Please select another document.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -174,6 +181,7 @@ function Flashcards() {
           response.data?.message ||
             'Unable to generate flashcards. Please try again.'
         )
+        setRetryableError(response.data?.retryable === true)
         return
       }
 
@@ -184,6 +192,7 @@ function Flashcards() {
         setError(
           'The server returned flashcards in an unexpected format.'
         )
+        setRetryableError(false)
         return
       }
 
@@ -191,6 +200,7 @@ function Flashcards() {
         setError(
           'No usable flashcards could be generated from this study material.'
         )
+        setRetryableError(false)
         return
       }
 
@@ -199,6 +209,7 @@ function Flashcards() {
       setDisclaimer(response.data?.disclaimer ?? '')
       setCurrentCard(0)
       setShowAnswer(false)
+      setRetryableError(false)
     } catch (generationError) {
       console.error(
         'Flashcard generation error:',
@@ -208,6 +219,7 @@ function Flashcards() {
       setError(
         'Unable to connect to the server. Please try again.'
       )
+      setRetryableError(true)
     } finally {
       setGenerationLoading(false)
     }
@@ -297,6 +309,7 @@ function Flashcards() {
                 setSelectedDocument(event.target.value)
                 clearGeneratedFlashcards()
                 setError('')
+                setRetryableError(false)
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -368,10 +381,24 @@ function Flashcards() {
 
         {/* Flashcard Error */}
         {error && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div
+            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+            role="alert"
+          >
             <p className="text-sm text-red-700">
               {error}
             </p>
+
+            {retryableError && (
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generationLoading}
+                className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {generationLoading ? 'Retrying...' : 'Retry'}
+              </button>
+            )}
           </div>
         )}
 
