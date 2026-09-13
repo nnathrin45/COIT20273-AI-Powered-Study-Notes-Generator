@@ -35,6 +35,7 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-07 | NFR5 | Send a request with no file attached | 400 `NO_FILE`, no crash | **Pass** | 11 Aug |
 | T-08 | NFR3 | Request another user's file via `GET /api/uploaded/:id` | 404 | **Pass** — query is scoped by `user_id` | 11 Aug |
 | T-26 | FR8.4, SR-DP4 | Upload a scanned, image-only PDF | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — rejected after a defect in the guard was fixed, see below | 10 Sep |
+| T-25 | FR8 | Extracted text compared against three source documents of known content, one per format | Extraction succeeds with no missing sections | **Pass** — character-exact recovery for all three; no omissions | 13 Sep |
 
 **Defect found and fixed during T-06.** Validation originally checked the MIME type, which caused valid `.docx` uploads from curl to be rejected because curl sends `application/octet-stream`. Changed to extension-based validation (commit `f80c2f4`) and documented in `docs/api-spec.md`.
 
@@ -56,6 +57,31 @@ Fixed by passing an empty `pageJoiner` to `getText()` in `pdf.service.js`, which
 Two regression tests were added to `backend/tests/integration/upload.test.js`: one uploading the scanned fixture and asserting the 422, and one asserting that no page marker survives into stored text. The suite now stands at 55 tests, all passing.
 
 This is the clearest argument so far for the automated framework introduced under issue #21: the manual `.pdf` case T-03 passed on 11 August and would have gone on passing, because a PDF with a text layer never exposes the fault.
+
+**Extraction accuracy verified, 13 September 2026 (T-25).** The metric for FR8 requires extraction to succeed across three source documents with no sections missing. Three fixtures were compared against the plain-text sources they were generated from, one per supported format.
+
+| Fixture | Format | Source characters | Lines recovered | Headings recovered |
+|---|---|---|---|---|
+| `known-doc1-software-testing.txt` | TXT | 27,912 | 123/123 | 18/18 |
+| `known-doc2-database-design.docx` | DOCX | 24,949 | 114/114 | 15/15 |
+| `known-doc3-computer-networks.pdf` | PDF | 23,754 | 101/101 | 13/13 |
+
+**No omissions were found in any of the three.** The result is stronger than the metric asks for: ignoring whitespace, the extracted text is *character-identical* to its source in every case — TXT byte-for-byte, DOCX 20,861 characters against 20,861, PDF 19,949 against 19,949. Nothing was dropped, reordered or altered, down to the individual character.
+
+**The character-count differences were investigated rather than accepted.** Each fixture reports a raw length differing slightly from its source, and the metric would have been satisfied without explaining why. Both differences are line-break formatting and neither involves content:
+
+- **DOCX, +226 characters.** `textutil` renders each source line as a paragraph and Mammoth separates paragraphs with an additional newline, so the extracted text carries exactly 452 newlines against the source's 226 — one extra per paragraph. Non-whitespace characters are identical.
+- **PDF, −91 characters.** The source is stored as one long line per paragraph, while the PDF is laid out in wrapped lines, so runs of spaces become single line breaks. Non-whitespace characters are identical.
+
+This is why the comparison is made on whitespace-stripped text. A PDF is laid out in wrapped lines and a DOCX in paragraphs, so line breaks legitimately differ from a plain-text source; the characters themselves must not.
+
+**Manual comparison.** Alongside the automated check, each document was compared by eye at three points — the opening, the midpoint and the closing lines. All three matched their sources exactly in all three documents, confirming the automated result was not an artefact of the comparison method.
+
+**Now an automated test rather than a one-off result.** `backend/tests/unit/extraction-accuracy.test.js` performs this comparison on every run: for each format it asserts character-exact recovery and the presence of every section heading. Six assertions, executing in well under a second, requiring no server, no database and no Gemini quota. The suite now stands at 61 tests, all passing.
+
+The test was confirmed non-vacuous by deleting a single sentence from the extracted text and checking that it failed, reporting the position and surrounding context of the divergence.
+
+The reason for automating a case the issue only asked to be performed manually is the `pageJoiner` defect found six days earlier under T-26. That fault sat in the extraction path from the first PDF upload in August and survived a manual test that passed, because a PDF with a text layer never exposes it. A manual comparison confirms extraction is correct on the day it is run and says nothing about the day after.
 ---
 
 ## 3. Authentication and security (supporting NFR2)
@@ -184,7 +210,6 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 | ID | Test | Blocked by |
 |---|---|---|
 | T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response. T-24 showed the slowest real run at 43.0 s, so the boundary is closer than assumed |
-| T-25 | Extraction accuracy against 3 known source documents (FR8 metric) | Not yet performed |
 
 **Consent enforcement metric now met.** T-20, T-21 and T-22 were executed on 20 August via `testing/verify-ai-generation.js`. Both refusal paths — never consented, and consent revoked — returned 403 `CONSENT_REQUIRED`, and generation succeeded only while consent was granted. The quality metric requiring 100% of unconsented generation attempts to be refused is therefore satisfied for the summary output type, and will need re-running as each further output type is added.
 
@@ -194,6 +219,6 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-30 accuracy reviewed against R1.~~ Completed 12 September. T-23 remains.
 2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
-3. Assemble three source documents with known content for the extraction-accuracy metric (T-25).
-4. Introduce an automated test framework so these cases run on every change rather than manually.
+3. ~~Assemble three source documents with known content for the extraction-accuracy metric (T-25).~~ Completed 13 September; character-exact recovery across all three formats, now covered by an automated test.
+4. ~~Introduce an automated test framework so these cases run on every change rather than manually.~~ Completed 10 September (issue #21); extended to 61 tests as each remaining case was executed.
 5. Create `backend/src/uploads/` on any new machine before testing uploads — the directory is gitignored and does not arrive with a clone, so the first upload otherwise fails with `ENOENT`.
