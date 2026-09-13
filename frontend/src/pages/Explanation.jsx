@@ -20,6 +20,7 @@ function Explanation() {
   const [generationLoading, setGenerationLoading] =
     useState(false)
   const [error, setError] = useState('')
+  const [retryableError, setRetryableError] = useState(false)
 
   const [consentStatus, setConsentStatus] = useState(null)
   const [consentInitialLoading, setConsentInitialLoading] =
@@ -118,6 +119,7 @@ function Explanation() {
   const handleGenerateExplanation = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setRetryableError(false)
       clearGeneratedExplanation()
       return
     }
@@ -126,6 +128,7 @@ function Explanation() {
       setError(
         'Please enter a concept or topic you would like explained.'
       )
+      setRetryableError(false)
       clearGeneratedExplanation()
       return
     }
@@ -134,12 +137,14 @@ function Explanation() {
       setError(
         'Please grant AI processing consent before generating a concept explanation.'
       )
+      setRetryableError(false)
       clearGeneratedExplanation()
       return
     }
 
     setGenerationLoading(true)
     setError('')
+    setRetryableError(false)
     clearGeneratedExplanation()
 
     try {
@@ -159,6 +164,7 @@ function Explanation() {
           setError(
             'AI processing consent is required. Please manage your consent from the Dashboard.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -166,6 +172,7 @@ function Explanation() {
           setError(
             'Your login session is missing or invalid. Please sign in again.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -173,6 +180,7 @@ function Explanation() {
           setError(
             'The selected study material could not be found. Please select another document.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -183,6 +191,7 @@ function Explanation() {
           setError(
             'Please enter a concept or topic you would like explained.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -193,6 +202,7 @@ function Explanation() {
           setError(
             'Please select a valid explanation level.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -200,6 +210,7 @@ function Explanation() {
           response.data?.message ||
             'Unable to generate the explanation. Please try again.'
         )
+        setRetryableError(response.data?.retryable === true)
         return
       }
 
@@ -213,11 +224,13 @@ function Explanation() {
         setError(
           'The server returned the explanation in an unexpected format.'
         )
+        setRetryableError(false)
         return
       }
 
       setGeneratedOutput(output)
       setDisclaimer(response.data?.disclaimer ?? '')
+      setRetryableError(false)
     } catch (generationError) {
       console.error(
         'Explanation generation error:',
@@ -227,6 +240,7 @@ function Explanation() {
       setError(
         'Unable to connect to the server. Please try again.'
       )
+      setRetryableError(true)
     } finally {
       setGenerationLoading(false)
     }
@@ -318,6 +332,7 @@ function Explanation() {
                   setSelectedDocument(event.target.value)
                   clearGeneratedExplanation()
                   setError('')
+                  setRetryableError(false)
                 }}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -353,6 +368,7 @@ function Explanation() {
                 setExplanationLevel(event.target.value)
                 clearGeneratedExplanation()
                 setError('')
+                setRetryableError(false)
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -390,6 +406,7 @@ function Explanation() {
               setConcept(event.target.value)
               clearGeneratedExplanation()
               setError('')
+              setRetryableError(false)
             }}
             placeholder="e.g. Machine learning, database normalisation..."
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -453,10 +470,24 @@ function Explanation() {
 
         {/* Explanation Error */}
         {error && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div
+            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+            role="alert"
+          >
             <p className="text-sm text-red-700">
               {error}
             </p>
+
+            {retryableError && (
+              <button
+                type="button"
+                onClick={handleGenerateExplanation}
+                disabled={generationLoading}
+                className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {generationLoading ? 'Retrying...' : 'Retry'}
+              </button>
+            )}
           </div>
         )}
 

@@ -22,6 +22,7 @@ function Summary() {
   const [generatedOutput, setGeneratedOutput] = useState(null)
   const [disclaimer, setDisclaimer] = useState('')
   const [error, setError] = useState('')
+  const [retryableError, setRetryableError] = useState(false)
 
   useEffect(() => {
     const loadConsent = async () => {
@@ -110,6 +111,7 @@ function Summary() {
   const handleGenerateSummary = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setRetryableError(false)
       setGeneratedOutput(null)
       setDisclaimer('')
       return
@@ -119,6 +121,7 @@ function Summary() {
       setError(
         'Please grant AI processing consent before generating a summary.'
       )
+      setRetryableError(false)
       setGeneratedOutput(null)
       setDisclaimer('')
       return
@@ -126,6 +129,7 @@ function Summary() {
 
     setGenerationLoading(true)
     setError('')
+    setRetryableError(false)
     setGeneratedOutput(null)
     setDisclaimer('')
 
@@ -144,6 +148,7 @@ function Summary() {
           setError(
             'AI processing consent is required. Please manage your consent from the Dashboard.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -151,6 +156,7 @@ function Summary() {
           setError(
             'Your login session is missing or invalid. Please sign in again.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -158,6 +164,7 @@ function Summary() {
           setError(
             'The selected study material could not be found. Please select another document.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -165,11 +172,13 @@ function Summary() {
           response.data?.message ||
             'Unable to generate the summary. Please try again.'
         )
+        setRetryableError(response.data?.retryable === true)
         return
       }
 
       setGeneratedOutput(response.data?.output ?? null)
       setDisclaimer(response.data?.disclaimer ?? '')
+      setRetryableError(false)
     } catch (generationError) {
       console.error(
         'Summary generation error:',
@@ -179,6 +188,7 @@ function Summary() {
       setError(
         'Unable to connect to the server. Please try again.'
       )
+      setRetryableError(true)
     } finally {
       setGenerationLoading(false)
     }
@@ -255,6 +265,7 @@ function Summary() {
                 setGeneratedOutput(null)
                 setDisclaimer('')
                 setError('')
+                setRetryableError(false)
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -325,10 +336,24 @@ function Summary() {
 
         {/* Generation Error */}
         {error && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div
+            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+            role="alert"
+          >
             <p className="text-sm text-red-700">
               {error}
             </p>
+
+            {retryableError && (
+              <button
+                type="button"
+                onClick={handleGenerateSummary}
+                disabled={generationLoading}
+                className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {generationLoading ? 'Retrying...' : 'Retry'}
+              </button>
+            )}
           </div>
         )}
 

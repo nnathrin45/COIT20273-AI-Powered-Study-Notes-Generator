@@ -27,6 +27,7 @@ function Quiz() {
     useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [error, setError] = useState('')
+  const [retryableError, setRetryableError] = useState(false)
 
   const [consentStatus, setConsentStatus] = useState(null)
   const [consentInitialLoading, setConsentInitialLoading] =
@@ -129,6 +130,7 @@ function Quiz() {
   const handleGenerateQuiz = async () => {
     if (!selectedDocument) {
       setError('Please select a study material first.')
+      setRetryableError(false)
       clearQuiz()
       return
     }
@@ -137,12 +139,14 @@ function Quiz() {
       setError(
         'Please grant AI processing consent before generating a practice quiz.'
       )
+      setRetryableError(false)
       clearQuiz()
       return
     }
 
     setGenerationLoading(true)
     setError('')
+    setRetryableError(false)
     clearQuiz()
 
     try {
@@ -160,6 +164,7 @@ function Quiz() {
           setError(
             'AI processing consent is required. Please manage your consent from the Dashboard.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -167,6 +172,7 @@ function Quiz() {
           setError(
             'Your login session is missing or invalid. Please sign in again.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -174,6 +180,7 @@ function Quiz() {
           setError(
             'The selected study material could not be found. Please select another document.'
           )
+          setRetryableError(false)
           return
         }
 
@@ -181,6 +188,7 @@ function Quiz() {
           response.data?.message ||
             'Unable to generate the practice quiz. Please try again.'
         )
+        setRetryableError(response.data?.retryable === true)
         return
       }
 
@@ -191,6 +199,7 @@ function Quiz() {
         setError(
           'The server returned the quiz in an unexpected format.'
         )
+        setRetryableError(false)
         return
       }
 
@@ -198,6 +207,7 @@ function Quiz() {
         setError(
           'No usable quiz questions could be generated from this study material.'
         )
+        setRetryableError(false)
         return
       }
 
@@ -207,6 +217,7 @@ function Quiz() {
       setCurrentQuestion(0)
       setAnswers({})
       setAttempt(null)
+      setRetryableError(false)
     } catch (generationError) {
       console.error(
         'Quiz generation error:',
@@ -216,6 +227,7 @@ function Quiz() {
       setError(
         'Unable to connect to the server. Please try again.'
       )
+      setRetryableError(true)
     } finally {
       setGenerationLoading(false)
     }
@@ -249,6 +261,7 @@ function Quiz() {
       setError(
         'The generated quiz could not be identified. Please generate it again.'
       )
+      setRetryableError(false)
       return
     }
 
@@ -258,6 +271,7 @@ function Quiz() {
 
     setSubmitLoading(true)
     setError('')
+    setRetryableError(false)
 
     try {
       const response = await submitQuizAttempt({
@@ -316,6 +330,7 @@ function Quiz() {
     setAttempt(null)
     setCurrentQuestion(0)
     setError('')
+    setRetryableError(false)
   }
 
   const selectedDocumentName =
@@ -398,6 +413,7 @@ function Quiz() {
                 setSelectedDocument(event.target.value)
                 clearQuiz()
                 setError('')
+                setRetryableError(false)
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -467,10 +483,24 @@ function Quiz() {
         )}
 
         {error && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div
+            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+            role="alert"
+          >
             <p className="text-sm text-red-700">
               {error}
             </p>
+
+            {retryableError && (
+              <button
+                type="button"
+                onClick={handleGenerateQuiz}
+                disabled={generationLoading}
+                className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {generationLoading ? 'Retrying...' : 'Retry'}
+              </button>
+            )}
           </div>
         )}
 
