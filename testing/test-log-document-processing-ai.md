@@ -116,6 +116,7 @@ The reason for automating a case the issue only asked to be performed manually i
 | T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
 | T-24 | NFR1 | End-to-end summary generation timed across three ~10-page documents | Average under 60 s, no single run over 90 s | **Pass** — six measurements over two rounds, mean 28.7 s, slowest 43.0 s | 10 & 12 Sep |
 | T-30 | FR9–FR12, R1 | AI output accuracy reviewed against documents with known content | At least 4 of 5 outputs accurate, no invented facts | **Pass** — 5 of 5 accurate, no invented facts in any output | 12 Sep |
+| T-23 | NFR5 | Generation abandoned when the model does not respond in time | 504 `AI_TIMEOUT`, marked retryable, document retained | **Pass** — timeout path now covered by 9 automated tests | 13 Sep |
 | T-30 | — | Request an output type that is not yet implemented | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** — tested with `quiz` before it was implemented | 20 Aug |
 | T-31 | FR11.1 | Generate a practice quiz from an uploaded document | 201 with questions, options and marked answers | **Pass** — 6 questions | 20 Aug |
 | T-32 | FR11.1 | Quiz contains both multiple-choice and true/false questions | Both types present | **Pass** — 3 multiple-choice, 3 true/false | 20 Aug |
@@ -201,15 +202,31 @@ Two rounds were run on separate dates deliberately. Round 1 preceded the `pageJo
 **On the automated signals.** The suite reports a vocabulary-overlap percentage and a key-concept count beside each output. These proved useful only for directing attention, not for judging quality. Overlap sits between 55.7% and 80.7% across the five outputs, and the terms counted as absent from the source are overwhelmingly ordinary paraphrase — *determine*, *providing*, *whereas* — which is exactly what a good summary in the model's own words should produce. Concept coverage is length-sensitive: the quiz scored 2 of 10 because seven questions address seven points of a whole document, which is correct behaviour rather than a defect. Both figures are retained as evidence of what was checked, but the verdict in every case rests on reading the output against the source.
 
 A defect in the signal itself was found and fixed before the review: flashcards and quizzes were being stringified as raw JSON, so keys and values ran together into tokens such as `typemultiple` and `choicequestion`, none of which occur in any source. The first quiz measured 51.6% overlap for this reason alone; comparing only the human-readable string values raised it to 80.7%. The earlier figure was an artefact of the measurement, not of the output.
+
+**Timeout handling verified, 13 September 2026 (T-23).** This was the last case standing in section 5, recorded since August as blocked because Gemini cannot be made slow on demand and no suite can wait a real minute for a timeout to elapse. Both obstacles were removed rather than worked around, and the path is now covered by nine automated tests that make no Gemini call and consume no quota.
+
+What was previously covered was only the tail of the path: an existing unit test confirmed that an error already carrying `AI_TIMEOUT` survived classification. The race that produces it, the mapping to a response, and the consequences for the student's uploaded document had never executed.
+
+**Change to the production code.** `REQUEST_TIMEOUT_MS` now reads `AI_REQUEST_TIMEOUT_MS` from the environment and falls back to 60,000 ms, so behaviour is unchanged unless it is deliberately overridden. The race was extracted from `generate()` into `raceAgainstTimeout(request, timeoutMs)`, which takes the duration as an argument. The same code path that runs in production therefore runs in the tests, in milliseconds, against a request that never settles.
+
+Extracting the race exposed a real defect. The original timer was never cleared once the race settled, so every successful generation left a `setTimeout` pending for the remainder of the 60 seconds. In the server this was harmless — the process is long-lived and the timer eventually fired against an already-settled promise — but it would have held the event loop open in any short-lived process, and it is the kind of leak that is invisible until something depends on a clean exit. `raceAgainstTimeout` now clears the timer in a `finally`, and a test asserts that no timer outlives the race.
+
+**Unit coverage (5 tests, `tests/unit/ai-timeout.test.js`).** A request that never returns is rejected as `AI_TIMEOUT`, and not before the timeout has actually elapsed. A request that returns in time is unaffected. A request that fails on its own merits keeps its own error rather than being relabelled a timeout — a mistake that would have hidden the quota handling added on 3 September. The 60-second default is asserted explicitly, because the tests override the duration per call and a change to the constant would otherwise pass unnoticed. And no timer outlives the race.
+
+**Integration coverage (4 tests, `tests/integration/ai-timeout-handling.test.js`).** The timeout is provoked by replacing `ai.service.generate` before the controller is required, so the real controller, the real database and the real HTTP server are all exercised without an upstream call. The request is reported as **504 `AI_TIMEOUT`** with `retryable: true` and a message telling the student to try again. The uploaded document survives: it is read back over HTTP afterwards with its extracted text intact, so nothing has to be uploaded a second time (NFR5). No partial output is left behind in `ai_outputs`. And a retry against the same document then succeeds, leaving exactly one stored output — the point of the requirement, verified end to end rather than inferred.
+
+The mapping tests were confirmed non-vacuous by disabling the `AI_TIMEOUT` branch in the controller and checking that they failed. The two retention tests continue to pass under that mutation, correctly, because retention does not depend on which status code is returned.
+
+**Why this mattered more than its priority suggested.** T-24 measured the slowest real generation at 43.0 s against the 60 s timeout, with a standard deviation of 7.8 s across six runs — about two standard deviations of headroom. A timeout during the final demonstration is plausible rather than hypothetical, and until today the code that would have handled it had never run.
+
+**Section 5 is now empty.** Every documented behaviour of the document-processing and AI-integration subsystem has been executed at least once, and the suite stands at 70 tests.
 ---
 
 ## 5. Not yet verified
 
 Recorded explicitly so that untested behaviour is not mistaken for working behaviour.
 
-| ID | Test | Blocked by |
-|---|---|---|
-| T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response. T-24 showed the slowest real run at 43.0 s, so the boundary is closer than assumed |
+_Nothing outstanding._ T-23, the last entry, was executed on 13 September 2026; see section 4. Every documented behaviour of this subsystem has now been executed at least once.
 
 **Consent enforcement metric now met.** T-20, T-21 and T-22 were executed on 20 August via `testing/verify-ai-generation.js`. Both refusal paths — never consented, and consent revoked — returned 403 `CONSENT_REQUIRED`, and generation succeeded only while consent was granted. The quality metric requiring 100% of unconsented generation attempts to be refused is therefore satisfied for the summary output type, and will need re-running as each further output type is added.
 
@@ -217,7 +234,7 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 ## 6. Actions arising
 
-1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-30 accuracy reviewed against R1.~~ Completed 12 September. T-23 remains.
+1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-30 accuracy reviewed against R1.~~ Completed 12 September. ~~T-23 timeout handling verified.~~ Completed 13 September.
 2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
 3. ~~Assemble three source documents with known content for the extraction-accuracy metric (T-25).~~ Completed 13 September; character-exact recovery across all three formats, now covered by an automated test.
 4. ~~Introduce an automated test framework so these cases run on every change rather than manually.~~ Completed 10 September (issue #21); extended to 61 tests as each remaining case was executed.
