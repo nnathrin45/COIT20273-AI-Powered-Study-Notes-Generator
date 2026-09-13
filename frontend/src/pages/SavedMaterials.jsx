@@ -1,70 +1,152 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { getUploadedFiles } from '../services/uploadedService'
+import { getAIOutputs } from '../services/aiService'
 
 function SavedMaterials() {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const [materials, setMaterials] = useState([
-    {
-      id: 1,
-      title: 'Artificial Intelligence Summary',
-      type: 'Summary',
-      source: 'Introduction to Artificial Intelligence.pdf',
-      createdAt: '10 Aug 2026',
-    },
-    {
-      id: 2,
-      title: 'AI Fundamentals Flashcards',
-      type: 'Flashcards',
-      source: 'Introduction to Artificial Intelligence.pdf',
-      createdAt: '10 Aug 2026',
-    },
-    {
-      id: 3,
-      title: 'Database Systems Practice Quiz',
-      type: 'Quiz',
-      source: 'Database Systems Week 4.docx',
-      createdAt: '9 Aug 2026',
-    },
-    {
-      id: 4,
-      title: 'Software Engineering Study Plan',
-      type: 'Study Plan',
-      source: 'Software Engineering Notes.txt',
-      createdAt: '8 Aug 2026',
-    },
-    {
-      id: 5,
-      title: 'Machine Learning Explanation',
-      type: 'Explanation',
-      source: 'Introduction to Artificial Intelligence.pdf',
-      createdAt: '8 Aug 2026',
-    },
-  ])
+  const [materials, setMaterials] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [selectedMaterial, setSelectedMaterial] = useState(null)
 
-  const filteredMaterials = materials.filter((material) => {
-    const matchesFilter =
-      filter === 'all' ||
-      material.type.toLowerCase().replace(' ', '-') === filter
+  useEffect(() => {
+    const loadSavedMaterials = async () => {
+      setLoading(true)
+      setError('')
 
-    const matchesSearch =
-      material.title.toLowerCase().includes(search.toLowerCase()) ||
-      material.source.toLowerCase().includes(search.toLowerCase())
+      try {
+        const uploadedResponse = await getUploadedFiles()
 
-    return matchesFilter && matchesSearch
-  })
+        if (!uploadedResponse.ok) {
+          if (uploadedResponse.status === 401) {
+            setError(
+              'Your login session is missing or invalid. Please sign in again.'
+            )
+          } else {
+            setError(
+              uploadedResponse.data?.message ||
+                'Unable to retrieve your uploaded study materials.'
+            )
+          }
 
-  const handleDelete = (id) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this saved material?'
-    )
+          return
+        }
 
-    if (!confirmed) {
-      return
+        const files = uploadedResponse.data?.files ?? []
+
+        if (files.length === 0) {
+          setMaterials([])
+          return
+        }
+
+        const outputRequests = files.map(async (file) => {
+          const response = await getAIOutputs(file.file_id)
+
+          return {
+            file,
+            response,
+          }
+        })
+
+        const results = await Promise.all(outputRequests)
+
+        const savedMaterials = []
+
+        results.forEach(({ file, response }) => {
+          if (!response.ok) {
+            console.error(
+              `Unable to load saved AI outputs for file ${file.file_id}:`,
+              response.data
+            )
+
+            return
+          }
+
+          const outputs = response.data?.outputs ?? []
+
+          outputs.forEach((output) => {
+            savedMaterials.push({
+              id: output.output_id,
+              outputId: output.output_id,
+              fileId: file.file_id,
+              title: getMaterialTitle(
+                output.output_type,
+                file.file_name
+              ),
+              type: getMaterialTypeLabel(
+                output.output_type
+              ),
+              outputType: output.output_type,
+              source: file.file_name,
+              createdAt: output.generated_at,
+              content: output.content,
+              isAiGenerated:
+                Boolean(output.is_ai_generated),
+            })
+          })
+        })
+
+        savedMaterials.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime()
+          const dateB = new Date(b.createdAt).getTime()
+
+          return dateB - dateA
+        })
+
+        setMaterials(savedMaterials)
+      } catch (loadError) {
+        console.error(
+          'Saved materials load error:',
+          loadError
+        )
+
+        setError(
+          'Unable to connect to the server to retrieve your saved materials.'
+        )
+      } finally {
+        setLoading(false)
+      }
     }
 
-    setMaterials(
-      materials.filter((material) => material.id !== id)
-    )
+    loadSavedMaterials()
+  }, [])
+
+  const filteredMaterials = useMemo(() => {
+    const normalisedSearch = search
+      .trim()
+      .toLowerCase()
+
+    return materials.filter((material) => {
+      const matchesFilter =
+        filter === 'all' ||
+        material.outputType === filter
+
+      const matchesSearch =
+        normalisedSearch === '' ||
+        material.title
+          .toLowerCase()
+          .includes(normalisedSearch) ||
+        material.source
+          .toLowerCase()
+          .includes(normalisedSearch)
+
+      return matchesFilter && matchesSearch
+    })
+  }, [filter, search, materials])
+
+  const formatDate = (value) => {
+    if (!value) {
+      return ''
+    }
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+      return ''
+    }
+
+    return date.toLocaleDateString()
   }
 
   const getTypeStyle = (type) => {
@@ -81,12 +163,90 @@ function SavedMaterials() {
       case 'Explanation':
         return 'bg-orange-100 text-orange-700'
 
-      case 'Study Plan':
-        return 'bg-pink-100 text-pink-700'
-
       default:
         return 'bg-gray-100 text-gray-700'
     }
+  }
+
+  const renderMaterialContent = (material) => {
+    if (
+      material.outputType === 'summary' ||
+      material.outputType === 'explanation'
+    ) {
+      return (
+        <p className="whitespace-pre-wrap leading-7 text-gray-700">
+          {material.content}
+        </p>
+      )
+    }
+
+    if (
+      material.outputType === 'flashcards' &&
+      Array.isArray(material.content)
+    ) {
+      return (
+        <div className="space-y-4">
+          {material.content.map((card, index) => (
+            <div
+              key={index}
+              className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+            >
+              <p className="font-semibold text-gray-900">
+                {index + 1}. {card.question}
+              </p>
+
+              <p className="mt-2 text-gray-700">
+                {card.answer}
+              </p>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if (
+      material.outputType === 'quiz' &&
+      Array.isArray(material.content)
+    ) {
+      return (
+        <div className="space-y-5">
+          {material.content.map((question, index) => (
+            <div
+              key={index}
+              className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+            >
+              <p className="font-semibold text-gray-900">
+                {index + 1}. {question.question}
+              </p>
+
+              {Array.isArray(question.options) && (
+                <div className="mt-3 space-y-2">
+                  {question.options.map(
+                    (option, optionIndex) => (
+                      <p
+                        key={optionIndex}
+                        className="text-sm text-gray-700"
+                      >
+                        {String.fromCharCode(
+                          65 + optionIndex
+                        )}
+                        . {option}
+                      </p>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <p className="text-gray-600">
+        This saved material could not be displayed.
+      </p>
+    )
   }
 
   return (
@@ -110,7 +270,6 @@ function SavedMaterials() {
 
         <div className="grid gap-5 md:grid-cols-2">
 
-          {/* Search */}
           <div>
 
             <label
@@ -124,14 +283,15 @@ function SavedMaterials() {
               id="saved-search"
               type="text"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) =>
+                setSearch(event.target.value)
+              }
               placeholder="Search by title or source document..."
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
           </div>
 
-          {/* Filter */}
           <div>
 
             <label
@@ -144,7 +304,9 @@ function SavedMaterials() {
             <select
               id="saved-filter"
               value={filter}
-              onChange={(event) => setFilter(event.target.value)}
+              onChange={(event) =>
+                setFilter(event.target.value)
+              }
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
 
@@ -168,10 +330,6 @@ function SavedMaterials() {
                 Explanations
               </option>
 
-              <option value="study-plan">
-                Study Plans
-              </option>
-
             </select>
 
           </div>
@@ -180,126 +338,239 @@ function SavedMaterials() {
 
       </div>
 
-      {/* Material Count */}
-      <div className="mt-6 flex items-center justify-between">
+      {loading && (
+        <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
+          <p className="text-sm text-blue-700">
+            Loading your saved materials...
+          </p>
+        </div>
+      )}
 
-        <p className="text-sm text-gray-600">
-          Showing{' '}
-          <span className="font-semibold text-gray-900">
-            {filteredMaterials.length}
-          </span>{' '}
-          saved material
-          {filteredMaterials.length !== 1 ? 's' : ''}
-        </p>
+      {error && (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
+          <p className="text-sm text-red-700">
+            {error}
+          </p>
+        </div>
+      )}
 
-      </div>
+      {!loading && !error && (
+        <>
+          {/* Material Count */}
+          <div className="mt-6 flex items-center justify-between">
 
-      {/* Saved Materials */}
-      {filteredMaterials.length > 0 ? (
+            <p className="text-sm text-gray-600">
+              Showing{' '}
+              <span className="font-semibold text-gray-900">
+                {filteredMaterials.length}
+              </span>{' '}
+              saved material
+              {filteredMaterials.length !== 1
+                ? 's'
+                : ''}
+            </p>
 
-        <div className="mt-4 grid gap-5 lg:grid-cols-2">
+          </div>
 
-          {filteredMaterials.map((material) => (
+          {/* Saved Materials */}
+          {filteredMaterials.length > 0 ? (
 
-            <div
-              key={material.id}
-              className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-            >
+            <div className="mt-4 grid gap-5 lg:grid-cols-2">
 
-              <div className="flex items-start justify-between gap-4">
+              {filteredMaterials.map(
+                (material) => (
 
-                <div className="min-w-0">
-
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getTypeStyle(
-                      material.type
-                    )}`}
+                  <div
+                    key={material.id}
+                    className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
                   >
-                    {material.type}
-                  </span>
 
-                  <h2 className="mt-3 text-lg font-semibold text-gray-900">
-                    {material.title}
-                  </h2>
+                    <div className="flex items-start justify-between gap-4">
 
-                  <p className="mt-2 break-words text-sm text-gray-500">
-                    Source: {material.source}
-                  </p>
+                      <div className="min-w-0">
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Saved: {material.createdAt}
-                  </p>
+                        <div className="flex flex-wrap items-center gap-2">
 
-                </div>
+                          <span
+                            className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getTypeStyle(
+                              material.type
+                            )}`}
+                          >
+                            {material.type}
+                          </span>
 
-              </div>
+                          {material.isAiGenerated && (
+                            <span className="inline-block rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                              AI Generated
+                            </span>
+                          )}
 
-              {/* Actions */}
-              <div className="mt-6 flex flex-wrap gap-3">
+                        </div>
 
-                <button
-                  type="button"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-                >
-                  Open
-                </button>
+                        <h2 className="mt-3 text-lg font-semibold text-gray-900">
+                          {material.title}
+                        </h2>
 
-                <button
-                  type="button"
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                >
-                  Download
-                </button>
+                        <p className="mt-2 break-words text-sm text-gray-500">
+                          Source: {material.source}
+                        </p>
 
-                <button
-                  type="button"
-                  onClick={() => handleDelete(material.id)}
-                  className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                >
-                  Delete
-                </button>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Saved:{' '}
+                          {formatDate(
+                            material.createdAt
+                          )}
+                        </p>
 
-              </div>
+                      </div>
+
+                    </div>
+
+                    <div className="mt-6">
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedMaterial(
+                            material
+                          )
+                        }
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                      >
+                        Open
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )
+              )}
 
             </div>
 
-          ))}
+          ) : (
 
-        </div>
+            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
 
-      ) : (
+              <h2 className="text-xl font-semibold text-gray-900">
+                No saved materials found
+              </h2>
 
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+              <p className="mt-2 text-gray-600">
+                {materials.length === 0
+                  ? 'Generate a summary, flashcard set, quiz or explanation to see it here.'
+                  : 'Try changing your search or filter selection.'}
+              </p>
 
-          <h2 className="text-xl font-semibold text-gray-900">
-            No saved materials found
-          </h2>
+            </div>
 
-          <p className="mt-2 text-gray-600">
-            Try changing your search or filter selection.
-          </p>
-
-        </div>
-
+          )}
+        </>
       )}
 
-      {/* Temporary Development Notice */}
-      <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-5">
+      {/* Open Material */}
+      {selectedMaterial && (
+        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
-        <h3 className="font-semibold text-blue-900">
-          Development Preview
-        </h3>
+          <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
 
-        <p className="mt-1 text-sm leading-6 text-blue-800">
-          The materials shown on this page are temporary sample data. The final
-          version will retrieve the logged-in student's saved materials from
-          the backend and database.
-        </p>
+            <div>
 
-      </div>
+              <div className="flex flex-wrap items-center gap-2">
+
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  {selectedMaterial.title}
+                </h2>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${getTypeStyle(
+                    selectedMaterial.type
+                  )}`}
+                >
+                  {selectedMaterial.type}
+                </span>
+
+              </div>
+
+              <p className="mt-2 text-sm text-gray-500">
+                Source:{' '}
+                {selectedMaterial.source}
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedMaterial(null)
+              }
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Close
+            </button>
+
+          </div>
+
+          <div className="mt-6">
+            {renderMaterialContent(
+              selectedMaterial
+            )}
+          </div>
+
+          {selectedMaterial.isAiGenerated && (
+            <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5">
+
+              <h3 className="font-semibold text-amber-900">
+                AI-Generated Content
+              </h3>
+
+              <p className="mt-1 text-sm leading-6 text-amber-800">
+                This content was generated by AI and may contain errors or omissions. Please check it against your original study material.
+              </p>
+
+            </div>
+          )}
+
+        </div>
+      )}
 
     </div>
   )
+}
+
+const getMaterialTypeLabel = (outputType) => {
+  switch (outputType) {
+    case 'summary':
+      return 'Summary'
+
+    case 'flashcards':
+      return 'Flashcards'
+
+    case 'quiz':
+      return 'Quiz'
+
+    case 'explanation':
+      return 'Explanation'
+
+    default:
+      return 'Saved Material'
+  }
+}
+
+const getMaterialTitle = (
+  outputType,
+  fileName
+) => {
+  const typeLabel =
+    getMaterialTypeLabel(outputType)
+
+  const baseName = fileName.replace(
+    /\.[^/.]+$/,
+    ''
+  )
+
+  return `${baseName} — ${typeLabel}`
 }
 
 export default SavedMaterials

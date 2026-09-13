@@ -41,3 +41,13 @@ export const submitQuizAttempt = async ({
     }
   )
 }
+
+export const getAIOutputs = async (fileId) => {
+  return apiRequest(
+    `/api/ai/outputs/${fileId}`,
+    {
+      method: 'GET',
+      requiresAuth: true,
+    }
+  )
+}
