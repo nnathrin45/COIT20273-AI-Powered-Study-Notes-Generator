@@ -12,10 +12,13 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
+const path = require("path");
 
 const {
   startServer, stopServer, request, createUser, uploadBuffer, cleanup
 } = require("../helpers/api");
+
+const mysql = require(path.join(__dirname, "..", "..", "node_modules", "mysql2", "promise"));
 
 const STUDY_TEXT =
   "Newton's second law states that force equals mass multiplied by acceleration.";
@@ -177,6 +180,50 @@ test("a document belonging to another user is reported as not found (NFR3, T-39)
   assert.strictEqual(
     res.data.code, "FILE_NOT_FOUND",
     "the API should not reveal that the file exists"
+  );
+});
+
+// ------------------------------------------------- no readable text (FR8.4)
+test("generation against a file with no extracted text advises re-uploading (FR8.4)", async () => {
+  await setConsent(user.token, "granted");
+
+  // This state cannot be produced through the upload endpoint: since the
+  // extraction guard was corrected on 10 Sep 2026 a file with no readable text
+  // is rejected at 422 before it is ever stored. The row is therefore seeded
+  // directly, which is exactly how it would arise in practice — a document
+  // stored before that fix, or written by some route other than the upload
+  // controller.
+  const conn = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+
+  const [users] = await conn.execute(
+    "SELECT user_id FROM users WHERE email = ?", [user.email]
+  );
+
+  const [inserted] = await conn.execute(
+    `INSERT INTO uploaded_files (user_id, file_name, file_path, extracted_text)
+     VALUES (?, ?, ?, ?)`,
+    [users[0].user_id, "scanned-handout.pdf", "src/uploads/seeded-empty.pdf", "   \n\t  "]
+  );
+
+  await conn.end();
+
+  const res = await generate(user.token, {
+    file_id: inserted.insertId,
+    output_type: "summary"
+  });
+
+  assert.strictEqual(res.status, 422);
+  assert.strictEqual(res.data.code, "NO_READABLE_TEXT");
+  assert.match(
+    res.data.message,
+    /text-based document/i,
+    "the message should tell the student what to do, as the upload path does"
   );
 });
 

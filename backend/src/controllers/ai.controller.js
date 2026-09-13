@@ -68,7 +68,14 @@ const generateOutput = async (req, res) => {
       return res.status(422).json({
         status: "error",
         code: "NO_READABLE_TEXT",
-        message: "This file has no extracted text to generate from"
+        // Worded to match the upload path (FR8.4). A file can only reach this
+        // state if it was stored before the extraction guard was corrected on
+        // 10 Sep 2026, or if it was written by some route other than the upload
+        // controller. Either way the student needs the same advice they would
+        // have been given at upload time, not a bare statement of the problem.
+        message: "No readable text is available for this file. " +
+                 "Scanned or image-only documents are not supported. " +
+                 "Please upload a text-based document instead."
       });
     }
 

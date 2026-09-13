@@ -117,6 +117,7 @@ The reason for automating a case the issue only asked to be performed manually i
 | T-24 | NFR1 | End-to-end summary generation timed across three ~10-page documents | Average under 60 s, no single run over 90 s | **Pass** — six measurements over two rounds, mean 28.7 s, slowest 43.0 s | 10 & 12 Sep |
 | T-30 | FR9–FR12, R1 | AI output accuracy reviewed against documents with known content | At least 4 of 5 outputs accurate, no invented facts | **Pass** — 5 of 5 accurate, no invented facts in any output | 12 Sep |
 | T-23 | NFR5 | Generation abandoned when the model does not respond in time | 504 `AI_TIMEOUT`, marked retryable, document retained | **Pass** — timeout path now covered by 9 automated tests | 13 Sep |
+| T-31 | FR8.4 | Generation requested against a stored file with no extracted text | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — message now matches the upload path | 13 Sep |
 | T-30 | — | Request an output type that is not yet implemented | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** — tested with `quiz` before it was implemented | 20 Aug |
 | T-31 | FR11.1 | Generate a practice quiz from an uploaded document | 201 with questions, options and marked answers | **Pass** — 6 questions | 20 Aug |
 | T-32 | FR11.1 | Quiz contains both multiple-choice and true/false questions | Both types present | **Pass** — 3 multiple-choice, 3 true/false | 20 Aug |
@@ -220,6 +221,16 @@ The mapping tests were confirmed non-vacuous by disabling the `AI_TIMEOUT` branc
 **Why this mattered more than its priority suggested.** T-24 measured the slowest real generation at 43.0 s against the 60 s timeout, with a standard deviation of 7.8 s across six runs — about two standard deviations of headroom. A timeout during the final demonstration is plausible rather than hypothetical, and until today the code that would have handled it had never run.
 
 **Section 5 is now empty.** Every documented behaviour of the document-processing and AI-integration subsystem has been executed at least once, and the suite stands at 70 tests.
+
+**Error message consistency corrected, 13 September 2026 (T-31, issue #101).** `NO_READABLE_TEXT` is returned from two places, and until now they said very different things. The upload path (FR8.4) explains the problem and tells the student what to do; the generation path in `ai.controller.js` returned only *"This file has no extracted text to generate from"* — the same error code, with no mention of scanned documents and no advice. Which message a student saw depended only on which endpoint they happened to reach.
+
+This was found while verifying T-26 on 10 September and deliberately left out of that issue, because it falls outside what T-26 was written to check. It was raised separately rather than folded in.
+
+The generation-path message now matches the upload path in substance and tone, worded for a file already stored rather than one being uploaded. The status code and the error code are unchanged, so no client or Postman assertion is affected.
+
+**The path is reachable, which is why it was worth fixing.** Since the `pageJoiner` correction the upload guard rejects unreadable files before they are stored, so this check no longer fires on the normal route. It remains reachable for documents stored *before* that fix — whose `extracted_text` holds only the old page markers — and for any future ingestion route that writes `uploaded_files` without passing through the upload controller. The first case is real: any database in use before 10 September may hold such rows, and a student meeting one would be told their file will not generate without being told why.
+
+Covered by an integration test in `consent-and-ai-guards.test.js`. The row has to be seeded directly, because this state can no longer be produced through the upload endpoint — which is itself a demonstration that the T-26 fix works. The test asserts on the advice rather than the full string, so the wording can be revised without breaking it, and it was confirmed to fail against the previous message. The suite now stands at 71 tests.
 ---
 
 ## 5. Not yet verified
