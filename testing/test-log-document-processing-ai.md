@@ -34,9 +34,54 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-06 | FR6.1 | Upload `.docx` via curl (`application/octet-stream`) | 201 — accepted | **Pass** — confirms extension-based validation was the correct choice | 11 Aug |
 | T-07 | NFR5 | Send a request with no file attached | 400 `NO_FILE`, no crash | **Pass** | 11 Aug |
 | T-08 | NFR3 | Request another user's file via `GET /api/uploaded/:id` | 404 | **Pass** — query is scoped by `user_id` | 11 Aug |
+| T-26 | FR8.4, SR-DP4 | Upload a scanned, image-only PDF | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — rejected after a defect in the guard was fixed, see below | 10 Sep |
+| T-25 | FR8 | Extracted text compared against three source documents of known content, one per format | Extraction succeeds with no missing sections | **Pass** — character-exact recovery for all three; no omissions | 13 Sep |
 
 **Defect found and fixed during T-06.** Validation originally checked the MIME type, which caused valid `.docx` uploads from curl to be rejected because curl sends `application/octet-stream`. Changed to extension-based validation (commit `f80c2f4`) and documented in `docs/api-spec.md`.
 
+
+**Defect found and fixed during T-26, 10 September 2026.** The scanned-PDF case was executed for the first time using a new fixture, `testing/fixtures/scanned-no-text.pdf` — three pages of study notes rasterised to bilevel images with no text layer at all. The upload was **accepted with 201** instead of being rejected.
+
+The cause was not the guard itself but what reached it. `pdf-parse` appends a page boundary marker to the text of every page by default, of the form `-- 1 of 3 --`. For the scanned document those markers were the *entire* extracted result:
+
+```
+"\n\n-- 1 of 3 --\n\n\n\n-- 2 of 3 --\n\n\n\n-- 3 of 3 --\n\n"
+```
+
+44 characters of text, none of it from the document. The FR8.4 check in `upload.controller.js` tests `extracted_text.trim().length === 0`, which could therefore never be true for any PDF, however empty. Had this reached the demonstration, a student uploading a photographed or scanned handout would have received a successful upload followed by a summary generated from nothing.
+
+The same markers were also being stored in `extracted_text` and sent to Gemini as part of the study material for every text-based PDF.
+
+Fixed by passing an empty `pageJoiner` to `getText()` in `pdf.service.js`, which is the library's supported way to disable the markers; pages remain separated by a blank line. The scanned fixture now extracts 0 characters and is rejected with 422 `NO_READABLE_TEXT`, and extracted text from a real PDF is unchanged apart from the markers being gone.
+
+Two regression tests were added to `backend/tests/integration/upload.test.js`: one uploading the scanned fixture and asserting the 422, and one asserting that no page marker survives into stored text. The suite now stands at 55 tests, all passing.
+
+This is the clearest argument so far for the automated framework introduced under issue #21: the manual `.pdf` case T-03 passed on 11 August and would have gone on passing, because a PDF with a text layer never exposes the fault.
+
+**Extraction accuracy verified, 13 September 2026 (T-25).** The metric for FR8 requires extraction to succeed across three source documents with no sections missing. Three fixtures were compared against the plain-text sources they were generated from, one per supported format.
+
+| Fixture | Format | Source characters | Lines recovered | Headings recovered |
+|---|---|---|---|---|
+| `known-doc1-software-testing.txt` | TXT | 27,912 | 123/123 | 18/18 |
+| `known-doc2-database-design.docx` | DOCX | 24,949 | 114/114 | 15/15 |
+| `known-doc3-computer-networks.pdf` | PDF | 23,754 | 101/101 | 13/13 |
+
+**No omissions were found in any of the three.** The result is stronger than the metric asks for: ignoring whitespace, the extracted text is *character-identical* to its source in every case — TXT byte-for-byte, DOCX 20,861 characters against 20,861, PDF 19,949 against 19,949. Nothing was dropped, reordered or altered, down to the individual character.
+
+**The character-count differences were investigated rather than accepted.** Each fixture reports a raw length differing slightly from its source, and the metric would have been satisfied without explaining why. Both differences are line-break formatting and neither involves content:
+
+- **DOCX, +226 characters.** `textutil` renders each source line as a paragraph and Mammoth separates paragraphs with an additional newline, so the extracted text carries exactly 452 newlines against the source's 226 — one extra per paragraph. Non-whitespace characters are identical.
+- **PDF, −91 characters.** The source is stored as one long line per paragraph, while the PDF is laid out in wrapped lines, so runs of spaces become single line breaks. Non-whitespace characters are identical.
+
+This is why the comparison is made on whitespace-stripped text. A PDF is laid out in wrapped lines and a DOCX in paragraphs, so line breaks legitimately differ from a plain-text source; the characters themselves must not.
+
+**Manual comparison.** Alongside the automated check, each document was compared by eye at three points — the opening, the midpoint and the closing lines. All three matched their sources exactly in all three documents, confirming the automated result was not an artefact of the comparison method.
+
+**Now an automated test rather than a one-off result.** `backend/tests/unit/extraction-accuracy.test.js` performs this comparison on every run: for each format it asserts character-exact recovery and the presence of every section heading. Six assertions, executing in well under a second, requiring no server, no database and no Gemini quota. The suite now stands at 61 tests, all passing.
+
+The test was confirmed non-vacuous by deleting a single sentence from the extracted text and checking that it failed, reporting the position and surrounding context of the divergence.
+
+The reason for automating a case the issue only asked to be performed manually is the `pageJoiner` defect found six days earlier under T-26. That fault sat in the extraction path from the first PDF upload in August and survived a manual test that passed, because a PDF with a text layer never exposes it. A manual comparison confirms extraction is correct on the day it is run and says nothing about the day after.
 ---
 
 ## 3. Authentication and security (supporting NFR2)
@@ -69,6 +114,10 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-27 | FR10.1 | Generate flashcards from an uploaded document | 201 with an array of question/answer records | **Pass** — 6 cards, all answerable from the source text | 20 Aug |
 | T-28 | FR10.1 | Flashcard content stored as JSON and returned parsed by `GET /api/ai/outputs/:fileId` | Array returned, not a string | **Pass** | 20 Aug |
 | T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
+| T-24 | NFR1 | End-to-end summary generation timed across three ~10-page documents | Average under 60 s, no single run over 90 s | **Pass** — six measurements over two rounds, mean 28.7 s, slowest 43.0 s | 10 & 12 Sep |
+| T-30 | FR9–FR12, R1 | AI output accuracy reviewed against documents with known content | At least 4 of 5 outputs accurate, no invented facts | **Pass** — 5 of 5 accurate, no invented facts in any output | 12 Sep |
+| T-23 | NFR5 | Generation abandoned when the model does not respond in time | 504 `AI_TIMEOUT`, marked retryable, document retained | **Pass** — timeout path now covered by 9 automated tests | 13 Sep |
+| T-31 | FR8.4 | Generation requested against a stored file with no extracted text | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — message now matches the upload path | 13 Sep |
 | T-30 | — | Request an output type that is not yet implemented | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** — tested with `quiz` before it was implemented | 20 Aug |
 | T-31 | FR11.1 | Generate a practice quiz from an uploaded document | 201 with questions, options and marked answers | **Pass** — 6 questions | 20 Aug |
 | T-32 | FR11.1 | Quiz contains both multiple-choice and true/false questions | Both types present | **Pass** — 3 multiple-choice, 3 true/false | 20 Aug |
@@ -89,19 +138,106 @@ Testing is currently manual. The project has no automated test framework yet; ad
 | T-47 | FR17.2 | Explanation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** | 20 Aug |
 | T-48 | FR6 | Upload response returns `file_id` | `file.file_id` present and usable directly in `POST /api/ai/generate` | **Pass** — removes a lookup step for the frontend | 25 Aug |
 | T-49 | NFR3 | `GET /api/uploaded` (Member 1's endpoint) returns only the authenticated user's documents | Other user sees an empty list | **Pass** — verified while documenting the endpoint; not my code | 25 Aug |
+| T-50 | FR11.2 | Quiz attempt request sizes its answer array to the generated quiz | Attempt accepted without manual editing | **Pass** — after fixing a defect in the Postman collection (see below) | 2 Sep |
+| T-51 | FR11.2 | Partial attempt via the collection's `quizAnswersPartial` variable | Recorded, unanswered questions score zero | **Pass** — 1 of 6 | 2 Sep |
+| T-52 | NFR5, R3 | Gemini daily quota exhausted during generation | 429 `AI_QUOTA_EXCEEDED` with a retry hint, not a generic 500 | **Pass** — verified against a real quota error; `retry_after_seconds: 33` | 3 Sep |
+| T-53 | NFR5 | Error classifier applied to upstream failures | 429 daily, 429 rate-limit, 503, own errors and unknown errors each classified correctly | **Pass** — 5 cases | 3 Sep |
+| T-54 | All above | Full Postman collection run, 26 requests across 6 folders | All assertions pass | **Pass** — 35 of 35 assertions, 0 failures | 7 Sep |
 
+**Independent verification by Member 1, 2 September 2026.** Christian Jeff imported the shared Postman collection and independently confirmed authentication, upload and extraction, the uploaded-files list, consent, all four AI content types, quiz scoring and history, and all eight error cases. This is the first verification of these endpoints by someone other than their author.
+
+**Defect found by Member 1 in the Postman collection.** The quiz-attempt request carried a fixed three-entry answers array, while generated quizzes contain five to ten questions, so the request failed with `400 ANSWER_COUNT_MISMATCH`. The API behaved correctly — the fault was in the collection, not the endpoint. Fixed on 2 September: the quiz generation step now builds an answer array sized to that quiz and stores it in the `quizAnswers` variable, so the attempt request works without editing. A `quizAnswersPartial` variable was added to demonstrate partial scoring, and the deliberate mismatch case in folder 5 remains fixed-length by design.
+
+**Transient failure observed by Member 1.** One explanation request returned `500 AI_GENERATION_FAILED` and succeeded immediately on retry. This is the documented behaviour for a retryable failure (NFR5) and the uploaded file was retained, so no work was lost. The underlying cause was not captured because the server log was on Member 1's machine. Recorded as an observation; if it recurs, mapping transient upstream errors to a more specific code than the generic catch-all would improve diagnostics.
+
+**Project risk R3 materialised on 3 September 2026.** During a full Postman collection run, all four AI generation requests failed. Investigation showed the cause was HTTP 429 from Gemini: the free tier permits 20 generation requests per day per model, and the day's allowance had been consumed by earlier testing. The quiz-attempt failures in the same run were a downstream consequence, as the quiz output ID was never set.
+
+The application code was not at fault, but the error handling was inadequate: a rate limit surfaced as a generic `500 AI_GENERATION_FAILED`, giving no indication that waiting would resolve it. This also explains the single transient failure reported by Member 1 on 2 September, which succeeded on retry.
+
+Fixed the same day. Upstream errors are now classified: 429 returns `AI_QUOTA_EXCEEDED` with `retry_after_seconds` and a message distinguishing a short rate-limit pause from the daily quota being exhausted; Gemini 5xx returns `AI_UNAVAILABLE`. Both are marked retryable and neither discards the uploaded document (NFR5).
+
+**Practical constraint recorded for planning:** a full collection run consumes 4 requests, so approximately 5 runs per day are available on the free tier. Validation failures do not consume quota. This should be considered when scheduling the final demonstration.
+
+**First fully clean end-to-end run, 7 September 2026.** The complete Postman collection executed with all 35 assertions passing: authentication, upload and extraction, the uploaded-files list, consent grant/revoke/restore, all four AI content types, quiz scoring and history, and all eight error cases. This is the first run in which every endpoint and every documented error code was verified in a single pass.
+
+Two collection defects were found and fixed to reach this point, neither of them faults in the API:
+
+1. **Run-order dependency.** Three folder 5 cases — `MISSING_CONCEPT`, `INVALID_LEVEL` and `FILE_NOT_FOUND` — are evaluated after the consent guard in the controller, so they require consent to be granted. The `CONSENT_REQUIRED` case ran before them and restored consent through an asynchronous call, which is not guaranteed to complete before the next request begins. `CONSENT_REQUIRED` was moved to the end of the folder so nothing following it depends on consent state.
+
+2. **File access from the Collection Runner.** Selecting the upload fixture directly from the repository appeared to work — the filename was shown in the request — but the Runner could not read it and returned `400 NO_FILE`, which cascaded into every request depending on `fileId`. Enabling *Read files outside working directory* was not sufficient. Copying the fixture into the Postman working directory resolved it. The collection now documents this, and the upload request reports the cause explicitly rather than a bare status mismatch.
+
+
+**NFR1 measured, 10 and 12 September 2026 (T-24).** Three fixtures of approximately ten pages were prepared, one per supported format, each generated from a plain-text source held in `testing/fixtures/source/`: `known-doc1-software-testing.txt` (9 pages, 27,912 characters), `known-doc2-database-design.docx` (8 pages, 25,175 characters) and `known-doc3-computer-networks.pdf` (8 pages, 23,663 characters). Summary generation was timed end to end — upload, extraction, storage, generation and response — by `testing/run-verification-suite.js`.
+
+| Document | Format | Round 1, 10 Sep | Round 2, 12 Sep |
+|---|---|---|---|
+| doc1 software testing | TXT | 25.7 s | 20.2 s |
+| doc2 database design | DOCX | 30.5 s | 27.5 s |
+| doc3 computer networks | PDF | 25.1 s | 43.0 s |
+| **Average** | | **27.1 s** | **30.2 s** |
+
+Across all six measurements the mean is 28.7 s, the median 26.6 s, the range 20.2 s to 43.0 s and the standard deviation 7.8 s. **NFR1 is met**: both rounds average well under the 60 s metric, and no single run approached the 90 s ceiling.
+
+Two observations worth carrying into the report.
+
+**Extraction is not the cost; the model is.** Upload and extraction completed in 0.0–0.1 s for every document, including the 27,912-character TXT. End-to-end time is therefore Gemini's response time almost in its entirety, and document size within this range is a weak predictor of it — the largest document was the fastest in round 2, and the same PDF took 25.1 s in one round and 43.0 s in the other. The variation is upstream load, not anything the application controls.
+
+**The 90 s ceiling cannot actually be reached.** `ai.service.js` abandons a request at `REQUEST_TIMEOUT_MS` = 60 s and returns `AI_TIMEOUT` (NFR5). Any generation that would have breached the 90 s ceiling is therefore aborted at 60 s and surfaces as a failure rather than as a slow success. The ceiling is structurally satisfied, but the metric that matters in practice is the 60 s timeout, and the slowest observed run of 43.0 s sits only about 1.4 times below it. Given a standard deviation of 7.8 s, an occasional `AI_TIMEOUT` under upstream load is plausible and should be expected rather than treated as a defect. This is the same boundary T-23 is written against and strengthens the case for executing it.
+
+Two rounds were run on separate dates deliberately. Round 1 preceded the `pageJoiner` fix of 10 September, so its PDF figure was measured against extraction that still carried page markers; round 2 confirms the result on the current code. Raw timings for each round are retained in `testing/verification-results-2026-09-10.json` and `testing/verification-results-2026-09-12.json`.
+
+**AI output accuracy reviewed, 12 September 2026 (T-30, risk R1).** The quality metric for R1 requires at least 4 of 5 generated outputs to be verified accurate against source material with no invented facts. Five outputs were generated from the three known-content fixtures — a summary from each, plus flashcards from the DOCX and a practice quiz from the PDF — and each was read against its source in full. The outputs, the automated signals and the written verdict for each are retained in `testing/ai-accuracy-review-2026-09-12.md`.
+
+| Output | Format | Length | Verdict |
+|---|---|---|---|
+| doc1 summary | TXT | 1,056 words | Accurate |
+| doc2 summary | DOCX | 935 words | Accurate |
+| doc3 summary | PDF | 1,064 words | Accurate |
+| doc2 flashcards | DOCX | 11 cards | Accurate |
+| doc3 quiz | PDF | 7 questions | Accurate |
+
+**5 of 5 accurate, against a metric of 4 of 5.** No output asserted a fact absent from its source. Verification concentrated on the details most likely to be got wrong rather than on general impressions: in doc3, the 48-bit MAC address, 32-bit IPv4 and 128-bit IPv6, the eight-byte UDP header, and the host-address formula; in doc2, the SQL logical evaluation order, aggregate functions ignoring nulls except `COUNT(*)`, and the BCNF determinant rule; in doc1, all seven testing principles and the direction of the coverage implication. All correct. Every quiz answer was verifiable from the source and every `correct_answer` repeated one of its own options word for word, so all seven questions were scoreable.
+
+**The one deviation found, recorded because it qualifies the result.** The doc3 summary introduced standard terminology that appears nowhere in its source — CSMA/CA, WPA2, WPA3, WEP and CDN — as labels for mechanisms the source describes only in longhand. Every label is correctly applied, so no statement is false, and a student would be helped rather than misled. But the prompt instructs the model to use only information present in the material, and this vocabulary comes from the model's own knowledge. The useful conclusion for the report is narrow and worth stating plainly: the grounding instruction constrained *claims* reliably across all five outputs, and constrained *vocabulary* less reliably. R1 is therefore mitigated rather than eliminated, which is also why the AI-generated disclaimer (FR16.1) remains necessary.
+
+**On the automated signals.** The suite reports a vocabulary-overlap percentage and a key-concept count beside each output. These proved useful only for directing attention, not for judging quality. Overlap sits between 55.7% and 80.7% across the five outputs, and the terms counted as absent from the source are overwhelmingly ordinary paraphrase — *determine*, *providing*, *whereas* — which is exactly what a good summary in the model's own words should produce. Concept coverage is length-sensitive: the quiz scored 2 of 10 because seven questions address seven points of a whole document, which is correct behaviour rather than a defect. Both figures are retained as evidence of what was checked, but the verdict in every case rests on reading the output against the source.
+
+A defect in the signal itself was found and fixed before the review: flashcards and quizzes were being stringified as raw JSON, so keys and values ran together into tokens such as `typemultiple` and `choicequestion`, none of which occur in any source. The first quiz measured 51.6% overlap for this reason alone; comparing only the human-readable string values raised it to 80.7%. The earlier figure was an artefact of the measurement, not of the output.
+
+**Timeout handling verified, 13 September 2026 (T-23).** This was the last case standing in section 5, recorded since August as blocked because Gemini cannot be made slow on demand and no suite can wait a real minute for a timeout to elapse. Both obstacles were removed rather than worked around, and the path is now covered by nine automated tests that make no Gemini call and consume no quota.
+
+What was previously covered was only the tail of the path: an existing unit test confirmed that an error already carrying `AI_TIMEOUT` survived classification. The race that produces it, the mapping to a response, and the consequences for the student's uploaded document had never executed.
+
+**Change to the production code.** `REQUEST_TIMEOUT_MS` now reads `AI_REQUEST_TIMEOUT_MS` from the environment and falls back to 60,000 ms, so behaviour is unchanged unless it is deliberately overridden. The race was extracted from `generate()` into `raceAgainstTimeout(request, timeoutMs)`, which takes the duration as an argument. The same code path that runs in production therefore runs in the tests, in milliseconds, against a request that never settles.
+
+Extracting the race exposed a real defect. The original timer was never cleared once the race settled, so every successful generation left a `setTimeout` pending for the remainder of the 60 seconds. In the server this was harmless — the process is long-lived and the timer eventually fired against an already-settled promise — but it would have held the event loop open in any short-lived process, and it is the kind of leak that is invisible until something depends on a clean exit. `raceAgainstTimeout` now clears the timer in a `finally`, and a test asserts that no timer outlives the race.
+
+**Unit coverage (5 tests, `tests/unit/ai-timeout.test.js`).** A request that never returns is rejected as `AI_TIMEOUT`, and not before the timeout has actually elapsed. A request that returns in time is unaffected. A request that fails on its own merits keeps its own error rather than being relabelled a timeout — a mistake that would have hidden the quota handling added on 3 September. The 60-second default is asserted explicitly, because the tests override the duration per call and a change to the constant would otherwise pass unnoticed. And no timer outlives the race.
+
+**Integration coverage (4 tests, `tests/integration/ai-timeout-handling.test.js`).** The timeout is provoked by replacing `ai.service.generate` before the controller is required, so the real controller, the real database and the real HTTP server are all exercised without an upstream call. The request is reported as **504 `AI_TIMEOUT`** with `retryable: true` and a message telling the student to try again. The uploaded document survives: it is read back over HTTP afterwards with its extracted text intact, so nothing has to be uploaded a second time (NFR5). No partial output is left behind in `ai_outputs`. And a retry against the same document then succeeds, leaving exactly one stored output — the point of the requirement, verified end to end rather than inferred.
+
+The mapping tests were confirmed non-vacuous by disabling the `AI_TIMEOUT` branch in the controller and checking that they failed. The two retention tests continue to pass under that mutation, correctly, because retention does not depend on which status code is returned.
+
+**Why this mattered more than its priority suggested.** T-24 measured the slowest real generation at 43.0 s against the 60 s timeout, with a standard deviation of 7.8 s across six runs — about two standard deviations of headroom. A timeout during the final demonstration is plausible rather than hypothetical, and until today the code that would have handled it had never run.
+
+**Section 5 is now empty.** Every documented behaviour of the document-processing and AI-integration subsystem has been executed at least once, and the suite stands at 70 tests.
+
+**Error message consistency corrected, 13 September 2026 (T-31, issue #101).** `NO_READABLE_TEXT` is returned from two places, and until now they said very different things. The upload path (FR8.4) explains the problem and tells the student what to do; the generation path in `ai.controller.js` returned only *"This file has no extracted text to generate from"* — the same error code, with no mention of scanned documents and no advice. Which message a student saw depended only on which endpoint they happened to reach.
+
+This was found while verifying T-26 on 10 September and deliberately left out of that issue, because it falls outside what T-26 was written to check. It was raised separately rather than folded in.
+
+The generation-path message now matches the upload path in substance and tone, worded for a file already stored rather than one being uploaded. The status code and the error code are unchanged, so no client or Postman assertion is affected.
+
+**The path is reachable, which is why it was worth fixing.** Since the `pageJoiner` correction the upload guard rejects unreadable files before they are stored, so this check no longer fires on the normal route. It remains reachable for documents stored *before* that fix — whose `extracted_text` holds only the old page markers — and for any future ingestion route that writes `uploaded_files` without passing through the upload controller. The first case is real: any database in use before 10 September may hold such rows, and a student meeting one would be told their file will not generate without being told why.
+
+Covered by an integration test in `consent-and-ai-guards.test.js`. The row has to be seeded directly, because this state can no longer be produced through the upload endpoint — which is itself a demonstration that the T-26 fix works. The test asserts on the advice rather than the full string, so the wording can be revised without breaking it, and it was confirmed to fail against the previous message. The suite now stands at 71 tests.
 ---
 
 ## 5. Not yet verified
 
 Recorded explicitly so that untested behaviour is not mistaken for working behaviour.
 
-| ID | Test | Blocked by |
-|---|---|---|
-| T-23 | `AI_TIMEOUT` returned when Gemini exceeds 60 s | Hard to trigger deliberately; needs an induced slow response |
-| T-24 | End-to-end time under 60 s for a 10-page document (NFR1) | Needs three 10-page fixtures; a short document measured 27.3 s on 20 Aug |
-| T-25 | Extraction accuracy against 3 known source documents (FR8 metric) | Not yet performed |
-| T-26 | Scanned/image-only PDF returns 422 `NO_READABLE_TEXT` (FR8.4) | No scanned test document prepared |
+_Nothing outstanding._ T-23, the last entry, was executed on 13 September 2026; see section 4. Every documented behaviour of this subsystem has now been executed at least once.
 
 **Consent enforcement metric now met.** T-20, T-21 and T-22 were executed on 20 August via `testing/verify-ai-generation.js`. Both refusal paths — never consented, and consent revoked — returned 403 `CONSENT_REQUIRED`, and generation succeeded only while consent was granted. The quality metric requiring 100% of unconsented generation attempts to be refused is therefore satisfied for the summary output type, and will need re-running as each further output type is added.
 
@@ -109,8 +245,8 @@ Recorded explicitly so that untested behaviour is not mistaken for working behav
 
 ## 6. Actions arising
 
-1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. T-23 and T-24 remain.
-2. Prepare a scanned PDF as a fixture and execute T-26.
-3. Assemble three source documents with known content for the extraction-accuracy metric (T-25).
-4. Introduce an automated test framework so these cases run on every change rather than manually.
+1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-30 accuracy reviewed against R1.~~ Completed 12 September. ~~T-23 timeout handling verified.~~ Completed 13 September.
+2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
+3. ~~Assemble three source documents with known content for the extraction-accuracy metric (T-25).~~ Completed 13 September; character-exact recovery across all three formats, now covered by an automated test.
+4. ~~Introduce an automated test framework so these cases run on every change rather than manually.~~ Completed 10 September (issue #21); extended to 61 tests as each remaining case was executed.
 5. Create `backend/src/uploads/` on any new machine before testing uploads — the directory is gitignored and does not arrive with a clone, so the first upload otherwise fails with `ENOENT`.

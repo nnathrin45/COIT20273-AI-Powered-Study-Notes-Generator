@@ -9,8 +9,10 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 // testing to documents of up to 10 pages or 50,000 characters (NFR1).
 const MAX_INPUT_CHARS = 50000;
 
-// Beyond this the request is abandoned so the caller can offer a retry (NFR5)
-const REQUEST_TIMEOUT_MS = 60000;
+// Beyond this the request is abandoned so the caller can offer a retry (NFR5).
+// Configurable so the timeout path can be exercised in a test without waiting a
+// real minute (T-23); production behaviour is unchanged unless it is set.
+const REQUEST_TIMEOUT_MS = Number(process.env.AI_REQUEST_TIMEOUT_MS) || 60000;
 
 let client = null;
 
@@ -247,17 +249,79 @@ const buildPrompt = (text, outputType, options = {}) => {
 };
 
 // SR-AI1 to SR-AI3 - send the prompt to Gemini and return the generated text
-const generate = async (text, outputType, options = {}) => {
-  const prompt = buildPrompt(text, outputType, options);
-  const ai = getClient();
+// Translate an error from the Gemini SDK into one of our own codes.
+// Without this, a rate limit and a genuine bug both surface as a generic
+// failure, so the interface cannot tell the user that waiting will help.
+// Added 3 Sep 2026 after the free-tier daily quota (20 requests) was reached
+// during Postman testing — project risk R3.
+const classifyUpstreamError = (error) => {
+  // Errors we raised ourselves already carry a code; pass them straight through
+  if (error.code) {
+    return error;
+  }
+
+  const status = error.status || (error.response && error.response.status);
+  const text = String(error.message || "");
+
+  // 429 - rate limited or daily quota exhausted. Both clear with time, so the
+  // retry delay is extracted where the API supplies one.
+  if (status === 429 || text.includes("RESOURCE_EXHAUSTED")) {
+    const seconds = readRetryDelay(text);
+    const quotaExhausted = text.includes("PerDay") || text.includes("per day");
+
+    const err = new Error("Gemini quota or rate limit reached");
+    err.code = "AI_QUOTA_EXCEEDED";
+    err.retryAfterSeconds = seconds;
+    err.quotaExhausted = quotaExhausted;
+    return err;
+  }
+
+  // 5xx from Google - the service is unavailable rather than our request being
+  // wrong, so a retry is worth offering
+  if (status >= 500 && status < 600) {
+    const err = new Error("Gemini service is unavailable");
+    err.code = "AI_UNAVAILABLE";
+    return err;
+  }
+
+  return error;
+};
+
+// The API reports a retry delay as e.g. "retryDelay":"22s" or
+// "Please retry in 22.8s". Returns whole seconds, or null if absent.
+const readRetryDelay = (text) => {
+  const match =
+    text.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/) ||
+    text.match(/retry in (\d+(?:\.\d+)?)\s*s/i);
+
+  return match ? Math.ceil(Number(match[1])) : null;
+};
+
+// NFR5 - abandon a request that is taking too long so the caller can offer a
+// retry, rather than leaving the student waiting indefinitely. Extracted from
+// generate() so the race can be verified directly, without a Gemini call and
+// without waiting for the real timeout to elapse (T-23).
+//
+// The timer is cleared once the race settles. Left running it would hold the
+// event loop open for the remainder of the timeout, which in a test suite means
+// the process does not exit when the tests finish.
+const raceAgainstTimeout = (request, timeoutMs = REQUEST_TIMEOUT_MS) => {
+  let timer;
 
   const timeout = new Promise((_, reject) => {
-    setTimeout(() => {
+    timer = setTimeout(() => {
       const error = new Error("Gemini request timed out");
       error.code = "AI_TIMEOUT";
       reject(error);
-    }, REQUEST_TIMEOUT_MS);
+    }, timeoutMs);
   });
+
+  return Promise.race([request, timeout]).finally(() => clearTimeout(timer));
+};
+
+const generate = async (text, outputType, options = {}) => {
+  const prompt = buildPrompt(text, outputType, options);
+  const ai = getClient();
 
   const isStructured = Boolean(STRUCTURED[outputType]);
 
@@ -269,7 +333,12 @@ const generate = async (text, outputType, options = {}) => {
     config: isStructured ? { responseMimeType: "application/json" } : {}
   });
 
-  const response = await Promise.race([request, timeout]);
+  let response;
+  try {
+    response = await raceAgainstTimeout(request);
+  } catch (error) {
+    throw classifyUpstreamError(error);
+  }
 
   const generated = (response.text || "").trim();
 
@@ -309,5 +378,13 @@ module.exports = {
   generate,
   LEVELS,
   MAX_INPUT_CHARS,
-  MODEL
+  MODEL,
+
+  // Exposed for automated testing. These are pure functions, so they can be
+  // verified without a server, a database or a call to the Gemini API — which
+  // matters because the free tier allows only 20 requests per day (risk R3).
+  parseStructured: STRUCTURED,
+  classifyUpstreamError,
+  raceAgainstTimeout,
+  REQUEST_TIMEOUT_MS
 };

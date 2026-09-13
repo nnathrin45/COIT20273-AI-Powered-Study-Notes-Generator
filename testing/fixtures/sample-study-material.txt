@@ -1,0 +1,18 @@
+Cellular Respiration
+
+Cellular respiration is the process by which cells release energy stored in glucose
+and convert it into ATP, the molecule cells use for energy.
+
+There are three main stages. Glycolysis occurs in the cytoplasm and breaks one glucose
+molecule into two pyruvate molecules, producing a net gain of two ATP. The Krebs cycle,
+also called the citric acid cycle, takes place in the mitochondrial matrix and releases
+carbon dioxide while producing NADH and FADH2. The electron transport chain occurs across
+the inner mitochondrial membrane and produces the majority of the ATP, around 34 molecules
+per glucose.
+
+Aerobic respiration requires oxygen and produces roughly 36 to 38 ATP per glucose molecule.
+Anaerobic respiration occurs without oxygen and produces only two ATP, with lactic acid or
+ethanol as a by-product.
+
+Oxygen acts as the final electron acceptor in the electron transport chain. Without oxygen,
+the chain stops and the cell must rely on anaerobic pathways.

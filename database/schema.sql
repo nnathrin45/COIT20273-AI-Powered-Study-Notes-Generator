@@ -67,8 +67,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-
--- Study Planner plans (Member 2)
+-- Study Planner plans
 CREATE TABLE IF NOT EXISTS study_plans (
   plan_id          INT AUTO_INCREMENT PRIMARY KEY,
   user_id          INT NOT NULL,

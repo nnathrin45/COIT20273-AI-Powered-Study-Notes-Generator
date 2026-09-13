@@ -68,7 +68,14 @@ const generateOutput = async (req, res) => {
       return res.status(422).json({
         status: "error",
         code: "NO_READABLE_TEXT",
-        message: "This file has no extracted text to generate from"
+        // Worded to match the upload path (FR8.4). A file can only reach this
+        // state if it was stored before the extraction guard was corrected on
+        // 10 Sep 2026, or if it was written by some route other than the upload
+        // controller. Either way the student needs the same advice they would
+        // have been given at upload time, not a bare statement of the problem.
+        message: "No readable text is available for this file. " +
+                 "Scanned or image-only documents are not supported. " +
+                 "Please upload a text-based document instead."
       });
     }
 
@@ -141,6 +148,34 @@ const generateOutput = async (req, res) => {
         status: "error",
         code: "AI_TIMEOUT",
         message: "The AI service took too long to respond. Please try again.",
+        retryable: true
+      });
+    }
+
+    // R3 - the free tier allows a limited number of requests per day. This is
+    // retryable, but the wait may be minutes or until the quota resets, so it is
+    // reported separately from a transient failure.
+    if (error.code === "AI_QUOTA_EXCEEDED") {
+      return res.status(429).json({
+        status: "error",
+        code: "AI_QUOTA_EXCEEDED",
+        message: error.quotaExhausted
+          ? "The daily AI usage limit has been reached. Your document has been " +
+            "saved and you can generate content again tomorrow."
+          : "The AI service is receiving too many requests right now. " +
+            "Please wait a moment and try again.",
+        retryable: true,
+        ...(error.retryAfterSeconds
+          ? { retry_after_seconds: error.retryAfterSeconds }
+          : {})
+      });
+    }
+
+    if (error.code === "AI_UNAVAILABLE") {
+      return res.status(503).json({
+        status: "error",
+        code: "AI_UNAVAILABLE",
+        message: "The AI service is temporarily unavailable. Please try again shortly.",
         retryable: true
       });
     }
