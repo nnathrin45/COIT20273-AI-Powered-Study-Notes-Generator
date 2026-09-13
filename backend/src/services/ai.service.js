@@ -9,8 +9,10 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 // testing to documents of up to 10 pages or 50,000 characters (NFR1).
 const MAX_INPUT_CHARS = 50000;
 
-// Beyond this the request is abandoned so the caller can offer a retry (NFR5)
-const REQUEST_TIMEOUT_MS = 60000;
+// Beyond this the request is abandoned so the caller can offer a retry (NFR5).
+// Configurable so the timeout path can be exercised in a test without waiting a
+// real minute (T-23); production behaviour is unchanged unless it is set.
+const REQUEST_TIMEOUT_MS = Number(process.env.AI_REQUEST_TIMEOUT_MS) || 60000;
 
 let client = null;
 
@@ -295,17 +297,31 @@ const readRetryDelay = (text) => {
   return match ? Math.ceil(Number(match[1])) : null;
 };
 
-const generate = async (text, outputType, options = {}) => {
-  const prompt = buildPrompt(text, outputType, options);
-  const ai = getClient();
+// NFR5 - abandon a request that is taking too long so the caller can offer a
+// retry, rather than leaving the student waiting indefinitely. Extracted from
+// generate() so the race can be verified directly, without a Gemini call and
+// without waiting for the real timeout to elapse (T-23).
+//
+// The timer is cleared once the race settles. Left running it would hold the
+// event loop open for the remainder of the timeout, which in a test suite means
+// the process does not exit when the tests finish.
+const raceAgainstTimeout = (request, timeoutMs = REQUEST_TIMEOUT_MS) => {
+  let timer;
 
   const timeout = new Promise((_, reject) => {
-    setTimeout(() => {
+    timer = setTimeout(() => {
       const error = new Error("Gemini request timed out");
       error.code = "AI_TIMEOUT";
       reject(error);
-    }, REQUEST_TIMEOUT_MS);
+    }, timeoutMs);
   });
+
+  return Promise.race([request, timeout]).finally(() => clearTimeout(timer));
+};
+
+const generate = async (text, outputType, options = {}) => {
+  const prompt = buildPrompt(text, outputType, options);
+  const ai = getClient();
 
   const isStructured = Boolean(STRUCTURED[outputType]);
 
@@ -319,7 +335,7 @@ const generate = async (text, outputType, options = {}) => {
 
   let response;
   try {
-    response = await Promise.race([request, timeout]);
+    response = await raceAgainstTimeout(request);
   } catch (error) {
     throw classifyUpstreamError(error);
   }
@@ -368,5 +384,7 @@ module.exports = {
   // verified without a server, a database or a call to the Gemini API — which
   // matters because the free tier allows only 20 requests per day (risk R3).
   parseStructured: STRUCTURED,
-  classifyUpstreamError
+  classifyUpstreamError,
+  raceAgainstTimeout,
+  REQUEST_TIMEOUT_MS
 };
