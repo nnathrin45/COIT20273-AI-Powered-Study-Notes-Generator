@@ -115,9 +115,9 @@ The reason for automating a case the issue only asked to be performed manually i
 | T-28 | FR10.1 | Flashcard content stored as JSON and returned parsed by `GET /api/ai/outputs/:fileId` | Array returned, not a string | **Pass** | 20 Aug |
 | T-29 | FR17.2 | Flashcard generation refused after consent is revoked | 403 `CONSENT_REQUIRED` | **Pass** — consent applies to every output type | 20 Aug |
 | T-24 | NFR1 | End-to-end summary generation timed across three ~10-page documents | Average under 60 s, no single run over 90 s | **Pass** — six measurements over two rounds, mean 28.7 s, slowest 43.0 s | 10 & 12 Sep |
-| T-30 | FR9–FR12, R1 | AI output accuracy reviewed against documents with known content | At least 4 of 5 outputs accurate, no invented facts | **Pass** — 5 of 5 accurate, no invented facts in any output | 12 Sep |
+| T-55 | FR9–FR12, R1 | AI output accuracy reviewed against documents with known content | At least 4 of 5 outputs accurate, no invented facts | **Pass** — 5 of 5 accurate, no invented facts in any output | 12 Sep |
 | T-23 | NFR5 | Generation abandoned when the model does not respond in time | 504 `AI_TIMEOUT`, marked retryable, document retained | **Pass** — timeout path now covered by 9 automated tests | 13 Sep |
-| T-31 | FR8.4 | Generation requested against a stored file with no extracted text | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — message now matches the upload path | 13 Sep |
+| T-56 | FR8.4 | Generation requested against a stored file with no extracted text | 422 `NO_READABLE_TEXT`, with advice to upload a text-based document | **Pass** — message now matches the upload path | 13 Sep |
 | T-30 | — | Request an output type that is not yet implemented | 400 `UNSUPPORTED_OUTPUT_TYPE` | **Pass** — tested with `quiz` before it was implemented | 20 Aug |
 | T-31 | FR11.1 | Generate a practice quiz from an uploaded document | 201 with questions, options and marked answers | **Pass** — 6 questions | 20 Aug |
 | T-32 | FR11.1 | Quiz contains both multiple-choice and true/false questions | Both types present | **Pass** — 3 multiple-choice, 3 true/false | 20 Aug |
@@ -186,7 +186,7 @@ Two observations worth carrying into the report.
 
 Two rounds were run on separate dates deliberately. Round 1 preceded the `pageJoiner` fix of 10 September, so its PDF figure was measured against extraction that still carried page markers; round 2 confirms the result on the current code. Raw timings for each round are retained in `testing/verification-results-2026-09-10.json` and `testing/verification-results-2026-09-12.json`.
 
-**AI output accuracy reviewed, 12 September 2026 (T-30, risk R1).** The quality metric for R1 requires at least 4 of 5 generated outputs to be verified accurate against source material with no invented facts. Five outputs were generated from the three known-content fixtures — a summary from each, plus flashcards from the DOCX and a practice quiz from the PDF — and each was read against its source in full. The outputs, the automated signals and the written verdict for each are retained in `testing/ai-accuracy-review-2026-09-12.md`.
+**AI output accuracy reviewed, 12 September 2026 (T-55, risk R1).** The quality metric for R1 requires at least 4 of 5 generated outputs to be verified accurate against source material with no invented facts. Five outputs were generated from the three known-content fixtures — a summary from each, plus flashcards from the DOCX and a practice quiz from the PDF — and each was read against its source in full. The outputs, the automated signals and the written verdict for each are retained in `testing/ai-accuracy-review-2026-09-12.md`.
 
 | Output | Format | Length | Verdict |
 |---|---|---|---|
@@ -222,7 +222,7 @@ The mapping tests were confirmed non-vacuous by disabling the `AI_TIMEOUT` branc
 
 **Section 5 is now empty.** Every documented behaviour of the document-processing and AI-integration subsystem has been executed at least once, and the suite stands at 70 tests.
 
-**Error message consistency corrected, 13 September 2026 (T-31, issue #101).** `NO_READABLE_TEXT` is returned from two places, and until now they said very different things. The upload path (FR8.4) explains the problem and tells the student what to do; the generation path in `ai.controller.js` returned only *"This file has no extracted text to generate from"* — the same error code, with no mention of scanned documents and no advice. Which message a student saw depended only on which endpoint they happened to reach.
+**Error message consistency corrected, 13 September 2026 (T-56, issue #101).** `NO_READABLE_TEXT` is returned from two places, and until now they said very different things. The upload path (FR8.4) explains the problem and tells the student what to do; the generation path in `ai.controller.js` returned only *"This file has no extracted text to generate from"* — the same error code, with no mention of scanned documents and no advice. Which message a student saw depended only on which endpoint they happened to reach.
 
 This was found while verifying T-26 on 10 September and deliberately left out of that issue, because it falls outside what T-26 was written to check. It was raised separately rather than folded in.
 
@@ -245,7 +245,7 @@ _Nothing outstanding._ T-23, the last entry, was executed on 13 September 2026; 
 
 ## 6. Actions arising
 
-1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-30 accuracy reviewed against R1.~~ Completed 12 September. ~~T-23 timeout handling verified.~~ Completed 13 September.
+1. ~~Obtain a Gemini API key and execute T-19 to T-22.~~ Completed 20 August. ~~T-24 measured against NFR1.~~ ~~T-55 accuracy reviewed against R1.~~ Completed 12 September. ~~T-23 timeout handling verified.~~ Completed 13 September.
 2. ~~Prepare a scanned PDF as a fixture and execute T-26.~~ Completed 10 September; a defect was found and fixed, see section 2.
 3. ~~Assemble three source documents with known content for the extraction-accuracy metric (T-25).~~ Completed 13 September; character-exact recovery across all three formats, now covered by an automated test.
 4. ~~Introduce an automated test framework so these cases run on every change rather than manually.~~ Completed 10 September (issue #21); extended to 61 tests as each remaining case was executed.
