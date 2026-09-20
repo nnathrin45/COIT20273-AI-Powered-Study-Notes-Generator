@@ -473,70 +473,141 @@ Verify frontend behaviour when a user attempts to upload an unsupported file typ
 
 - Unsupported file is rejected.
 - User receives clear feedback.
+- Upload cannot proceed.
 - Application remains functional.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+- An unsupported file type was selected.
+- The application displayed:
+  `Unsupported file type. Please select a PDF, DOCX or TXT file.`
+- The Upload Material button remained disabled.
+- The unsupported file could not be submitted.
+- The page remained usable.
 
 **Result:**  
-Pending
+PASS
+
+**Evidence / Notes:**  
+Screenshot evidence confirms that unsupported file types are blocked before upload and the user receives clear validation feedback.
 
 ---
 
 ## ERR-FINAL-03 – Oversized Upload
 
 **Objective:**  
-Verify frontend behaviour when a file exceeds the configured upload size limit.
+Verify frontend behaviour when a supported file exceeds the configured 15 MB upload limit.
 
 **Expected Result:**
 
 - Oversized file is rejected.
-- Appropriate feedback is displayed.
-- Application does not crash or become unresponsive.
+- Clear validation feedback is displayed.
+- Upload cannot proceed.
+- Application remains usable.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+- A supported TXT file larger than the configured 15 MB limit was selected.
+- The application displayed:
+  `The selected file is larger than the 15 MB limit.`
+- The Upload Material button remained disabled.
+- The oversized file could not be submitted.
+- The page remained stable and usable.
 
 **Result:**  
-Pending
+PASS
+
+**Evidence / Notes:**  
+Screenshot evidence confirms that the frontend correctly prevents files larger than 15 MB from being uploaded and provides clear feedback to the user.
 
 ---
 
 ## ERR-FINAL-04 – Unreadable or Empty Document
 
 **Objective:**  
-Verify behaviour when an uploaded document contains no usable readable text.
+Verify application behaviour when a supported document contains no readable study content.
+
+**Test Cases:**
+
+1. Empty TXT document
+2. Empty DOCX document
 
 **Expected Result:**
 
-- Document is rejected or clearly reported as unreadable.
-- User receives an understandable error message.
-- No invalid study material is created.
+- Supported file type may be selected.
+- Document processing detects that no usable text is available.
+- The document is not accepted as usable study material.
+- A clear error message is displayed.
+- Application remains stable.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+### Empty TXT
+
+- An empty TXT file was selected.
+- The application detected that no readable text could be extracted.
+- The following error message was displayed:
+
+  `No readable text could be extracted from this document. Scanned or image-only documents are not supported.`
+
+### Empty DOCX
+
+- An empty DOCX file was selected.
+- The application detected that no readable text could be extracted.
+- The following error message was displayed:
+
+  `No readable text could be extracted from this document. Scanned or image-only documents are not supported.`
+
+- The application remained stable during both tests.
 
 **Result:**  
-Pending
+PASS
+
+**Evidence / Notes:**  
+Both TXT and DOCX documents with no readable content were correctly identified as unusable study material. Screenshot evidence was captured for both supported file formats.
 
 ---
 
-## ERR-FINAL-05 – Missing Resource
+## ERR-FINAL-05 – Missing Resource / Uploaded File Deletion
 
 **Objective:**  
-Verify frontend behaviour when a requested resource no longer exists or cannot be found.
+Verify that an authenticated user can delete one of their uploaded study documents and that the deleted resource does not remain available in the frontend after refresh.
+
+**Steps:**
+
+1. Opened the Upload Material page.
+2. Loaded the authenticated user's existing uploaded materials.
+3. Selected an uploaded document for deletion.
+4. Confirmed the deletion.
+5. Observed the frontend response.
+6. Refreshed the uploaded-material list.
+7. Refreshed the browser page.
+8. Reviewed the browser console for unexpected errors.
 
 **Expected Result:**
 
-- Application handles the missing resource without crashing.
-- Appropriate user feedback is displayed.
-- No unrelated user data is exposed.
+- The selected file is deleted successfully.
+- The deleted file disappears from the uploaded-material list.
+- The deleted file does not return after list refresh.
+- The deleted file does not return after browser refresh.
+- The application remains stable.
+- No unrelated user data is displayed or affected.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+- The delete operation completed successfully.
+- The backend deletion request returned HTTP 200.
+- A successful deletion message was displayed.
+- The deleted file disappeared immediately from the uploaded-material list.
+- The deleted file did not return after selecting Refresh.
+- The deleted file did not return after browser refresh.
+- No unexpected console errors occurred.
 
 **Result:**  
-Pending
+PASS
+
+**Evidence / Notes:**  
+The Upload Material page was extended with a live `Your Uploaded Materials` section using the existing authenticated uploaded-file API. Users can now review their own uploaded source documents and securely delete them through the existing backend deletion endpoint.
 
 ---
 
