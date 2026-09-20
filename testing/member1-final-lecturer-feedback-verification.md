@@ -299,10 +299,12 @@ Verify that Sign Out correctly ends the frontend authenticated session.
 
 **Steps:**
 
-1. Login using valid credentials.
-2. Confirm that a protected page is accessible.
-3. Select Sign Out.
-4. Observe the resulting application state.
+1. Logged in using valid credentials.
+2. Confirmed that the authentication token was present in Local Storage.
+3. Selected Sign Out.
+4. Observed the resulting application state.
+5. Rechecked Local Storage.
+6. Reviewed the browser console.
 
 **Expected Result:**
 
@@ -310,14 +312,21 @@ Verify that Sign Out correctly ends the frontend authenticated session.
 - User is redirected away from protected functionality.
 - Protected pages are no longer accessible through normal navigation.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+- Valid login completed successfully before Sign Out.
+- Authentication token was present before Sign Out.
+- Sign Out completed successfully.
+- Authentication token was removed from Local Storage.
+- User was redirected to the Login page.
+- Protected content did not remain visible.
+- No unexpected console errors occurred.
 
 **Result:**  
-Pending
+PASS
 
 **Evidence / Notes:**  
-Pending
+The Sign Out function correctly removed the stored authentication token and returned the user to the Login page without exposing protected content or generating unexpected frontend errors.
 
 ---
 
@@ -328,25 +337,35 @@ Verify that a user cannot return to protected functionality after signing out.
 
 **Steps:**
 
-1. Login.
-2. Sign out.
-3. Attempt to revisit a previously accessed protected route.
-4. Test browser Back navigation where appropriate.
+1. Logged in using valid credentials.
+2. Signed out successfully.
+3. Attempted direct access to `/dashboard`.
+4. Used the browser Back button.
+5. Attempted direct access to `/progress`.
+6. Checked for private data and unexpected console errors.
 
 **Expected Result:**
 
-- Protected application content remains inaccessible.
-- User is redirected to Login when authentication is required.
-- Previously authenticated functionality cannot be restored without logging in again.
+- Protected application content remains inaccessible after Sign Out.
+- Direct protected-route access redirects to Login.
+- Browser history does not restore protected functionality.
+- No private user information is exposed.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+- Test started while signed out.
+- Direct `/dashboard` access was blocked.
+- User was redirected to Login.
+- Browser Back did not restore protected content.
+- Direct `/progress` access was blocked.
+- No private user data was visible.
+- No unexpected console errors occurred.
 
 **Result:**  
-Pending
+PASS
 
 **Evidence / Notes:**  
-Pending
+The application correctly prevented access to protected frontend routes after Sign Out, including direct URL access and browser-history navigation.
 
 ---
 
@@ -359,31 +378,44 @@ Verify that the frontend does not expose one user's private study data to anothe
 
 - Test User A exists.
 - Test User B exists.
-- User A has at least one saved/private resource.
+- User A has private study data stored in the application.
 
 **Steps:**
 
-1. Login as User A.
-2. Confirm User A's resources.
-3. Sign out.
-4. Login as User B.
-5. Check Uploaded Materials, Saved Materials, Study Planner, Progress and other user-specific pages.
-6. Attempt relevant integrated workflows that could expose User A resources.
+1. Logged in as User A.
+2. Confirmed that User A had private application data.
+3. Signed out User A.
+4. Logged in as User B.
+5. Reviewed Uploaded Materials.
+6. Reviewed Saved Materials.
+7. Reviewed Study Planner.
+8. Reviewed Progress.
+9. Checked the browser console for unexpected errors.
 
 **Expected Result:**
 
-- User B cannot see User A's private resources.
-- User B sees only resources associated with their own account.
-- Cross-user private information is not displayed by the frontend.
+- User B cannot see User A's uploaded files.
+- User B cannot see User A's saved materials.
+- User B cannot see User A's study plans.
+- User B cannot see User A's progress data.
+- No cross-user private information is exposed.
 
-**Actual Result:**  
-Pending
+**Actual Result:**
+
+- User A had private application data.
+- User A was successfully signed out.
+- User B successfully logged in.
+- User A uploaded files were not visible to User B.
+- User A saved materials were not visible to User B.
+- User A study plans were not visible to User B.
+- User A progress data was not visible to User B.
+- No unexpected console errors occurred.
 
 **Result:**  
-Pending
+PASS
 
 **Evidence / Notes:**  
-Pending
+The application maintained user-specific data isolation across the tested frontend workflows. User B could not view private resources belonging to User A.
 
 ---
 
@@ -392,20 +424,43 @@ Pending
 ## ERR-FINAL-01 – Invalid Form Input
 
 **Objective:**  
-Verify that forms provide appropriate validation for invalid or incomplete user input.
+Verify that registration form validation prevents invalid or insecure user input.
 
-**Expected Result:**
+**Initial Findings:**
 
-- Invalid input is rejected or clearly identified.
-- Required fields are indicated appropriately.
-- Application remains stable.
-- No unexpected technical error is displayed.
+Initial testing identified two frontend validation gaps:
 
-**Actual Result:**  
-Pending
+- An email containing consecutive dots, such as `test..user@example.com`, was accepted.
+- A three-character password (`123`) was accepted and registration could proceed.
 
-**Result:**  
-Pending
+**Corrective Action:**
+
+The Registration interface was updated to:
+
+- validate email structure more strictly
+- reject email addresses containing invalid consecutive-dot formatting
+- require passwords to contain at least 8 characters
+- apply the minimum length requirement to both Password and Confirm Password fields
+- clear stale validation errors when the user edits form fields
+
+**Retest Result:**
+
+- `invalid-email` was rejected.
+- `test..user@example.com` was rejected.
+- Password `123` was rejected.
+- The stale email validation message disappeared after the email field was corrected.
+- A valid email with a password of at least 8 characters was accepted.
+- Registration continued to operate correctly for valid input.
+- No unexpected frontend errors occurred.
+
+**Final Result:**  
+PASS – After corrective action
+
+**Evidence / Notes:**  
+Final testing confirmed that the Registration interface now prevents the invalid email and short-password cases identified during lecturer-feedback verification while continuing to accept valid registration input.
+
+| DEF-FINAL-02 | Registration Validation | Registration initially accepted a very short password (`123`) | Medium | Added minimum 8-character password validation and HTML input constraint | PASS |
+| DEF-FINAL-03 | Registration Validation | Email containing consecutive dots such as `test..user@example.com` was initially accepted | Medium | Added stricter frontend email validation | PASS |
 
 ---
 
