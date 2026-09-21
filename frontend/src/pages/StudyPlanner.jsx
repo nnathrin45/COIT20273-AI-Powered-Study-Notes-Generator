@@ -21,6 +21,8 @@ function StudyPlanner() {
   const [plansError, setPlansError] = useState('')
   const [plansSuccess, setPlansSuccess] = useState('')
   const [deletingPlanId, setDeletingPlanId] = useState(null)
+  const [expandedPlanId, setExpandedPlanId] = useState(null)
+  const [generatedPlan, setGeneratedPlan] = useState(null)
   const loadStudyPlans = async () => {
     setPlansLoading(true)
     setPlansError('')
@@ -62,33 +64,88 @@ function StudyPlanner() {
     'Sunday',
   ]
 
-  // Default suggested study sessions stored with each study plan.
-  const mockPlan = [
-    {
-      id: 1,
-      session: 'Session 1',
-      activity: 'Review key concepts and definitions',
-      duration: '45 minutes',
-    },
-    {
-      id: 2,
-      session: 'Session 2',
-      activity: 'Study detailed notes and important examples',
-      duration: '60 minutes',
-    },
-    {
-      id: 3,
-      session: 'Session 3',
-      activity: 'Review generated flashcards',
-      duration: '30 minutes',
-    },
-    {
-      id: 4,
-      session: 'Session 4',
-      activity: 'Complete a practice quiz and review mistakes',
-      duration: '45 minutes',
-    },
-  ]
+  // Build suggested study sessions from the student's planner inputs.
+  const buildStudyPlan = (
+    topicValue,
+    hoursValue,
+    selectedDays,
+    deadlineValue
+  ) => {
+    const dayNames = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ]
+
+    const startDate = new Date()
+    startDate.setHours(0, 0, 0, 0)
+
+    const endDate = new Date(
+      `${deadlineValue}T00:00:00`
+    )
+
+    const weeklyMinutes = Math.round(
+      Number(hoursValue) * 60
+    )
+
+    const minutesPerSession = Math.max(
+      1,
+      Math.round(
+        weeklyMinutes / selectedDays.length
+      )
+    )
+
+    const activities = [
+      `Review the key concepts and definitions for ${topicValue}`,
+      `Study detailed notes and examples for ${topicValue}`,
+      `Review flashcards and important terms for ${topicValue}`,
+      `Complete practice questions for ${topicValue}`,
+      `Review difficult concepts and mistakes for ${topicValue}`,
+      `Complete a final revision of ${topicValue}`,
+    ]
+
+    const sessions = []
+
+    const currentDate = new Date(startDate)
+
+    while (currentDate <= endDate) {
+      const dayName = dayNames[currentDate.getDay()]
+
+      if (selectedDays.includes(dayName)) {
+        const sessionNumber = sessions.length + 1
+
+        const localDate = [
+          currentDate.getFullYear(),
+          String(currentDate.getMonth() + 1).padStart(2, '0'),
+          String(currentDate.getDate()).padStart(2, '0'),
+        ].join('-')
+
+        sessions.push({
+          id: sessionNumber,
+          day: dayName,
+          date: localDate,
+          session: `Session ${sessionNumber}`,
+          activity:
+            activities[
+              (sessionNumber - 1) % activities.length
+            ],
+          duration: `${minutesPerSession} minutes`,
+        })
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    return {
+      sessions,
+      recommendation:
+        `Study ${topicValue} on your selected study days until ${endDate.toLocaleDateString()}. Aim for approximately ${minutesPerSession} minutes per session and revisit difficult concepts after completing practice questions.`,
+    }
+  }
 
   const handleDayChange = (day) => {
     if (studyDays.includes(day)) {
@@ -130,6 +187,21 @@ function StudyPlanner() {
     return
   }
 
+  const selectedDeadline = new Date(
+    `${deadline}T00:00:00`
+  )
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  if (selectedDeadline < today) {
+    setError(
+      'Please select today or a future date as your deadline.'
+    )
+    setGenerated(false)
+    return
+  }
+
   if (
     !availableHours ||
     Number(availableHours) <= 0
@@ -149,10 +221,19 @@ function StudyPlanner() {
     return
   }
 
-  const planData = {
-    sessions: mockPlan,
-    recommendation:
-      'Spread your study sessions across your available days rather than completing all sessions at once. Review difficult concepts again after completing practice questions.',
+  const planData = buildStudyPlan(
+    topic.trim(),
+    availableHours,
+    studyDays,
+    deadline
+  )
+
+  if (planData.sessions.length === 0) {
+    setError(
+      'None of your selected study days occur before the deadline. Please choose a later deadline or different study days.'
+    )
+    setGenerated(false)
+    return
   }
 
   try {
@@ -184,6 +265,7 @@ function StudyPlanner() {
       }
 
       setSavedPlanId(response.data?.plan_id ?? null)
+      setGeneratedPlan(planData)
       setGenerated(true)
       setSuccess('Study plan created and saved successfully.')
 
@@ -253,6 +335,10 @@ function StudyPlanner() {
         setGenerated(false)
       }
 
+      if (expandedPlanId === planId) {
+        setExpandedPlanId(null)
+      }
+
       setPlansSuccess('Study plan deleted successfully.')
     } catch (deleteError) {
       console.error('Study plan delete error:', deleteError)
@@ -271,6 +357,27 @@ function StudyPlanner() {
     }
 
     return new Date(storedDeadline).toLocaleDateString()
+  }
+
+  const parsePlanData = (planData) => {
+    if (!planData) {
+      return null
+    }
+
+    if (typeof planData === 'object') {
+      return planData
+    }
+
+    try {
+      return JSON.parse(planData)
+    } catch (parseError) {
+      console.error(
+        'Unable to parse saved study plan data:',
+        parseError
+      )
+
+      return null
+    }
   }
 
   return (
@@ -548,7 +655,7 @@ function StudyPlanner() {
 
             <div className="mt-4 space-y-4">
 
-              {mockPlan.map((session) => (
+              {generatedPlan?.sessions?.map((session) => (
                 <div
                   key={session.id}
                   className="rounded-lg border border-gray-200 bg-gray-50 p-5"
@@ -559,6 +666,16 @@ function StudyPlanner() {
                     <div>
                       <p className="font-semibold text-gray-900">
                         {session.session}
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-blue-700">
+                        {session.day}
+                      </p>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        {new Date(
+                          `${session.date}T00:00:00`
+                        ).toLocaleDateString()}
                       </p>
 
                       <p className="mt-1 text-sm text-gray-700">
@@ -587,10 +704,7 @@ function StudyPlanner() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-blue-800">
-              Spread your study sessions across your available
-              days rather than completing all sessions at once.
-              Review difficult concepts again after completing
-              practice questions.
+              {generatedPlan?.recommendation}
             </p>
 
           </div>
@@ -645,7 +759,16 @@ function StudyPlanner() {
           savedPlans.length > 0 && (
             <div className="mt-6 space-y-4">
 
-              {savedPlans.map((plan) => (
+              {savedPlans.map((plan) => {
+                const savedPlanData = parsePlanData(
+                  plan.plan_data
+                )
+
+                const isExpanded =
+                  expandedPlanId === plan.plan_id
+
+                return (
+
                 <div
                   key={plan.plan_id}
                   className="rounded-lg border border-gray-200 p-5"
@@ -668,6 +791,20 @@ function StudyPlanner() {
                       <span className="w-fit rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
                         Saved
                       </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedPlanId((currentId) =>
+                            currentId === plan.plan_id
+                              ? null
+                              : plan.plan_id
+                          )
+                        }
+                        className="text-sm font-medium text-blue-600 hover:underline"
+                      >
+                        {isExpanded ? 'Hide Plan' : 'View Plan'}
+                      </button>
 
                       <button
                         type="button"
@@ -714,9 +851,83 @@ function StudyPlanner() {
                     ))}
 
                   </div>
+                      {isExpanded && (
+                        <div className="mt-6 border-t border-gray-200 pt-6">
 
+                          {savedPlanData?.sessions?.length > 0 ? (
+                            <>
+                              <h4 className="text-lg font-semibold text-gray-900">
+                                Suggested Sessions
+                              </h4>
+
+                              <div className="mt-4 space-y-4">
+
+                                {savedPlanData.sessions.map((session) => (
+                                  <div
+                                    key={`${plan.plan_id}-${session.id}`}
+                                    className="rounded-lg border border-gray-200 bg-gray-50 p-5"
+                                  >
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+
+                                      <div>
+                                        <p className="font-semibold text-gray-900">
+                                          {session.session}
+                                        </p>
+
+                                        {session.day && (
+                                          <p className="mt-1 text-sm font-medium text-blue-700">
+                                            {session.day}
+                                          </p>
+                                        )}
+
+                                        {session.date && (
+                                          <p className="mt-1 text-sm text-gray-500">
+                                            {new Date(
+                                              `${session.date}T00:00:00`
+                                            ).toLocaleDateString()}
+                                          </p>
+                                        )}
+
+                                        <p className="mt-1 text-sm text-gray-700">
+                                          {session.activity}
+                                        </p>
+                                      </div>
+
+                                      <span className="w-fit rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-600 shadow-sm">
+                                        {session.duration}
+                                      </span>
+
+                                    </div>
+                                  </div>
+                                ))}
+
+                              </div>
+
+                              {savedPlanData.recommendation && (
+                                <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-5">
+
+                                  <h4 className="font-semibold text-blue-900">
+                                    Study Recommendation
+                                  </h4>
+
+                                  <p className="mt-2 text-sm leading-6 text-blue-800">
+                                    {savedPlanData.recommendation}
+                                  </p>
+
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-sm text-gray-600">
+                              Detailed session information is not available for this saved plan.
+                            </p>
+                          )}
+
+                        </div>
+                      )}
                 </div>
-              ))}
+                )
+              })}
 
             </div>
           )}
