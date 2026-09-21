@@ -62,6 +62,34 @@ function Upload() {
     loadUploadedFiles()
   }, [loadUploadedFiles])
 
+  useEffect(() => {
+    if (!status) {
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setStatus('')
+    }, 4000)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [status])
+
+  useEffect(() => {
+    if (!filesStatus) {
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setFilesStatus('')
+    }, 4000)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [filesStatus])
+
   const handleFileChange = (event) => {
     const file = event.target.files[0]
 
@@ -245,11 +273,19 @@ function Upload() {
           response.status === 404 ||
           response.data?.code === 'FILE_NOT_FOUND'
         ) {
-          setFilesError(
-            'This uploaded file could not be found. The list will be refreshed.'
+          setUploadedFiles((currentFiles) =>
+            currentFiles.filter(
+              (uploadedFile) =>
+                uploadedFile.file_id !== file.file_id
+            )
           )
 
           await loadUploadedFiles()
+
+          setFilesError(
+            'This uploaded file could not be found. The uploaded-material list has been refreshed.'
+          )
+
           return
         }
 
