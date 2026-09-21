@@ -250,56 +250,149 @@ function Flashcards() {
 
       {/* Page Heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+          AI Study Tools
+        </p>
+
+        <h1 className="text-3xl font-bold tracking-tight text-[#f3f0ff]">
           Flashcards
         </h1>
 
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#898cc0]">
           Generate flashcards from your uploaded study materials
           and use them for active recall practice.
         </p>
+
       </div>
 
       {/* Flashcard Generator */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
 
-        <h2 className="text-xl font-semibold text-gray-900">
-          Generate Flashcards
-        </h2>
+        <div className="flex items-start gap-3">
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+
+            <svg
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              className="h-5 w-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 5h12a2 2 0 0 1 2 2v10H7a2 2 0 0 1-2-2V5Zm2 12v2h12"
+              />
+            </svg>
+
+          </div>
+
+          <div>
+
+            <h2 className="text-xl font-semibold text-[#f3f0ff]">
+              Generate Flashcards
+            </h2>
+
+            <p className="mt-1 text-sm text-[#898cc0]">
+              Select a document to create an AI-generated
+              flashcard study set.
+            </p>
+
+          </div>
+
+        </div>
 
         <div className="mt-6">
 
           <label
             htmlFor="flashcard-document"
-            className="mb-2 block text-sm font-medium text-gray-700"
+            className="mb-2 block text-sm font-medium text-[#d9d4eb]"
           >
             Study Material
           </label>
 
           {documentsLoading ? (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm text-blue-700">
+            <div
+              className="flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
+              role="status"
+            >
+
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+              <p className="text-sm text-[#c9b4ff]">
                 Loading your uploaded study materials...
               </p>
+
             </div>
           ) : documents.length === 0 &&
             !documentsError ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <p className="font-medium text-amber-900">
-                No uploaded study materials
-              </p>
+            <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
 
-              <p className="mt-1 text-sm leading-6 text-amber-800">
-                Upload a PDF, DOCX or TXT document before
-                generating flashcards.
-              </p>
+              <div className="flex items-start gap-3">
 
-              <Link
-                to="/upload"
-                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Upload Study Material
-              </Link>
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                    />
+                  </svg>
+
+                </div>
+
+                <div>
+
+                  <p className="font-medium text-amber-200">
+                    No uploaded study materials
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                    Upload a PDF, DOCX or TXT document before
+                    generating flashcards.
+                  </p>
+
+                  <Link
+                    to="/upload"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
+                  >
+                    Upload Study Material
+
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m9 18 6-6-6-6"
+                      />
+                    </svg>
+
+                  </Link>
+
+                </div>
+
+              </div>
+
             </div>
           ) : (
             <select
@@ -311,7 +404,7 @@ function Flashcards() {
                 setError('')
                 setRetryableError(false)
               }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
             >
               <option value="">
                 Select a document
@@ -332,8 +425,11 @@ function Flashcards() {
 
         {/* Document Error */}
         {documentsError && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-700">
+          <div
+            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            role="alert"
+          >
+            <p className="text-sm leading-6 text-red-300">
               {documentsError}
             </p>
           </div>
@@ -341,39 +437,128 @@ function Flashcards() {
 
         {/* AI Consent Status */}
         <div className="mt-6">
+
           {consentInitialLoading ? (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm text-blue-700">
+            <div
+              className="flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
+              role="status"
+            >
+
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+              <p className="text-sm text-[#c9b4ff]">
                 Checking your AI processing consent...
               </p>
+
             </div>
           ) : consentStatus !== 'granted' ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
 
-              <p className="font-medium text-amber-900">
-                AI processing consent required
-              </p>
+              <div className="flex items-start gap-3">
 
-              <p className="mt-1 text-sm leading-6 text-amber-800">
-                Grant AI processing consent from your Dashboard
-                before generating AI study content.
-              </p>
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
 
-              <Link
-                to="/dashboard"
-                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Manage AI Consent
-              </Link>
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 3 4 7v5c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V7l-8-4Z"
+                    />
+                  </svg>
+
+                </div>
+
+                <div>
+
+                  <p className="font-medium text-amber-200">
+                    AI processing consent required
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                    Grant AI processing consent from your Dashboard
+                    before generating AI study content.
+                  </p>
+
+                  <Link
+                    to="/dashboard"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
+                  >
+                    Manage AI Consent
+
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m9 18 6-6-6-6"
+                      />
+                    </svg>
+
+                  </Link>
+
+                </div>
+
+              </div>
 
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m5 12 4 4L19 6"
+                    />
+                  </svg>
+
+                </div>
+
+                <p className="text-sm font-medium text-emerald-300">
+                  AI processing consent is granted.
+                </p>
+
+              </div>
+
+            </div>
+          )}
+
         </div>
 
         {/* Consent Error */}
         {consentError && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-700">
+          <div
+            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            role="alert"
+          >
+            <p className="text-sm leading-6 text-red-300">
               {consentError}
             </p>
           </div>
@@ -382,28 +567,61 @@ function Flashcards() {
         {/* Flashcard Error */}
         {error && (
           <div
-            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
             role="alert"
           >
-            <p className="text-sm text-red-700">
-              {error}
-            </p>
 
-            {retryableError && (
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={generationLoading}
-                className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {generationLoading ? 'Retrying...' : 'Retry'}
-              </button>
-            )}
+            <div className="flex items-start gap-3">
+
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-400/10 text-red-300">
+
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                  />
+                </svg>
+
+              </div>
+
+              <div>
+
+                <p className="text-sm leading-6 text-red-300">
+                  {error}
+                </p>
+
+                {retryableError && (
+                  <button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={generationLoading}
+                    className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {generationLoading
+                      ? 'Retrying...'
+                      : 'Retry'}
+                  </button>
+                )}
+
+              </div>
+
+            </div>
+
           </div>
         )}
 
         {/* Generate Button */}
         <div className="mt-6 flex justify-end">
+
           <button
             type="button"
             onClick={handleGenerate}
@@ -414,12 +632,19 @@ function Flashcards() {
               consentStatus !== 'granted' ||
               generationLoading
             }
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
           >
+
+            {generationLoading && (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            )}
+
             {generationLoading
               ? 'Generating Flashcards...'
               : 'Generate Flashcards'}
+
           </button>
+
         </div>
 
       </div>
@@ -428,57 +653,129 @@ function Flashcards() {
       {flashcards.length > 0 && (
         <div className="mt-8">
 
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
             <div>
-              <div className="flex flex-wrap items-center gap-2">
 
-                <h2 className="text-2xl font-semibold text-gray-900">
+              <div className="flex flex-wrap items-center gap-3">
+
+                <h2 className="text-2xl font-semibold text-[#f3f0ff]">
                   Study Flashcards
                 </h2>
 
                 {generatedOutput?.is_ai_generated && (
-                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                  <span className="rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-xs font-semibold text-[#c9b4ff]">
                     AI Generated
                   </span>
                 )}
 
               </div>
 
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-[#727494]">
                 Source:{' '}
-                {generatedOutput?.file_name ||
-                  selectedDocumentName}
+                <span className="text-[#a6a8c7]">
+                  {generatedOutput?.file_name ||
+                    selectedDocumentName}
+                </span>
               </p>
+
             </div>
 
-            <p className="text-sm font-medium text-gray-500">
-              Card {currentCard + 1} of {flashcards.length}
-            </p>
+            <div className="rounded-full border border-[#2a1b4d] bg-[#160b32] px-4 py-2 text-sm font-medium text-[#a6a8c7]">
+              Card{' '}
+              <span className="font-semibold text-[#c9b4ff]">
+                {currentCard + 1}
+              </span>{' '}
+              of {flashcards.length}
+            </div>
+
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-[#241743]">
+
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#7a44ff] to-[#d83dff] transition-all duration-300"
+              style={{
+                width: `${
+                  ((currentCard + 1) / flashcards.length) * 100
+                }%`,
+              }}
+            />
 
           </div>
 
           {/* Flashcard */}
-          <div className="flex min-h-80 flex-col justify-between rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="relative flex min-h-80 flex-col justify-between overflow-hidden rounded-2xl border border-[#2a1b4d] bg-[#160b32] p-7 shadow-[0_18px_50px_rgba(0,0,0,0.12)] sm:p-8">
 
-            <div>
+            <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#7a44ff]/10 blur-3xl" />
 
-              <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                Question
-              </p>
+            <div className="relative">
 
-              <h3 className="mt-4 text-2xl font-semibold leading-relaxed text-gray-900">
+              <div className="flex items-center gap-2">
+
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7a44ff]/10 text-[#a97cff]">
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 8h6M9 12h6m-7 8h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
+                    />
+                  </svg>
+
+                </div>
+
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+                  Question
+                </p>
+
+              </div>
+
+              <h3 className="mt-5 max-w-4xl text-2xl font-semibold leading-relaxed text-[#f3f0ff]">
                 {flashcards[currentCard]?.question}
               </h3>
 
               {showAnswer && (
-                <div className="mt-8 border-t border-gray-200 pt-6">
+                <div className="mt-8 border-t border-[#2a1b4d] pt-6">
 
-                  <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
-                    Answer
-                  </p>
+                  <div className="flex items-center gap-2">
 
-                  <p className="mt-3 leading-7 text-gray-700">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
+
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-4 w-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="m5 12 4 4L19 6"
+                        />
+                      </svg>
+
+                    </div>
+
+                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-emerald-300">
+                      Answer
+                    </p>
+
+                  </div>
+
+                  <p className="mt-4 max-w-4xl leading-7 text-[#d9d4eb]">
                     {flashcards[currentCard]?.answer}
                   </p>
 
@@ -488,29 +785,67 @@ function Flashcards() {
             </div>
 
             {!showAnswer && (
-              <div className="mt-8">
+              <div className="relative mt-8">
+
                 <button
                   type="button"
                   onClick={() => setShowAnswer(true)}
-                  className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 sm:w-auto"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition hover:brightness-110 sm:w-auto"
                 >
+
                   Reveal Answer
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Zm10 2.5A2.5 2.5 0 1 0 12 9a2.5 2.5 0 0 0 0 5.5Z"
+                    />
+                  </svg>
+
                 </button>
+
               </div>
             )}
 
           </div>
 
           {/* Navigation */}
-          <div className="mt-5 flex items-center justify-between">
+          <div className="mt-5 flex items-center justify-between gap-4">
 
             <button
               type="button"
               onClick={handlePrevious}
               disabled={currentCard === 0}
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-5 py-2.5 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
             >
+
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m15 18-6-6 6-6"
+                />
+              </svg>
+
               Previous
+
             </button>
 
             <button
@@ -519,24 +854,70 @@ function Flashcards() {
               disabled={
                 currentCard === flashcards.length - 1
               }
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-5 py-2.5 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
             >
+
               Next
+
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m9 18 6-6-6-6"
+                />
+              </svg>
+
             </button>
 
           </div>
 
           {/* Responsible AI Warning */}
-          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
+          <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
 
-            <h3 className="font-semibold text-amber-900">
-              AI-Generated Content
-            </h3>
+            <div className="flex items-start gap-3">
 
-            <p className="mt-1 text-sm leading-6 text-amber-800">
-              {disclaimer ||
-                'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
-            </p>
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
+
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="h-5 w-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                  />
+                </svg>
+
+              </div>
+
+              <div>
+
+                <h3 className="font-semibold text-amber-200">
+                  AI-Generated Content
+                </h3>
+
+                <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                  {disclaimer ||
+                    'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
+                </p>
+
+              </div>
+
+            </div>
 
           </div>
 
