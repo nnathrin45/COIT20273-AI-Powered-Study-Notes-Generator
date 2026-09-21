@@ -1,7 +1,7 @@
 Test ID   : DP-02
 Artefact  : DOCX-extracted-text
 Issue     : #119
-Captured  : 2026-09-21T07:56:16.253Z
+Captured  : 2026-09-21T10:51:23.530Z
 Fixture   : known-doc2-database-design.docx
 Source    : testing/fixtures/source/doc2-database-design.txt
 Source chars: 20861

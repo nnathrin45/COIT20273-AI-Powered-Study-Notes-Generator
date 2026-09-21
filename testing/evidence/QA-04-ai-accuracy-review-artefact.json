@@ -2,7 +2,7 @@
   "test_id": "QA-04",
   "title": "AI accuracy review artefact",
   "issue": "#119",
-  "captured_at": "2026-09-21T07:56:19.925Z",
+  "captured_at": "2026-09-21T10:51:27.231Z",
   "checking": "the manual review recorded for the R1 metric exists and carries a verdict for every output reviewed",
   "request": null,
   "response": {

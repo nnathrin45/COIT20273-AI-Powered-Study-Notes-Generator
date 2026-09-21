@@ -2,13 +2,13 @@
   "test_id": "PRIV-01",
   "title": "Consent required before processing",
   "issue": "#119",
-  "captured_at": "2026-09-21T07:56:18.274Z",
+  "captured_at": "2026-09-21T10:51:25.538Z",
   "checking": "no document content reaches the model when consent has never been given",
   "request": {
     "method": "POST",
     "endpoint": "/api/ai/generate",
     "body": {
-      "file_id": 371,
+      "file_id": 401,
       "output_type": "summary"
     }
   },

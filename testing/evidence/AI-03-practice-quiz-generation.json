@@ -2,13 +2,13 @@
   "test_id": "AI-03",
   "title": "Practice quiz generation",
   "issue": "#119",
-  "captured_at": "2026-09-21T07:56:15.317Z",
+  "captured_at": "2026-09-21T10:51:22.582Z",
   "checking": "each question carries options and a correct answer that is one of those options, so the quiz can be scored",
   "request": {
     "method": "POST",
     "endpoint": "/api/ai/generate",
     "body": {
-      "file_id": 367,
+      "file_id": 397,
       "output_type": "quiz"
     }
   },
@@ -18,8 +18,8 @@
       "status": "success",
       "message": "Content generated successfully",
       "output": {
-        "output_id": 161,
-        "file_id": 367,
+        "output_id": 185,
+        "file_id": 397,
         "file_name": "photosynthesis.txt",
         "output_type": "quiz",
         "content": [

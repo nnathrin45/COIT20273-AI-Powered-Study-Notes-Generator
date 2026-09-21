@@ -2,11 +2,11 @@
   "test_id": "AI-07",
   "title": "Cross-user output isolation",
   "issue": "#119",
-  "captured_at": "2026-09-21T07:56:15.448Z",
+  "captured_at": "2026-09-21T10:51:22.718Z",
   "checking": "a second account requesting another user's document returns no content",
   "request": {
     "method": "GET",
-    "endpoint": "/api/ai/outputs/367",
+    "endpoint": "/api/ai/outputs/397",
     "as": "a different authenticated user"
   },
   "response": {

@@ -2,13 +2,13 @@
   "test_id": "PRIV-02",
   "title": "Revoked consent blocks processing",
   "issue": "#119",
-  "captured_at": "2026-09-21T07:56:18.403Z",
+  "captured_at": "2026-09-21T10:51:25.676Z",
   "checking": "consent is re-checked on every request, so revocation takes effect at once",
   "request": {
     "method": "POST",
     "endpoint": "/api/ai/generate",
     "body": {
-      "file_id": 372,
+      "file_id": 402,
       "output_type": "summary"
     }
   },

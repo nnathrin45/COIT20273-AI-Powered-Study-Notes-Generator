@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="AI-01 summary generation stores and returns prose content (FR9.1, issue #119)" time="0.403663" classname="test"/>
-	<testcase name="AI-02 flashcard generation returns structured question and answer records (FR10.1)" time="0.002248" classname="test"/>
-	<testcase name="AI-03 practice quiz generation returns scoreable questions (FR11.1)" time="0.002418" classname="test"/>
-	<testcase name="AI-04 concept explanation reflects the requested concept and level (FR12.1)" time="0.002225" classname="test"/>
-	<testcase name="AI-05 structured content survives storage and is returned parsed (FR10.1, FR11.1)" time="0.003709" classname="test"/>
-	<testcase name="AI-06 stored outputs stay bound to the generating user and document (NFR3)" time="0.001934" classname="test"/>
-	<testcase name="AI-07 another user cannot retrieve outputs generated from a document they do not own (NFR3)" time="0.123531" classname="test"/>
-	<testcase name="DP-01 PDF extraction recovers the source document in full (FR8, issue #119)" time="0.349262" classname="test"/>
-	<testcase name="DP-02 DOCX extraction recovers the source document in full (FR8, issue #119)" time="0.021620" classname="test"/>
-	<testcase name="DP-03 TXT extraction recovers the source document in full (FR8, issue #119)" time="0.001420" classname="test"/>
-	<testcase name="DP-04 a scanned, image-only PDF is rejected with actionable advice (FR8.4, SR-DP4)" time="0.153794" classname="test"/>
-	<testcase name="DP-05 extracted text is stored intact and retrievable (FR8, issue #119)" time="0.123452" classname="test"/>
-	<testcase name="DP-06 an unsupported file type is rejected before any processing (FR6.1)" time="0.117282" classname="test"/>
-	<testcase name="DP-07 a corrupt file with an accepted extension fails safely (FR6.1, NFR5)" time="0.117039" classname="test"/>
-	<testcase name="ERR-01 Gemini timeout returns 504 AI_TIMEOUT and preserves the document (NFR5, issue #119)" time="0.404324" classname="test"/>
-	<testcase name="ERR-02 Daily quota exhausted returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.002150" classname="test"/>
-	<testcase name="ERR-03 Short rate limit returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.001774" classname="test"/>
-	<testcase name="ERR-04 Malformed AI response returns 502 AI_MALFORMED_RESPONSE and preserves the document (NFR5, issue #119)" time="0.001678" classname="test"/>
-	<testcase name="ERR-05 Empty AI response returns 502 AI_EMPTY_RESPONSE and preserves the document (NFR5, issue #119)" time="0.001647" classname="test"/>
-	<testcase name="ERR-06 Upstream service unavailable returns 503 AI_UNAVAILABLE and preserves the document (NFR5, issue #119)" time="0.001487" classname="test"/>
-	<testcase name="ERR-07 every AI failure mode shares one response contract (NFR5, issue #119)" time="0.003383" classname="test"/>
-	<testcase name="ERR-08 invalid input is rejected before the model is reached (FR12.1, issue #119)" time="0.001773" classname="test"/>
-	<testcase name="PRIV-01 generation is refused when consent has never been recorded (FR17.1)" time="0.420947" classname="test"/>
-	<testcase name="PRIV-02 revoking consent blocks further processing immediately (FR17.2)" time="0.128071" classname="test"/>
-	<testcase name="PRIV-03 only the study material is sent to the model, with no account data (NFR3, privacy)" time="0.120007" classname="test"/>
-	<testcase name="PRIV-04 generated content is labelled and carries a disclaimer (FR16.1)" time="0.124484" classname="test"/>
-	<testcase name="PRIV-05 no credential is exposed in a successful API response (security)" time="0.122498" classname="test"/>
-	<testcase name="PRIV-06 an upstream failure does not leak the API key into the error response (security, NFR5)" time="0.119780" classname="test"/>
-	<testcase name="PRIV-07 the environment file is excluded from version control (security)" time="0.042584" classname="test"/>
-	<testcase name="QA-01 the full document-to-AI-output pipeline completes end to end (issue #119 readiness)" time="0.407202" classname="test"/>
-	<testcase name="QA-02 quiz marking is objectively correct against a known answer key (FR11.2)" time="0.129771" classname="test"/>
+	<testcase name="AI-01 summary generation stores and returns prose content (FR9.1, issue #119)" time="0.400937" classname="test"/>
+	<testcase name="AI-02 flashcard generation returns structured question and answer records (FR10.1)" time="0.001687" classname="test"/>
+	<testcase name="AI-03 practice quiz generation returns scoreable questions (FR11.1)" time="0.002260" classname="test"/>
+	<testcase name="AI-04 concept explanation reflects the requested concept and level (FR12.1)" time="0.002212" classname="test"/>
+	<testcase name="AI-05 structured content survives storage and is returned parsed (FR10.1, FR11.1)" time="0.004445" classname="test"/>
+	<testcase name="AI-06 stored outputs stay bound to the generating user and document (NFR3)" time="0.001910" classname="test"/>
+	<testcase name="AI-07 another user cannot retrieve outputs generated from a document they do not own (NFR3)" time="0.127193" classname="test"/>
+	<testcase name="DP-01 PDF extraction recovers the source document in full (FR8, issue #119)" time="0.352002" classname="test"/>
+	<testcase name="DP-02 DOCX extraction recovers the source document in full (FR8, issue #119)" time="0.022343" classname="test"/>
+	<testcase name="DP-03 TXT extraction recovers the source document in full (FR8, issue #119)" time="0.001544" classname="test"/>
+	<testcase name="DP-04 a scanned, image-only PDF is rejected with actionable advice (FR8.4, SR-DP4)" time="0.157248" classname="test"/>
+	<testcase name="DP-05 extracted text is stored intact and retrievable (FR8, issue #119)" time="0.126528" classname="test"/>
+	<testcase name="DP-06 an unsupported file type is rejected before any processing (FR6.1)" time="0.117012" classname="test"/>
+	<testcase name="DP-07 a corrupt file with an accepted extension fails safely (FR6.1, NFR5)" time="0.119539" classname="test"/>
+	<testcase name="ERR-01 Gemini timeout returns 504 AI_TIMEOUT and preserves the document (NFR5, issue #119)" time="0.403004" classname="test"/>
+	<testcase name="ERR-02 Daily quota exhausted returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.002368" classname="test"/>
+	<testcase name="ERR-03 Short rate limit returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.001590" classname="test"/>
+	<testcase name="ERR-04 Malformed AI response returns 502 AI_MALFORMED_RESPONSE and preserves the document (NFR5, issue #119)" time="0.001739" classname="test"/>
+	<testcase name="ERR-05 Empty AI response returns 502 AI_EMPTY_RESPONSE and preserves the document (NFR5, issue #119)" time="0.001550" classname="test"/>
+	<testcase name="ERR-06 Upstream service unavailable returns 503 AI_UNAVAILABLE and preserves the document (NFR5, issue #119)" time="0.001408" classname="test"/>
+	<testcase name="ERR-07 every AI failure mode shares one response contract (NFR5, issue #119)" time="0.004899" classname="test"/>
+	<testcase name="ERR-08 invalid input is rejected before the model is reached (FR12.1, issue #119)" time="0.001949" classname="test"/>
+	<testcase name="PRIV-01 generation is refused when consent has never been recorded (FR17.1)" time="0.400283" classname="test"/>
+	<testcase name="PRIV-02 revoking consent blocks further processing immediately (FR17.2)" time="0.136865" classname="test"/>
+	<testcase name="PRIV-03 only the study material is sent to the model, with no account data (NFR3, privacy)" time="0.128790" classname="test"/>
+	<testcase name="PRIV-04 generated content is labelled and carries a disclaimer (FR16.1)" time="0.127222" classname="test"/>
+	<testcase name="PRIV-05 no credential is exposed in a successful API response (security)" time="0.129980" classname="test"/>
+	<testcase name="PRIV-06 an upstream failure does not leak the API key into the error response (security, NFR5)" time="0.157234" classname="test"/>
+	<testcase name="PRIV-07 the environment file is excluded from version control (security)" time="0.039244" classname="test"/>
+	<testcase name="QA-01 the full document-to-AI-output pipeline completes end to end (issue #119 readiness)" time="0.408970" classname="test"/>
+	<testcase name="QA-02 quiz marking is objectively correct against a known answer key (FR11.2)" time="0.132482" classname="test"/>
 	<testcase name="QA-03 consent is enforced for all four content types (FR17, issue #119)" time="0.117295" classname="test"/>
-	<testcase name="QA-04 the recorded AI accuracy review is present and complete (risk R1, FR9–FR12)" time="0.000397" classname="test"/>
+	<testcase name="QA-04 the recorded AI accuracy review is present and complete (risk R1, FR9–FR12)" time="0.000445" classname="test"/>
 	<!-- tests 33 -->
 	<!-- suites 0 -->
 	<!-- pass 33 -->
@@ -40,5 +40,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 5337.5015 -->
+	<!-- duration_ms 5365.46525 -->
 </testsuites>

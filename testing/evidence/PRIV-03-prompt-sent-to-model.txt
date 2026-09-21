@@ -1,7 +1,7 @@
 Test ID   : PRIV-03
 Artefact  : prompt-sent-to-model
 Issue     : #119
-Captured  : 2026-09-21T07:56:18.523Z
+Captured  : 2026-09-21T10:51:25.804Z
 Study material chars: 240
 Prompt chars: 706
 Account data found: none

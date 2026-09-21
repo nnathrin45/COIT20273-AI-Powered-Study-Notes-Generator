@@ -1,7 +1,7 @@
 Test ID   : DP-03
 Artefact  : TXT-extracted-text
 Issue     : #119
-Captured  : 2026-09-21T07:56:16.254Z
+Captured  : 2026-09-21T10:51:23.531Z
 Fixture   : known-doc1-software-testing.txt
 Source    : testing/fixtures/source/doc1-software-testing.txt
 Source chars: 23543
