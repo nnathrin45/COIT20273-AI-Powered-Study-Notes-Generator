@@ -1,0 +1,25 @@
+{
+  "test_id": "ERR-06",
+  "title": "Upstream service unavailable",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:17.507Z",
+  "checking": "the upstream service unavailable path returns a consistent, actionable error and leaves the uploaded document untouched",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/ai/generate",
+    "body": {
+      "file_id": 370,
+      "output_type": "summary"
+    }
+  },
+  "response": {
+    "status": 503,
+    "body": {
+      "status": "error",
+      "code": "AI_UNAVAILABLE",
+      "message": "The AI service is temporarily unavailable. Please try again shortly.",
+      "retryable": true
+    }
+  },
+  "notes": "document intact after failure: true; outputs stored before 0, after 0"
+}

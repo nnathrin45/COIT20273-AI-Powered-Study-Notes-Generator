@@ -1,0 +1,462 @@
+Test ID   : DP-02
+Artefact  : DOCX-extracted-text
+Issue     : #119
+Captured  : 2026-09-21T07:56:16.253Z
+Fixture   : known-doc2-database-design.docx
+Source    : testing/fixtures/source/doc2-database-design.txt
+Source chars: 20861
+Extracted chars: 20861
+Match     : character-identical ignoring whitespace
+------------------------------------------------------------------------
+RELATIONAL DATABASE DESIGN
+
+Study Notes - Unit COIT20273 Revision Set B
+
+
+
+SECTION 1: THE RELATIONAL MODEL
+
+
+
+The relational model represents data as a collection of relations, which are presented to the user as tables. It was proposed by Edgar Codd in 1970 and it remains the foundation of the majority of business database systems in use today.
+
+
+
+A relation consists of a heading and a body. The heading is the set of attributes, each with a name and a domain that defines the permitted values. The body is a set of tuples, each of which assigns one value from the appropriate domain to each attribute. In table terms, attributes are columns and tuples are rows.
+
+
+
+Because the body of a relation is a set, the relational model admits no duplicate rows and imposes no ordering on rows or on columns. Practical database systems relax the no-duplicates rule unless a key constraint is declared, which is a departure from the model rather than a feature of it.
+
+
+
+The degree of a relation is the number of attributes it has. The cardinality of a relation is the number of tuples it contains.
+
+
+
+A domain is the set of permitted values for an attribute, and it carries a meaning beyond the underlying data type. Two attributes may both be stored as integers while belonging to entirely different domains, and comparing them is meaningless even though the system will permit it.
+
+
+
+The null marker represents the absence of a value. It is not zero and it is not an empty string. Comparisons involving null produce the unknown truth value rather than true or false, which is why three-valued logic must be considered when writing conditions over columns that permit nulls.
+
+
+
+SECTION 2: KEYS
+
+
+
+A superkey is any set of attributes whose values are guaranteed to be unique across all tuples of a relation.
+
+
+
+A candidate key is a superkey from which no attribute can be removed while retaining uniqueness. It is therefore a minimal superkey. A relation may have several candidate keys.
+
+
+
+The primary key is the candidate key chosen by the designer to identify tuples. The remaining candidate keys are alternate keys. A primary key may not contain a null in any of its attributes, a rule known as entity integrity.
+
+
+
+A composite key is a key consisting of more than one attribute. It arises naturally in relations that record an association between two other relations.
+
+
+
+A surrogate key is a system-generated identifier with no meaning outside the database, commonly an auto-incrementing integer or a generated unique identifier. It is stable, compact and never needs to change. A natural key is drawn from the data itself, such as an email address or a vehicle registration. Natural keys carry meaning but they are vulnerable to change, and a key that changes must be propagated to every relation that references it.
+
+
+
+A foreign key is a set of attributes in one relation whose values must either match the primary key of some tuple in the referenced relation or be wholly null. This rule is referential integrity, and it is what prevents a record from referring to a parent that does not exist.
+
+
+
+SECTION 3: INTEGRITY CONSTRAINTS
+
+
+
+Entity integrity requires that no part of a primary key is null, because a tuple that cannot be identified has no place in a relation.
+
+
+
+Referential integrity requires that every non-null foreign key value matches an existing primary key value in the referenced relation.
+
+
+
+Referential actions define what happens when a referenced row is deleted or its key is updated. Cascade propagates the operation to the referencing rows, so deleting a parent deletes its children. Set null replaces the foreign key with null, which requires the column to permit nulls. Restrict and no action refuse the operation while dependent rows exist. Set default replaces the value with the column default.
+
+
+
+Domain constraints restrict the values an attribute may take, and are implemented through data types, check constraints, and not-null declarations.
+
+
+
+A unique constraint enforces that no two rows share a value in the constrained columns, and unlike a primary key it may generally permit nulls.
+
+
+
+Business rules that cannot be expressed as column or table constraints are enforced either by triggers within the database or by the application layer. Placing a rule in the application alone means it applies only to traffic that passes through that application, so any rule that must hold absolutely belongs in the database.
+
+
+
+SECTION 4: ENTITY RELATIONSHIP MODELLING
+
+
+
+An entity relationship diagram models the data requirements of a system independently of any particular database product.
+
+
+
+An entity is a thing about which the system must store data. An entity type is the category, such as Student, while an entity instance is a particular occurrence, such as a specific student.
+
+
+
+An attribute is a property of an entity. A simple attribute cannot be divided further, while a composite attribute can, as an address divides into street, suburb, state and postcode. A single-valued attribute holds one value per instance, while a multi-valued attribute may hold several, such as multiple telephone numbers. A derived attribute is calculated from others, such as age derived from date of birth, and is normally not stored.
+
+
+
+A relationship is an association between entities. The degree of a relationship is the number of entity types involved: unary relationships associate an entity type with itself, binary relationships associate two, and ternary relationships associate three.
+
+
+
+Cardinality expresses how many instances of one entity may be associated with an instance of another, and takes the forms one to one, one to many, and many to many. Participation, also called optionality, expresses whether the association is mandatory or optional for each side.
+
+
+
+A weak entity is one that cannot be identified by its own attributes alone and depends on an owner entity for identification. Its key includes the key of the owner.
+
+
+
+SECTION 5: MAPPING A MODEL TO TABLES
+
+
+
+Each strong entity becomes a table, with its attributes becoming columns and its identifier becoming the primary key.
+
+
+
+A one to many relationship is implemented by placing a foreign key on the many side, referencing the primary key of the one side. Where participation on the many side is mandatory the foreign key column is declared not null.
+
+
+
+A many to many relationship cannot be implemented directly and requires a junction table, also called an associative or bridge table. The junction table holds a foreign key to each of the two participating tables, and its primary key is normally the composite of those two foreign keys. Any attribute that belongs to the association rather than to either participant, such as the date an enrolment was made, is placed on the junction table.
+
+
+
+A one to one relationship is implemented by placing a foreign key with a unique constraint on one side, preferably the side with optional participation, so that nulls are avoided where possible.
+
+
+
+A multi-valued attribute becomes a separate table with a foreign key back to the owning entity.
+
+
+
+A weak entity becomes a table whose primary key is the composite of its own partial key and the foreign key to its owner, with a cascading delete so that dependants do not outlive their owner.
+
+
+
+Supertype and subtype structures may be mapped in several ways: a single table holding all attributes with nulls for inapplicable ones, a separate table per subtype, or a table for the supertype with one table per subtype sharing its key.
+
+
+
+SECTION 6: FUNCTIONAL DEPENDENCY
+
+
+
+A functional dependency exists between two sets of attributes when the value of one determines the value of the other. If attribute set X determines attribute set Y, then any two tuples agreeing on X must agree on Y. This is written as X determines Y, and X is called the determinant.
+
+
+
+A full functional dependency exists when Y depends on the whole of X and not on any proper subset of it. A partial dependency exists when Y depends on only part of a composite determinant.
+
+
+
+A transitive dependency exists when X determines Y and Y determines Z, so that X determines Z indirectly through a non-key attribute.
+
+
+
+Functional dependencies are statements about the meaning of the data, not observations about the rows that happen to be present. A sample of data can disprove a claimed dependency by counterexample, but it can never establish one; that requires knowledge of the business rules.
+
+
+
+Armstrong's axioms provide the rules for reasoning about dependencies. Reflexivity states that a set of attributes determines any subset of itself. Augmentation states that if X determines Y then X together with Z determines Y together with Z. Transitivity states that if X determines Y and Y determines Z then X determines Z. From these three, further rules including union, decomposition and pseudotransitivity can be derived.
+
+
+
+The closure of a set of attributes is the complete set of attributes it determines, directly or indirectly. Computing the closure is the practical method for testing whether a set of attributes is a superkey: it is a superkey precisely when its closure contains every attribute of the relation.
+
+
+
+SECTION 7: NORMALISATION
+
+
+
+Normalisation is the process of organising attributes into relations so as to reduce redundancy and eliminate update anomalies. It proceeds by decomposing relations that violate a given normal form.
+
+
+
+Three anomalies motivate the process. An insertion anomaly occurs when a fact cannot be recorded because another unrelated fact is not yet known, such as being unable to record a new course because no student has enrolled in it. A deletion anomaly occurs when removing one fact unintentionally removes another, such as losing all record of a course when its last enrolment is deleted. An update anomaly occurs when a fact is stored in more than one place and only some copies are changed, leaving the database internally inconsistent.
+
+
+
+First normal form requires that every attribute holds a single atomic value, with no repeating groups and no lists stored within a single column. A table storing three phone number columns, or one column holding comma-separated values, violates it.
+
+
+
+Second normal form requires first normal form and the elimination of partial dependencies, so that every non-key attribute depends on the whole of the primary key. It can only be violated by a relation with a composite key.
+
+
+
+Third normal form requires second normal form and the elimination of transitive dependencies, so that no non-key attribute depends on another non-key attribute. Storing a postcode and the suburb it implies in the same table as an order is the classic violation.
+
+
+
+Boyce-Codd normal form strengthens third normal form by requiring that every determinant is a candidate key. It differs from third normal form only in relations with multiple overlapping composite candidate keys, which are uncommon but do occur.
+
+
+
+Fourth normal form addresses multi-valued dependencies, in which two independent multi-valued facts about the same entity are stored in one relation, producing a spurious cross product of rows. Fifth normal form addresses join dependencies, where a relation can be reconstructed only by joining three or more projections.
+
+
+
+A decomposition should be lossless, meaning the original relation can be recovered exactly by joining the parts, and it should ideally be dependency preserving, meaning every original functional dependency can still be enforced without a join. A decomposition into Boyce-Codd normal form is always lossless but is not always dependency preserving, whereas a decomposition into third normal form can always achieve both.
+
+
+
+SECTION 8: DENORMALISATION AND PHYSICAL DESIGN
+
+
+
+Denormalisation deliberately reintroduces redundancy to improve read performance, typically by storing a derived total or by duplicating a frequently joined column to avoid the join.
+
+
+
+It is a trade, not an improvement. The cost is that the redundant copies must be kept consistent, which shifts work onto every write and creates the possibility of the copies disagreeing. Denormalisation should be applied only in response to a measured performance problem, never pre-emptively.
+
+
+
+Physical design decisions include the choice of storage engine, data types, indexes, partitioning and the physical clustering of rows.
+
+
+
+Choosing the narrowest adequate data type reduces storage and improves cache efficiency. Storing a fixed two-character state code in a variable-length column of two hundred and fifty-five characters wastes both space and the opportunity for the system to reason about the data.
+
+
+
+Character set and collation determine which characters can be stored and how comparison and sorting behave. A collation that is case-insensitive will treat two values differing only in case as equal, which affects both unique constraints and query results.
+
+
+
+SECTION 9: INDEXING
+
+
+
+An index is an auxiliary structure that allows rows to be located without scanning the entire table. The most common implementation is the balanced tree, which supports equality lookups, range scans and ordered retrieval.
+
+
+
+A clustered index determines the physical order of the rows themselves, so a table can have only one. A non-clustered or secondary index stores the indexed columns together with a reference back to the row.
+
+
+
+A composite index covers several columns in a defined order, and it can be used for queries that filter on a leading prefix of that order. An index on surname followed by given name assists a search by surname alone, but not a search by given name alone.
+
+
+
+A covering index contains every column a query needs, allowing the query to be answered from the index without reading the table at all.
+
+
+
+Indexes accelerate reads and slow writes, because every insert, update and delete must maintain every affected index. They also consume storage. Indexing every column is therefore counterproductive.
+
+
+
+An index is generally ineffective where the indexed column has low selectivity, meaning few distinct values relative to the number of rows, and where a function is applied to the column in the query condition, which prevents the index from being used unless a matching functional index exists.
+
+
+
+SECTION 10: TRANSACTIONS AND CONCURRENCY
+
+
+
+A transaction is a unit of work that must be completed in its entirety or not at all. It is delimited by a start, and terminated by either a commit that makes its effects permanent or a rollback that undoes them.
+
+
+
+The ACID properties characterise a reliable transaction. Atomicity guarantees that all operations within the transaction succeed or none do. Consistency guarantees that the transaction moves the database from one valid state to another, respecting all declared constraints. Isolation guarantees that concurrent transactions do not observe each other's incomplete work. Durability guarantees that once a transaction is committed its effects survive a subsequent system failure.
+
+
+
+Three concurrency phenomena are defined. A dirty read occurs when a transaction reads data written by another transaction that has not yet committed. A non-repeatable read occurs when a transaction reads the same row twice and obtains different values because another transaction modified and committed it in between. A phantom read occurs when a transaction re-executes a query returning a set of rows and finds that rows have been added or removed by another committed transaction.
+
+
+
+The four standard isolation levels trade consistency against concurrency. Read uncommitted permits all three phenomena. Read committed prevents dirty reads. Repeatable read additionally prevents non-repeatable reads. Serialisable prevents all three and produces the same result as some serial execution of the transactions.
+
+
+
+A deadlock occurs when two transactions each hold a lock the other requires, so neither can proceed. Database systems detect deadlocks and resolve them by aborting one transaction, which the application must be prepared to retry.
+
+
+
+Optimistic concurrency control assumes conflicts are rare, allows work to proceed without locking, and checks for conflict at commit time using a version column or timestamp. Pessimistic concurrency control acquires locks in advance and is appropriate where contention is high.
+
+
+
+SECTION 11: SQL AND QUERY BEHAVIOUR
+
+
+
+Structured Query Language divides into a data definition language for creating and altering structures, a data manipulation language for inserting, updating, deleting and selecting rows, and a data control language for granting and revoking privileges.
+
+
+
+The logical order in which a select statement is evaluated differs from the order in which it is written. The from clause is processed first, then where, then group by, then having, then select, then order by, and finally any row limit. This explains why an alias defined in the select clause cannot be referenced in the where clause, but can be referenced in order by.
+
+
+
+An inner join returns only rows with a match on both sides. A left outer join returns all rows from the left table together with matching rows from the right, supplying nulls where no match exists. A right outer join is the mirror image, and a full outer join returns unmatched rows from both sides. A cross join returns the Cartesian product, which is almost always the result of an omitted join condition rather than an intention.
+
+
+
+The where clause filters individual rows before grouping, while the having clause filters groups after aggregation. Placing an aggregate condition in the where clause is an error.
+
+
+
+Aggregate functions ignore nulls, with the exception of count applied to all rows, which counts rows rather than values. This distinction produces results that appear inconsistent until the rule is understood.
+
+
+
+A subquery may be uncorrelated, evaluated once independently, or correlated, referencing the outer query and evaluated per outer row. Correlated subqueries are frequently rewritable as joins, often with a substantial performance benefit.
+
+
+
+SECTION 12: SECURITY, PRIVACY AND MAINTENANCE
+
+
+
+Access control follows the principle of least privilege: an account is granted only the rights required for its function. An application connecting as an administrative account converts any injection vulnerability into a total compromise of the server.
+
+
+
+Parameterised queries, also called prepared statements, are the primary defence against injection. They separate the statement structure from the values supplied, so that supplied data can never be interpreted as statement syntax. String concatenation to build queries is unsafe regardless of any filtering applied to the input.
+
+
+
+Passwords must never be stored in a recoverable form. They are stored as a salted hash produced by a deliberately slow algorithm designed for the purpose, so that an attacker who obtains the table cannot practically reverse the values.
+
+
+
+Personal information carries legal obligations governing its collection, storage, use, disclosure and retention. Data that is not collected cannot be breached, so collecting the minimum necessary is itself a security control.
+
+
+
+Backups must be tested by restoring them. An untested backup is an assumption rather than a safeguard. A recovery point objective states the maximum tolerable data loss, and a recovery time objective states the maximum tolerable outage.
+
+
+
+Schema changes in a live system are managed through versioned migration scripts held in source control alongside the application code, so that any environment can be brought to a known schema version reproducibly.
+
+
+
+SECTION 13: STORED PROGRAMS, VIEWS AND TRIGGERS
+
+
+
+A view is a named query stored in the database and presented as if it were a table. Views serve three main purposes: they simplify complex queries by naming them, they present a restricted subset of columns or rows for security purposes, and they provide a stable interface that insulates applications from changes to the underlying tables.
+
+
+
+A view is normally evaluated when it is queried, so it always reflects current data. A materialised view stores the computed result and must be refreshed, trading currency for speed.
+
+
+
+Not every view is updatable. A view containing aggregation, distinct, a union or a group by cannot be unambiguously mapped back to rows in a base table, so modifications through it are rejected.
+
+
+
+A stored procedure is a named block of statements held in the database and invoked by name. It reduces network round trips, centralises logic that several applications share, and allows privileges to be granted on the procedure rather than the underlying tables. Against this, logic held in the database is harder to place under source control and to test than logic held in application code, and it is specific to the database product.
+
+
+
+A trigger is a block of statements executed automatically in response to an insert, update or delete on a table, either before or after the event. Triggers are appropriate for enforcing invariants and for maintaining audit trails, because they cannot be bypassed by any route that reaches the table.
+
+
+
+Triggers are also a common source of surprise, because their effects are invisible at the point the statement is written. A trigger that modifies another table which itself has a trigger can produce long chains of hidden work, and a defect in such a chain is difficult to trace.
+
+
+
+SECTION 14: DATA WAREHOUSING AND ANALYTICAL DESIGN
+
+
+
+Operational databases support online transaction processing, characterised by many short transactions that read and write small numbers of rows. They are normalised, because the dominant cost is maintaining consistency across frequent writes.
+
+
+
+Analytical databases support online analytical processing, characterised by few long-running queries that read very large numbers of rows and aggregate them. They are deliberately denormalised, because the dominant cost is reading.
+
+
+
+The star schema is the standard analytical structure. A central fact table holds the measurements, such as the quantity and value of each sale, together with foreign keys to the surrounding dimension tables. Dimension tables hold the descriptive attributes by which the facts are analysed, such as product, customer, store and date.
+
+
+
+A snowflake schema normalises the dimension tables into further tables. It saves storage and reduces update anomalies within dimensions, at the cost of additional joins at query time.
+
+
+
+The grain of a fact table is the meaning of a single row, and it must be stated explicitly before design begins. A fact table at the grain of one row per line item on an order cannot be mixed with rows at the grain of one row per order without producing incorrect totals.
+
+
+
+Slowly changing dimensions describe how a dimension responds to change in the source data. Type one overwrites the old value, losing history. Type two adds a new row with validity dates and a current-record flag, preserving history. Type three keeps a limited number of prior values in additional columns.
+
+
+
+Extract, transform and load is the process by which data is taken from source systems, cleansed and reshaped, and written into the warehouse. Data quality work belongs in the transform stage, because analytical conclusions drawn from inconsistent source data are unreliable regardless of how the query is written.
+
+
+
+SECTION 15: SUMMARY OF KEY DEFINITIONS
+
+
+
+A relation is a set of tuples over a defined set of attributes, presented as a table. Its degree is its number of attributes and its cardinality is its number of rows.
+
+
+
+A candidate key is a minimal superkey. The primary key is the candidate key selected to identify rows, and it may not be null. A foreign key must match an existing primary key value or be null.
+
+
+
+Entity integrity forbids nulls in a primary key. Referential integrity requires foreign key values to reference existing rows.
+
+
+
+A functional dependency X determines Y means that any two rows agreeing on X must agree on Y. A partial dependency depends on part of a composite key; a transitive dependency runs through a non-key attribute.
+
+
+
+First normal form requires atomic values. Second normal form eliminates partial dependencies. Third normal form eliminates transitive dependencies. Boyce-Codd normal form requires every determinant to be a candidate key.
+
+
+
+A many to many relationship is implemented through a junction table whose primary key is normally the composite of the two foreign keys.
+
+
+
+Atomicity, consistency, isolation and durability are the four ACID properties of a transaction.
+
+
+
+A dirty read reads uncommitted data; a non-repeatable read sees a changed row on re-reading; a phantom read sees rows appear or disappear on re-querying. Read committed prevents the first, repeatable read prevents the first two, and serialisable prevents all three.
+
+
+
+An index accelerates reads at the cost of slower writes and additional storage, and is ineffective on columns of low selectivity.
+
+
+
+A parameterised query is the primary defence against injection, because it prevents supplied values from being interpreted as statement syntax.
+

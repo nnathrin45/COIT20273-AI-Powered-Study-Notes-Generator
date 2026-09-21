@@ -1,0 +1,21 @@
+{
+  "test_id": "DP-06",
+  "title": "Unsupported file type rejected",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:16.649Z",
+  "checking": "an extension outside the allow-list is refused",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/upload",
+    "file": "malware.exe"
+  },
+  "response": {
+    "status": 415,
+    "body": {
+      "status": "error",
+      "code": "UNSUPPORTED_FILE_TYPE",
+      "message": "Only PDF, DOCX and TXT files are allowed"
+    }
+  },
+  "notes": null
+}

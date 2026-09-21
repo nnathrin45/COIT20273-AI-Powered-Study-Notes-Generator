@@ -1,0 +1,49 @@
+{
+  "test_id": "ERR-07",
+  "title": "Consistent AI error contract",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:17.510Z",
+  "checking": "all AI failure modes return the same response shape with distinct, machine-readable codes",
+  "request": null,
+  "response": {
+    "modes": [
+      {
+        "mode": "Gemini timeout",
+        "status": 504,
+        "code": "AI_TIMEOUT",
+        "retryable": true
+      },
+      {
+        "mode": "Daily quota exhausted",
+        "status": 429,
+        "code": "AI_QUOTA_EXCEEDED",
+        "retryable": true
+      },
+      {
+        "mode": "Short rate limit",
+        "status": 429,
+        "code": "AI_QUOTA_EXCEEDED",
+        "retryable": true
+      },
+      {
+        "mode": "Malformed AI response",
+        "status": 502,
+        "code": "AI_MALFORMED_RESPONSE",
+        "retryable": true
+      },
+      {
+        "mode": "Empty AI response",
+        "status": 502,
+        "code": "AI_EMPTY_RESPONSE",
+        "retryable": true
+      },
+      {
+        "mode": "Upstream service unavailable",
+        "status": 503,
+        "code": "AI_UNAVAILABLE",
+        "retryable": true
+      }
+    ]
+  },
+  "notes": null
+}

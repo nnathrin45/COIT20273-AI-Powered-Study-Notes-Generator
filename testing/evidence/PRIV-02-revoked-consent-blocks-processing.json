@@ -1,0 +1,29 @@
+{
+  "test_id": "PRIV-02",
+  "title": "Revoked consent blocks processing",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:18.403Z",
+  "checking": "consent is re-checked on every request, so revocation takes effect at once",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/ai/generate",
+    "body": {
+      "file_id": 372,
+      "output_type": "summary"
+    }
+  },
+  "response": {
+    "before_revocation": {
+      "status": 201
+    },
+    "after_revocation": {
+      "status": 403,
+      "body": {
+        "status": "error",
+        "code": "CONSENT_REQUIRED",
+        "message": "AI processing requires your consent. Please review and accept the data handling conditions before generating content."
+      }
+    }
+  },
+  "notes": "model invoked after revocation: no"
+}

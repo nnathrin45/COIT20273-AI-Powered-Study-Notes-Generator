@@ -1,0 +1,50 @@
+{
+  "started_at": "2026-09-21T07:56:08.192Z",
+  "duration_ms": 11973,
+  "issue": "#119",
+  "gemini_quota_consumed": 0,
+  "regression": {
+    "total": 71,
+    "failed": 0
+  },
+  "final": {
+    "total": 33,
+    "failed": 0
+  },
+  "failures": [],
+  "evidence_files": [
+    "AI-01-summary-generation.json",
+    "AI-02-flashcard-generation.json",
+    "AI-03-practice-quiz-generation.json",
+    "AI-04-concept-explanation-generation.json",
+    "AI-05-structured-response-round-trip.json",
+    "AI-06-output-ownership.json",
+    "AI-07-cross-user-output-isolation.json",
+    "DP-01-pdf-extracted-text.txt",
+    "DP-02-docx-extracted-text.txt",
+    "DP-03-txt-extracted-text.txt",
+    "DP-04-scanned-pdf-rejected.json",
+    "DP-05-extracted-text-storage.json",
+    "DP-06-unsupported-file-type-rejected.json",
+    "DP-07-corrupt-document-handled-safely.json",
+    "ERR-01-gemini-timeout.json",
+    "ERR-02-daily-quota-exhausted.json",
+    "ERR-03-short-rate-limit.json",
+    "ERR-04-malformed-ai-response.json",
+    "ERR-05-empty-ai-response.json",
+    "ERR-06-upstream-service-unavailable.json",
+    "ERR-07-consistent-ai-error-contract.json",
+    "ERR-08-invalid-input-handling.json",
+    "PRIV-01-consent-required-before-processing.json",
+    "PRIV-02-revoked-consent-blocks-processing.json",
+    "PRIV-03-prompt-sent-to-model.txt",
+    "PRIV-04-responsible-ai-labelling.json",
+    "PRIV-05-no-credentials-in-api-responses.json",
+    "PRIV-06-upstream-error-does-not-leak-credentials.json",
+    "PRIV-07-secrets-excluded-from-version-control.json",
+    "QA-01-full-pipeline-end-to-end.json",
+    "QA-02-quiz-marking-against-a-known-key.json",
+    "QA-03-consent-enforced-across-all-content-types.json",
+    "QA-04-ai-accuracy-review-artefact.json"
+  ]
+}

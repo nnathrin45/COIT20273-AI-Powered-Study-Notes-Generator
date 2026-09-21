@@ -1,0 +1,25 @@
+{
+  "test_id": "ERR-01",
+  "title": "Gemini timeout",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:17.497Z",
+  "checking": "the gemini timeout path returns a consistent, actionable error and leaves the uploaded document untouched",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/ai/generate",
+    "body": {
+      "file_id": 370,
+      "output_type": "summary"
+    }
+  },
+  "response": {
+    "status": 504,
+    "body": {
+      "status": "error",
+      "code": "AI_TIMEOUT",
+      "message": "The AI service took too long to respond. Please try again.",
+      "retryable": true
+    }
+  },
+  "notes": "document intact after failure: true; outputs stored before 0, after 0"
+}

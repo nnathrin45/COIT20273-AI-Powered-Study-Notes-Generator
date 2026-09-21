@@ -1,0 +1,21 @@
+{
+  "test_id": "DP-07",
+  "title": "Corrupt document handled safely",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:16.765Z",
+  "checking": "a file that passes extension validation but cannot be parsed returns a structured error and does not crash the server",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/upload",
+    "file": "corrupt.pdf (plain text with a .pdf extension)"
+  },
+  "response": {
+    "status": 500,
+    "body": {
+      "status": "error",
+      "code": "PROCESSING_FAILED",
+      "message": "Unable to upload or process file"
+    }
+  },
+  "notes": null
+}

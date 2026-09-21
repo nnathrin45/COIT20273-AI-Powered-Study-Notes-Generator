@@ -1,0 +1,254 @@
+Test ID   : DP-03
+Artefact  : TXT-extracted-text
+Issue     : #119
+Captured  : 2026-09-21T07:56:16.254Z
+Fixture   : known-doc1-software-testing.txt
+Source    : testing/fixtures/source/doc1-software-testing.txt
+Source chars: 23543
+Extracted chars: 23543
+Match     : character-identical ignoring whitespace
+------------------------------------------------------------------------
+SOFTWARE TESTING FUNDAMENTALS
+Study Notes - Unit COIT20273 Revision Set A
+
+SECTION 1: WHAT TESTING IS AND IS NOT
+
+Software testing is the process of evaluating a system or its components with the intent of finding whether it satisfies the specified requirements. Testing is an investigation carried out to give stakeholders information about the quality of the product under test.
+
+A central principle is that testing can show the presence of defects but cannot prove their absence. Running a test that passes tells us only that the system behaved correctly for that particular input on that particular run. Exhaustive testing, meaning testing every possible combination of inputs and preconditions, is not feasible for any non-trivial system, so testing is always a sampling activity guided by risk.
+
+Verification asks whether the product was built correctly, that is, whether it conforms to its specification. Validation asks whether the correct product was built, that is, whether it meets the actual needs of the user. A system can pass verification and still fail validation if the specification itself was wrong.
+
+A defect, also called a bug or fault, is a flaw in a component or system that can cause it to fail to perform its required function. A failure is the observable event in which the system does not perform as required. An error is the human action that produced the defect. The chain therefore runs from error to defect to failure.
+
+The cost of defect correction rises sharply the later a defect is found in the development lifecycle. A defect found during requirements analysis may cost very little to correct, while the same defect found in production may cost orders of magnitude more because of rework, redeployment and damage to user confidence. This economic argument is the primary justification for early and continuous testing.
+
+SECTION 2: THE SEVEN TESTING PRINCIPLES
+
+The first principle is that testing shows the presence of defects, not their absence.
+
+The second principle is that exhaustive testing is impossible, so effort must be focused using risk analysis and priorities.
+
+The third principle is early testing. Testing activities should begin as early as possible in the development lifecycle, including the review of requirements and design documents before any code exists.
+
+The fourth principle is defect clustering. A small number of modules usually contains the majority of the defects discovered before release. This observation is a practical application of the Pareto principle and it justifies concentrating effort on historically defect-prone areas.
+
+The fifth principle is the pesticide paradox. If the same tests are repeated over and over, they eventually stop finding new defects. Test cases must be reviewed and revised regularly, and new tests written, in order to keep finding new problems.
+
+The sixth principle is that testing is context dependent. A safety-critical medical device is tested very differently from a marketing website, because the consequences of failure differ.
+
+The seventh principle is the absence of errors fallacy. Finding and fixing a large number of defects is of no value if the system that results is unusable or does not meet the users' needs.
+
+SECTION 3: LEVELS OF TESTING
+
+Unit testing examines individual components in isolation, usually functions, methods or classes. It is normally performed by the developer who wrote the code, and it relies on stubs and mocks to stand in for collaborators that are not under test. Unit tests are fast, numerous and cheap to run, which makes them suitable for execution on every change.
+
+Integration testing examines the interfaces and interactions between components that have already been unit tested. It finds defects in data passed between modules, in interface contracts, and in assumptions one component makes about another. Two common strategies are top-down integration, which uses stubs for lower components, and bottom-up integration, which uses drivers for higher components. Big-bang integration, in which all components are combined at once, is generally discouraged because it makes fault localisation difficult.
+
+System testing examines the complete, integrated system against the specified requirements. It is performed in an environment as close to production as practical, and it covers both functional and non-functional requirements.
+
+Acceptance testing determines whether the system is acceptable to the customer or end user. User acceptance testing is performed by representatives of the intended users. Alpha testing is conducted at the developer's site by people who are not the development team, while beta testing is conducted at the customer's site by real users under real conditions.
+
+SECTION 4: BLACK BOX TEST DESIGN TECHNIQUES
+
+Black box techniques derive test cases from the specification without reference to the internal structure of the code.
+
+Equivalence partitioning divides the input domain into partitions within which all values are expected to be treated the same way by the system. One value is then chosen to represent each partition, on the assumption that if that value is handled correctly the others will be too. Partitions exist for both valid and invalid inputs, and both must be tested.
+
+Boundary value analysis complements equivalence partitioning by testing at the edges of each partition, because defects cluster at boundaries. For a field accepting values from one to ninety-nine, the boundary values to test are zero, one, two, ninety-eight, ninety-nine and one hundred. The technique reflects the frequency of off-by-one errors in comparison operators.
+
+Decision table testing captures combinations of conditions and the actions that should result from each combination. It is well suited to business rules where several conditions interact, and it exposes combinations the specification failed to address.
+
+State transition testing models the system as a set of states with permitted transitions between them, driven by events. It is appropriate where the system's response to an input depends on its history, such as a login process that locks an account after three failed attempts. Tests cover valid transitions, and also invalid transitions that should be rejected.
+
+Use case testing derives tests from the interactions described in use cases, exercising the main success scenario together with the documented alternative and exception flows.
+
+SECTION 5: WHITE BOX TEST DESIGN TECHNIQUES
+
+White box techniques, also called structural techniques, derive tests from the internal structure of the code.
+
+Statement coverage measures the percentage of executable statements exercised by a test suite. It is the weakest of the common coverage measures, because a suite can reach full statement coverage without ever taking the false branch of a condition that has no else clause.
+
+Decision coverage, also called branch coverage, measures the percentage of decision outcomes exercised. Full decision coverage implies full statement coverage, but the converse does not hold.
+
+Condition coverage measures whether each individual boolean sub-expression within a decision has been evaluated both true and false. Modified condition decision coverage additionally requires demonstrating that each condition independently affects the decision outcome, and it is mandated for avionics software at the highest criticality levels.
+
+Path coverage requires exercising every possible route through the code. The number of paths grows combinatorially with the number of decisions and becomes impractical for real programs, particularly where loops are involved.
+
+Coverage is a useful indicator of what has not been tested, but a poor measure of test quality. Code can be executed by a test that asserts nothing, which registers as covered while verifying nothing at all.
+
+SECTION 6: NON-FUNCTIONAL TESTING
+
+Performance testing determines how a system behaves in terms of responsiveness and stability under a particular workload. Load testing applies an expected level of demand. Stress testing applies demand beyond the expected maximum in order to find the breaking point and to observe how the system fails. Soak testing, also called endurance testing, applies a sustained load over an extended period to reveal problems such as memory leaks that only appear over time. Spike testing applies a sudden sharp increase in load.
+
+Usability testing evaluates how easily intended users can accomplish their goals, and is normally conducted by observing representative users attempting representative tasks.
+
+Security testing seeks to establish that the system protects data and maintains functionality as intended, covering areas such as authentication, authorisation, input validation, session management and the secure storage of credentials.
+
+Compatibility testing establishes that the system operates correctly across the intended range of browsers, devices, operating systems and screen sizes.
+
+Accessibility testing establishes that the system can be used by people with disabilities, and is commonly assessed against the Web Content Accessibility Guidelines.
+
+Reliability testing measures the ability of the system to perform its required functions under stated conditions for a stated period of time.
+
+SECTION 7: REGRESSION TESTING AND TEST AUTOMATION
+
+Regression testing re-executes previously passing tests after a change, in order to establish that the change has not broken existing behaviour. Confirmation testing, by contrast, re-executes the specific test that exposed a defect, in order to establish that the fix works.
+
+Because regression suites are executed frequently and grow continuously, they are the strongest candidates for automation. Automation offers repeatability, speed, and the ability to run tests unattended, and it removes the transcription errors that occur when humans repeat the same steps.
+
+Automation is not free. Automated tests are software in their own right and must be designed, reviewed and maintained. A brittle suite that fails for reasons unrelated to real defects will be ignored, and an ignored suite provides no protection at all.
+
+The test automation pyramid recommends a large base of fast unit tests, a smaller layer of integration tests, and a small number of end-to-end tests at the top. Inverting the pyramid, with many slow end-to-end tests and few unit tests, produces a suite that is slow, expensive to maintain and prone to intermittent failure.
+
+A flaky test is one that produces different results across runs without any change to the code. Flaky tests erode confidence in the suite and should be either repaired or removed rather than tolerated.
+
+SECTION 8: TEST DOCUMENTATION AND DEFECT MANAGEMENT
+
+A test plan describes the scope, approach, resources and schedule of the intended testing activities, and identifies the items to be tested, the features to be tested, the tasks to be performed, and the risks requiring contingency planning.
+
+A test case specifies the preconditions, the inputs, the steps to execute, the expected result and the postconditions for a single test. The expected result must be recorded before execution, otherwise there is a temptation to accept whatever the system produces as correct.
+
+A defect report should contain a short descriptive title, the steps to reproduce, the observed result, the expected result, the environment, and an assessment of severity and priority. Severity describes the technical impact of the defect on the system. Priority describes the urgency with which it should be fixed. The two are independent: a cosmetic misspelling of a company name on the landing page is low severity but may be high priority.
+
+Traceability links each requirement to the test cases that verify it. It supports impact analysis when a requirement changes, and it demonstrates coverage of the requirements to auditors and stakeholders.
+
+Entry criteria define the conditions that must be met before a test level begins, and exit criteria define the conditions that must be met before it is considered complete. Exit criteria commonly include a coverage target, the resolution of all defects above an agreed severity, and the successful execution of an agreed proportion of planned tests.
+
+SECTION 9: TESTING IN THE DEVELOPMENT LIFECYCLE
+
+The V-model pairs each development phase with a corresponding test level. Requirements analysis is paired with acceptance testing, system design with system testing, architectural design with integration testing, and detailed design with unit testing. The value of the model lies in the observation that test design can begin as soon as the corresponding development document exists, long before any code is written.
+
+In agile development, testing is not a phase that follows development but an activity that occurs continuously within each iteration. The whole team shares responsibility for quality, and a user story is not considered done until it meets an agreed definition of done that includes testing.
+
+Test-driven development inverts the usual order by writing a failing test before writing the production code that makes it pass, then refactoring. The cycle is commonly summarised as red, green, refactor.
+
+Continuous integration requires developers to merge their work into a shared branch frequently, with an automated build and test run triggered on every merge. Its purpose is to detect integration defects within minutes rather than weeks.
+
+Shift-left testing describes moving testing activities earlier in the lifecycle. Shift-right testing describes complementary activities in production, such as monitoring, canary releases and feature flags.
+
+SECTION 10: QUALITY ASSURANCE AND QUALITY CONTROL
+
+Quality assurance is process oriented and preventive. It seeks to improve the processes by which the product is developed so that defects are less likely to be introduced in the first place. Standards, reviews, training and defined procedures are quality assurance activities.
+
+Quality control is product oriented and detective. It seeks to identify defects in the product that has been built. Testing is a quality control activity.
+
+Static testing examines work products without executing them, and includes reviews, walkthroughs, technical reviews, inspections and static analysis performed by tools. Static testing can be applied to requirements, designs, code and test cases, and it finds defects directly rather than the failures they cause.
+
+Dynamic testing requires the software to be executed. It observes failures and infers the defects behind them.
+
+An informal review has no formal process and is typically a pair of colleagues reading each other's work. A walkthrough is led by the author. A technical review is led by a trained moderator and focuses on technical decisions. An inspection is the most formal, follows a defined entry and exit process, uses checklists and collects metrics.
+
+Reviews are consistently found to be among the most cost-effective defect-removal activities available, because they find defects at the point of creation and they find categories of defect, such as ambiguity in a requirement, that dynamic testing cannot detect at all.
+
+SECTION 11: RISK-BASED TESTING
+
+Risk-based testing prioritises test effort according to the risk associated with each part of the system. Risk is assessed as the product of the likelihood that a defect exists in an area and the impact that a failure in that area would have.
+
+Likelihood is estimated from factors such as the complexity of the component, the amount of recent change, the experience of the developers involved, the defect history of the area, and the use of new or unfamiliar technology. Impact is estimated from factors such as the visibility of the feature to users, the frequency with which it is used, the financial or legal consequences of failure, and whether a workaround exists.
+
+Areas of high likelihood and high impact receive the deepest testing, including exhaustive boundary analysis and negative testing. Areas of low likelihood and low impact may receive only a single confirmatory test, or none at all.
+
+The output of risk analysis is normally recorded in a risk register that names each risk, its owner, its assessed likelihood and impact, and the mitigation planned. The register is revisited throughout the project, because risk assessments made at the start become stale as the system and the team's knowledge of it change.
+
+Risk-based testing also provides the vocabulary for release decisions. Rather than reporting that a given percentage of tests have passed, the team can report which risks have been addressed and which remain open, which is far more useful to a stakeholder deciding whether to ship.
+
+SECTION 12: TEST ENVIRONMENTS AND TEST DATA
+
+A test environment comprises the hardware, software, network configuration, and data required to execute tests. Differences between the test environment and production are a common source of defects that escape to production and of failures that cannot be reproduced by developers.
+
+The ideal is an environment that mirrors production in configuration if not in scale. Where full parity is impractical, the differences must be documented so that their consequences are understood when interpreting results.
+
+Test data must be representative of production data in its variety, including the awkward cases: names containing apostrophes, addresses with unusual formats, dates around leap years and daylight saving transitions, and text in non-Latin scripts.
+
+Using a copy of production data provides realism but introduces privacy obligations. Personal data must be anonymised or pseudonymised before use in a test environment, and the relevant privacy legislation applies to test copies exactly as it applies to the production original.
+
+Test data must also be managed over time. Tests that depend on data created by earlier tests introduce run-order dependencies, which cause failures that appear intermittent and are difficult to diagnose. A well-designed test either creates the data it needs and removes it afterwards, or depends only on a fixed reference set that no test modifies.
+
+SECTION 13: TEST ESTIMATION AND METRICS
+
+Test estimation predicts the effort required for the testing activity. The metrics-based approach estimates from the measured effort of previous, comparable projects. The expert-based approach estimates from the judgement of the people who will perform the work, or of experienced practitioners.
+
+Common progress metrics include the number of test cases planned, executed, passed and failed; the number of defects found, fixed and reopened; and the coverage achieved against requirements or code.
+
+Defect density expresses the number of defects found per unit of size, such as per thousand lines of code or per function point, and permits comparison between components and between releases.
+
+Defect removal efficiency expresses the proportion of defects found before release as a fraction of all defects eventually discovered, including those reported by users after release. It can only be calculated retrospectively, once field defects are known.
+
+The defect detection percentage and the mean time to detect are used to assess how quickly the process surfaces problems. Mean time to repair measures how quickly they are corrected.
+
+Metrics are open to distortion when they become targets. Counting defects found rewards quantity over significance, and counting test cases written rewards fragmentation of tests. Metrics should therefore be interpreted together and in context rather than individually and in isolation.
+
+SECTION 14: DEFECT LIFECYCLE
+
+A defect passes through a defined sequence of states from discovery to closure. The typical lifecycle begins with the new state, assigned when a tester first records the defect.
+
+The defect is then triaged, in which it is assessed for validity, severity and priority, and either assigned to a developer or rejected. A defect may be rejected as a duplicate of one already recorded, as not a defect because the observed behaviour is in fact correct, or as not reproducible.
+
+Once assigned, the defect moves to the open or in progress state while the developer investigates and corrects it. When the correction is complete and delivered to the test environment, the defect moves to the fixed or resolved state.
+
+The tester then performs confirmation testing. If the defect no longer occurs, it moves to the verified state and then to closed. If it still occurs, it is reopened and returns to the developer.
+
+A defect may also be deferred, meaning that it is accepted as genuine but will not be corrected in the current release. Deferred defects should be recorded in the release notes so that support staff recognise reports of known behaviour.
+
+A high reopen rate indicates a problem in the process rather than in any individual defect, and commonly points to inadequate reproduction steps, an unrepresentative test environment, or corrections made without understanding the underlying cause.
+
+SECTION 15: EXPLORATORY AND SCRIPTED TESTING
+
+Scripted testing executes test cases that were designed and documented in advance. It provides repeatability, permits delegation to testers unfamiliar with the system, and produces clear evidence of what was tested.
+
+Exploratory testing treats test design, execution and learning as concurrent activities. The tester designs the next test based on what the previous test revealed, which allows investigation to follow the evidence rather than a plan written before the system existed.
+
+Exploratory testing is not unstructured. Session-based test management organises it into time-boxed sessions, each governed by a charter that states what is to be investigated. The tester records notes during the session and reports the findings, the coverage achieved and any obstacles encountered.
+
+The two approaches are complementary. Scripted tests protect known behaviour and satisfy the need for evidence and repeatability, while exploratory testing finds the defects that nobody thought to write a test case for, particularly in areas where the specification was vague.
+
+Exploratory testing depends heavily on the skill and domain knowledge of the tester, which makes it difficult to estimate and to compare between individuals. Scripted testing depends heavily on the quality of the specification from which the scripts were derived, and inherits any ambiguity or error present in it.
+
+SECTION 16: SUMMARY OF KEY DEFINITIONS
+
+Testing is the process of evaluating a system to find whether it satisfies its specified requirements, and it provides information about product quality to stakeholders.
+
+An error is a human action producing a defect. A defect is the flaw in the product. A failure is the observable deviation from required behaviour when the defect is executed.
+
+Verification confirms that the product was built correctly against its specification. Validation confirms that the correct product was built against the user's needs.
+
+Severity is the technical impact of a defect. Priority is the urgency of correcting it. The two are assigned independently.
+
+Static testing examines work products without executing them. Dynamic testing executes the software.
+
+Quality assurance is preventive and improves the process. Quality control is detective and examines the product.
+
+Confirmation testing checks that a specific fix works. Regression testing checks that a change has broken nothing that previously worked.
+
+Equivalence partitioning selects one representative value per partition of the input domain. Boundary value analysis tests at the edges of those partitions, where defects cluster.
+
+Statement coverage measures executable statements exercised. Decision coverage measures decision outcomes exercised, and full decision coverage implies full statement coverage.
+
+The pesticide paradox states that unchanged tests stop finding new defects over time, so test cases must be regularly reviewed and revised.
+
+SECTION 17: TESTING WEB APPLICATIONS AND APPLICATION PROGRAMMING INTERFACES
+
+Web application testing must address the client, the server and the network between them. Client-side concerns include rendering across browsers, responsive layout across screen sizes, and the behaviour of scripts when a request is slow or fails. Server-side concerns include correct processing, persistence and authorisation. Network concerns include latency, intermittent connectivity and the handling of requests that are retried.
+
+Application programming interface testing exercises the service directly rather than through a user interface. It is faster and more stable than interface-driven testing because it avoids the rendering layer entirely, and it can be performed before any interface exists.
+
+An API test should assert on the status code, the response body, the response headers and the time taken. Testing only the status code is a common weakness, because a service can return a success code alongside an empty or malformed body.
+
+Negative API testing is at least as important as positive testing. Each documented error condition should have a test that triggers it deliberately and confirms both the status code and the machine-readable error code, so that clients can distinguish a validation failure from an authorisation failure from an upstream outage.
+
+Authorisation testing must confirm not only that an unauthenticated request is refused, but that an authenticated user cannot reach another user's records by supplying an identifier that does not belong to them. This class of defect, known as insecure direct object reference, is not detected by testing that exercises only the interface, because the interface never offers the identifier in the first place.
+
+SECTION 18: TESTING SYSTEMS THAT USE GENERATIVE ARTIFICIAL INTELLIGENCE
+
+A system that calls a generative model presents testing problems that conventional deterministic systems do not. The same input may produce a different output on each call, so an assertion comparing the output to a fixed expected string will fail even when the system is working correctly.
+
+Testing therefore shifts from exact comparison to property checking. Useful properties include whether the response has the required structure, whether it is within an expected length range, whether it contains content grounded in the supplied source material, and whether it avoids asserting facts that the source does not contain.
+
+The boundary between the application and the model should be tested separately from the model itself. The application's own logic, including prompt construction, response parsing, error classification and persistence, is deterministic and can be tested with a stubbed model that returns a fixed response. This allows malformed responses, empty responses and upstream failures to be simulated deliberately rather than waited for.
+
+Upstream failure modes require explicit tests. A rate limit, a quota exhaustion, a timeout and a server error from the provider are distinct conditions, and a system that reports all of them as a single generic failure gives the user no basis for deciding whether to retry.
+
+Accuracy of generated content cannot be established by automation alone at this stage, and is assessed by manual review against source documents with known content. The review checks that key concepts present in the source are represented, and that no fact absent from the source has been introduced. A quality metric is agreed in advance, such as a required proportion of reviewed outputs being free of invented content.
+
+Systems that send user material to a third-party model also carry obligations beyond correctness. Explicit consent must be obtained and recorded before material is transmitted, the user must be able to withdraw that consent, and withdrawal must be enforced on every subsequent request rather than only at the point it is given.

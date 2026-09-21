@@ -1,0 +1,37 @@
+{
+  "test_id": "QA-03",
+  "title": "Consent enforced across all content types",
+  "issue": "#119",
+  "captured_at": "2026-09-21T07:56:19.925Z",
+  "checking": "all four content types are refused without consent, and none reaches the model",
+  "request": null,
+  "response": {
+    "types": [
+      {
+        "output_type": "summary",
+        "status": 403,
+        "code": "CONSENT_REQUIRED",
+        "model_called": false
+      },
+      {
+        "output_type": "flashcards",
+        "status": 403,
+        "code": "CONSENT_REQUIRED",
+        "model_called": false
+      },
+      {
+        "output_type": "quiz",
+        "status": 403,
+        "code": "CONSENT_REQUIRED",
+        "model_called": false
+      },
+      {
+        "output_type": "explanation",
+        "status": 403,
+        "code": "CONSENT_REQUIRED",
+        "model_called": false
+      }
+    ]
+  },
+  "notes": "quality metric: 100% of unconsented generation attempts refused"
+}

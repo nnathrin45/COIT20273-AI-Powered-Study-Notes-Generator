@@ -1,0 +1,21 @@
+Test ID   : PRIV-03
+Artefact  : prompt-sent-to-model
+Issue     : #119
+Captured  : 2026-09-21T07:56:18.523Z
+Study material chars: 240
+Prompt chars: 706
+Account data found: none
+------------------------------------------------------------------------
+You are helping a university student revise from their own study material.
+
+Summarise the study material below. Cover the key concepts and any definitions that appear in it.
+
+Rules:
+- Use only information present in the material. Do not add facts from outside it.
+- If the material is too short or unclear to summarise, say so plainly instead of inventing content.
+- Write in clear prose with short paragraphs. Do not use markdown headings.
+
+Study material:
+---
+Photosynthesis converts light energy into chemical energy stored as glucose. The light-dependent reactions occur in the thylakoid membrane and produce ATP and NADPH. The Calvin cycle occurs in the stroma and fixes carbon dioxide into sugar.
+---
