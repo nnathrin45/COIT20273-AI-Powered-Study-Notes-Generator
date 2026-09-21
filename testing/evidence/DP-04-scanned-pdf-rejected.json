@@ -1,0 +1,21 @@
+{
+  "test_id": "DP-04",
+  "title": "Scanned PDF rejected",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:23.689Z",
+  "checking": "an image-only document is refused rather than accepted with empty content",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/upload",
+    "file": "scanned-no-text.pdf (3 pages, no text layer)"
+  },
+  "response": {
+    "status": 422,
+    "body": {
+      "status": "error",
+      "code": "NO_READABLE_TEXT",
+      "message": "No readable text could be extracted from this file. Scanned or image-only documents are not supported. Please upload a text-based document."
+    }
+  },
+  "notes": "Text recoverable by the extraction service: 0 characters"
+}

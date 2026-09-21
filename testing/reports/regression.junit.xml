@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="a timeout is reported as 504 AI_TIMEOUT and marked retryable (T-23, NFR5)" time="0.960829" classname="test"/>
+	<testcase name="the uploaded document survives a timeout (NFR5, T-23)" time="0.126412" classname="test"/>
+	<testcase name="no partial output is stored when a generation times out (T-23)" time="0.124061" classname="test"/>
+	<testcase name="a retry after a timeout succeeds against the same document (NFR5, T-23)" time="0.124293" classname="test"/>
+	<testcase name="consent starts unrecorded and is not an error (FR17.1)" time="0.506276" classname="test"/>
+	<testcase name="consent is recorded and retrievable (FR17.1, NFR11)" time="0.120973" classname="test"/>
+	<testcase name="consent history is append-only, so the latest decision wins (NFR11)" time="0.123204" classname="test"/>
+	<testcase name="an invalid consent value is rejected (FR17.1)" time="0.114424" classname="test"/>
+	<testcase name="generation is refused when consent has never been given (FR17.1, T-20)" time="0.120475" classname="test"/>
+	<testcase name="generation is refused again after consent is revoked (FR17.2, T-22)" time="0.124590" classname="test"/>
+	<testcase name="consent is enforced for every output type, not only summaries (FR17)" time="0.140100" classname="test"/>
+	<testcase name="an unsupported output type is rejected before consent is considered (T-30)" time="0.002158" classname="test"/>
+	<testcase name="a missing file_id is rejected" time="0.002278" classname="test"/>
+	<testcase name="an explanation without a concept is rejected (FR12.1, T-44)" time="0.005988" classname="test"/>
+	<testcase name="an explanation with an unrecognised level is rejected (FR12.1, T-45)" time="0.005133" classname="test"/>
+	<testcase name="a document belonging to another user is reported as not found (NFR3, T-39)" time="0.119392" classname="test"/>
+	<testcase name="generation against a file with no extracted text advises re-uploading (FR8.4)" time="0.013316" classname="test"/>
+	<testcase name="the AI endpoints require authentication (NFR2, T-13)" time="0.004966" classname="test"/>
+	<testcase name="a fully correct attempt scores every question (FR11.2, T-34)" time="0.530689" classname="test"/>
+	<testcase name="a wholly incorrect attempt scores zero (FR11.2)" time="0.004732" classname="test"/>
+	<testcase name="a partial attempt records unanswered questions as incorrect (FR11.2, T-35)" time="0.006819" classname="test"/>
+	<testcase name="per-question results identify which answers were correct (FR11.2)" time="0.009592" classname="test"/>
+	<testcase name="each attempt is stored separately so retakes are preserved (FR11.2, T-36)" time="0.149845" classname="test"/>
+	<testcase name="the number of answers must match the number of questions (FR11.2, T-37)" time="0.002763" classname="test"/>
+	<testcase name="answers must be supplied as an array (FR11.2)" time="0.002313" classname="test"/>
+	<testcase name="an attempt cannot be submitted against a non-quiz output (T-38)" time="0.002954" classname="test"/>
+	<testcase name="a quiz belonging to another user cannot be attempted (NFR3)" time="0.125678" classname="test"/>
+	<testcase name="quiz attempt endpoints require authentication (NFR2)" time="0.002745" classname="test"/>
+	<testcase name="accepts a .txt upload and extracts its text (FR8.3, T-01)" time="0.678171" classname="test"/>
+	<testcase name="returns file_id so the caller can generate without a second lookup (FR6, T-48)" time="0.128115" classname="test"/>
+	<testcase name="rejects a file whose extension is not allowed (FR6.1, T-04)" time="0.123631" classname="test"/>
+	<testcase name="accepts .pdf, .docx and .txt extensions at the validation stage (FR6.1)" time="0.148990" classname="test"/>
+	<testcase name="rejects a file over the 15 MB limit (FR6.2, T-05)" time="0.143138" classname="test"/>
+	<testcase name="rejects a request with no file attached (T-07)" time="0.120568" classname="test"/>
+	<testcase name="rejects a document with no readable text (FR8.4)" time="0.116478" classname="test"/>
+	<testcase name="rejects a scanned, image-only PDF (FR8.4, SR-DP4, T-26)" time="0.120776" classname="test"/>
+	<testcase name="extracted PDF text carries no pdf-parse page markers (T-26)" time="0.144721" classname="test"/>
+	<testcase name="one user cannot read another user's document (NFR3, T-08)" time="0.231530" classname="test"/>
+	<testcase name="upload requires authentication (NFR2)" time="0.001903" classname="test"/>
+	<testcase name="buildPrompt includes the source material (T-15)" time="0.000449" classname="test"/>
+	<testcase name="buildPrompt instructs the model not to invent facts (T-15, risk R1)" time="0.000099" classname="test"/>
+	<testcase name="buildPrompt rejects an unsupported output type (T-16)" time="0.000162" classname="test"/>
+	<testcase name="buildPrompt truncates long input on a word boundary (T-17, NFR1)" time="0.000073" classname="test"/>
+	<testcase name="buildPrompt leaves short input untouched" time="0.000041" classname="test"/>
+	<testcase name="explanation requires a concept (FR12.1)" time="0.000044" classname="test"/>
+	<testcase name="explanation rejects a blank concept (FR12.1)" time="0.000043" classname="test"/>
+	<testcase name="explanation rejects an unrecognised level (FR12.1)" time="0.000038" classname="test"/>
+	<testcase name="explanation accepts each documented level, and they differ (FR12.1)" time="0.000247" classname="test"/>
+	<testcase name="flashcard parser accepts a well-formed response (FR10.1)" time="0.000270" classname="test"/>
+	<testcase name="flashcard parser discards incomplete cards" time="0.000077" classname="test"/>
+	<testcase name="flashcard parser rejects a non-array response" time="0.000041" classname="test"/>
+	<testcase name="flashcard parser rejects a response with no usable cards" time="0.000035" classname="test"/>
+	<testcase name="quiz parser labels question types correctly (FR11.1)" time="0.000082" classname="test"/>
+	<testcase name="quiz parser discards a question whose answer is not among its options (FR11.1)" time="0.000031" classname="test"/>
+	<testcase name="quiz parser rejects a response with no usable questions" time="0.000036" classname="test"/>
+	<testcase name="a daily quota error is classified as AI_QUOTA_EXCEEDED (T-53, risk R3)" time="0.000112" classname="test"/>
+	<testcase name="a short rate limit is distinguished from the daily quota (T-53)" time="0.000071" classname="test"/>
+	<testcase name="an upstream 5xx is classified as AI_UNAVAILABLE (T-53)" time="0.000037" classname="test"/>
+	<testcase name="our own errors pass through unchanged (T-53)" time="0.000032" classname="test"/>
+	<testcase name="an unrecognised error is not disguised as a capacity problem (T-53)" time="0.000030" classname="test"/>
+	<testcase name="a request that does not return in time is rejected as AI_TIMEOUT (T-23)" time="0.021816" classname="test"/>
+	<testcase name="a request that returns in time is unaffected by the timeout (T-23)" time="0.000612" classname="test"/>
+	<testcase name="a request failing on its own merits keeps its own error (T-23)" time="0.000096" classname="test"/>
+	<testcase name="the production timeout is 60 seconds unless configured otherwise (NFR5)" time="0.000047" classname="test"/>
+	<testcase name="the timeout timer does not outlive the race (T-23)" time="0.000123" classname="test"/>
+	<testcase name="TXT extraction recovers the source in full (FR8, T-25)" time="0.003523" classname="test"/>
+	<testcase name="TXT extraction recovers every section heading (FR8, T-25)" time="0.000898" classname="test"/>
+	<testcase name="DOCX extraction recovers the source in full (FR8, T-25)" time="0.021654" classname="test"/>
+	<testcase name="DOCX extraction recovers every section heading (FR8, T-25)" time="0.012863" classname="test"/>
+	<testcase name="PDF extraction recovers the source in full (FR8, T-25)" time="0.090694" classname="test"/>
+	<testcase name="PDF extraction recovers every section heading (FR8, T-25)" time="0.027594" classname="test"/>
+	<!-- tests 71 -->
+	<!-- suites 0 -->
+	<!-- pass 71 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 7294.164292 -->
+</testsuites>

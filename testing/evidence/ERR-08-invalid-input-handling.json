@@ -1,0 +1,43 @@
+{
+  "test_id": "ERR-08",
+  "title": "Invalid input handling",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:24.790Z",
+  "checking": "each invalid request is rejected with its own code, and none reaches the model",
+  "request": null,
+  "response": {
+    "cases": [
+      {
+        "case": "missing file_id",
+        "status": 400,
+        "code": "MISSING_FILE_ID",
+        "model_called": false
+      },
+      {
+        "case": "unsupported output type",
+        "status": 400,
+        "code": "UNSUPPORTED_OUTPUT_TYPE",
+        "model_called": false
+      },
+      {
+        "case": "explanation without a concept",
+        "status": 400,
+        "code": "MISSING_CONCEPT",
+        "model_called": false
+      },
+      {
+        "case": "explanation with an invalid level",
+        "status": 400,
+        "code": "INVALID_LEVEL",
+        "model_called": false
+      },
+      {
+        "case": "document that does not exist",
+        "status": 404,
+        "code": "FILE_NOT_FOUND",
+        "model_called": false
+      }
+    ]
+  },
+  "notes": null
+}

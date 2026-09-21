@@ -1,0 +1,61 @@
+{
+  "test_id": "QA-01",
+  "title": "Full pipeline end to end",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:26.980Z",
+  "checking": "every stage of the Member 3 subsystem, from upload to retrieval, including the failure path",
+  "request": {
+    "account": "autotest-1789987886836-biq4rc@example.invalid",
+    "document": "photosynthesis.txt"
+  },
+  "response": {
+    "stages": [
+      {
+        "stage": "1. Registration and login",
+        "result": "token issued",
+        "user_id": 655
+      },
+      {
+        "stage": "2. Consent granted (FR17.1)",
+        "status": 201
+      },
+      {
+        "stage": "3. Upload and text extraction (FR6, FR8)",
+        "status": 201,
+        "file_id": 407,
+        "characters_extracted": 240
+      },
+      {
+        "stage": "4. Extracted text stored (FR8)",
+        "stored_characters": 240,
+        "owned_by": 655
+      },
+      {
+        "stage": "5. AI request and response parsing (FR11.1)",
+        "status": 201,
+        "output_id": 197,
+        "questions_returned": 3,
+        "labelled_ai_generated": true
+      },
+      {
+        "stage": "6. AI output stored (FR16.1)",
+        "output_type": "quiz",
+        "is_ai_generated": 1,
+        "stored_as": "string"
+      },
+      {
+        "stage": "7. Retrieval for display (FR15)",
+        "status": 200,
+        "returned_as": "array",
+        "questions": 3
+      },
+      {
+        "stage": "8. Error handling without data loss (NFR5)",
+        "status": 504,
+        "code": "AI_TIMEOUT",
+        "document_intact": true
+      }
+    ]
+  },
+  "notes": null
+}
