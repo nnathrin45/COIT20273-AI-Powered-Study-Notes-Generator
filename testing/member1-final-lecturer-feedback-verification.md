@@ -1358,6 +1358,54 @@ Source review and previous browser testing confirmed appropriate loading, succes
 
 ---
 
+## UIUX-FINAL-05 - Accessibility and Responsive Regression
+
+**Objective:**
+Retest accessibility and responsive behaviour after the final frontend changes, with particular attention to the updated Study Planner interface.
+
+**Responsive Verification:**
+
+The Study Planner was reviewed at:
+
+- 375 × 812 mobile
+- 768 × 1024 tablet
+- 1440 × 900 desktop
+
+Across the tested viewport sizes:
+
+- No unintended horizontal overflow was observed.
+- Form fields remained usable and within the viewport.
+- Study-day controls remained accessible.
+- Generated study-session cards remained readable.
+- Saved, View Plan / Hide Plan and Delete controls did not overlap.
+- Expanded saved-plan details remained readable.
+- No important content was cut off.
+
+**Keyboard Accessibility:**
+
+- Form controls were reachable using keyboard navigation.
+- View Plan was keyboard accessible.
+- Saved-plan details could be expanded using Enter.
+- Hide Plan could be operated using the keyboard.
+- Delete remained keyboard reachable.
+- Visible keyboard focus was maintained.
+
+**Browser Console:**
+
+No unexpected frontend console errors were observed while expanding, collapsing and navigating the Study Planner.
+
+**Lighthouse Accessibility:**
+
+- Accessibility score: **100**
+
+**Result:**
+PASS
+
+**Evidence / Notes:**
+The final Study Planner refinements did not introduce accessibility or responsive-layout regressions. The page remained usable across mobile, tablet and desktop viewport sizes and retained a Lighthouse Accessibility score of 100.
+
+---
+
 # 10. Defects Identified During Final Verification
 
 This section records defects discovered during the final lecturer-feedback verification.
