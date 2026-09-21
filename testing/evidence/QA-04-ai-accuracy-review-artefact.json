@@ -1,0 +1,15 @@
+{
+  "test_id": "QA-04",
+  "title": "AI accuracy review artefact",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:27.231Z",
+  "checking": "the manual review recorded for the R1 metric exists and carries a verdict for every output reviewed",
+  "request": null,
+  "response": {
+    "artefact": "testing/ai-accuracy-review-2026-09-12.md",
+    "outputs_reviewed": 5,
+    "verdicts_recorded": 5,
+    "metric": "at least 4 of 5 outputs accurate, no invented facts"
+  },
+  "notes": "This checks the completeness of the evidence, not the quality of the content. The judgement itself is manual."
+}

@@ -1,0 +1,25 @@
+{
+  "test_id": "ERR-05",
+  "title": "Empty AI response",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:24.781Z",
+  "checking": "the empty ai response path returns a consistent, actionable error and leaves the uploaded document untouched",
+  "request": {
+    "method": "POST",
+    "endpoint": "/api/ai/generate",
+    "body": {
+      "file_id": 400,
+      "output_type": "summary"
+    }
+  },
+  "response": {
+    "status": 502,
+    "body": {
+      "status": "error",
+      "code": "AI_EMPTY_RESPONSE",
+      "message": "The AI service returned no content. Please try again.",
+      "retryable": true
+    }
+  },
+  "notes": "document intact after failure: true; outputs stored before 0, after 0"
+}
