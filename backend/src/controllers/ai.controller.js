@@ -251,6 +251,78 @@ const getOutputsForFile = async (req, res) => {
   }
 };
 
+// Delete one previously generated AI output belonging to the authenticated user
+const deleteOutput = async (req, res) => {
+  try {
+    const { outputId } = req.params;
+
+    const numericOutputId = Number(outputId);
+
+    if (
+      !Number.isInteger(numericOutputId) ||
+      numericOutputId <= 0
+    ) {
+      return res.status(400).json({
+        status: "error",
+        code: "INVALID_OUTPUT_ID",
+        message: "A valid output ID is required"
+      });
+    }
+
+    // NFR3 - confirm ownership before deletion.
+    // Returning 404 for another user's output avoids revealing
+    // whether that resource exists.
+    const [rows] = await db.execute(
+      `SELECT output_id, output_type
+       FROM ai_outputs
+       WHERE output_id = ? AND user_id = ?`,
+      [numericOutputId, req.user.user_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        code: "OUTPUT_NOT_FOUND",
+        message: "Saved material not found"
+      });
+    }
+
+    const output = rows[0];
+
+    const [result] = await db.execute(
+      `DELETE FROM ai_outputs
+       WHERE output_id = ? AND user_id = ?`,
+      [numericOutputId, req.user.user_id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        status: "error",
+        code: "OUTPUT_NOT_FOUND",
+        message: "Saved material not found"
+      });
+    }
+
+    return res.json({
+      status: "success",
+      message: "Saved material deleted successfully",
+      output: {
+        output_id: numericOutputId,
+        output_type: output.output_type
+      }
+    });
+
+  } catch (error) {
+    console.error("AI output delete error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      code: "AI_OUTPUT_DELETE_ERROR",
+      message: "Unable to delete saved material"
+    });
+  }
+};
+
 // FR11.2 - record a quiz attempt and return the score.
 // Marking happens on the server against the stored quiz, so a submitted answer
 // cannot be scored against anything the client supplies.
@@ -390,6 +462,7 @@ const getQuizAttempts = async (req, res) => {
 module.exports = {
   generateOutput,
   getOutputsForFile,
+  deleteOutput,
   submitQuizAttempt,
   getQuizAttempts
 };
