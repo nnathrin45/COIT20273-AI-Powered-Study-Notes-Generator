@@ -269,58 +269,122 @@ function Explanation() {
 
       {/* Page Heading */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+          AI Study Tools
+        </p>
+
+        <h1 className="text-3xl font-bold tracking-tight text-[#f3f0ff]">
           Concept Explanation
         </h1>
 
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#898cc0]">
           Select a study material and request a clearer
           explanation of a topic or concept.
         </p>
+
       </div>
 
       {/* Explanation Generator */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
 
-        <h2 className="text-xl font-semibold text-gray-900">
-          Explain a Concept
-        </h2>
+        <div className="flex items-start gap-3">
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+
+            <svg
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              className="h-5 w-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9.5 18h5M10 22h4M8.5 14.5A7 7 0 1 1 15.5 14.5C14.6 15.2 14 16 14 17h-4c0-1-.6-1.8-1.5-2.5Z"
+              />
+            </svg>
+
+          </div>
+
+          <div>
+
+            <h2 className="text-xl font-semibold text-[#f3f0ff]">
+              Explain a Concept
+            </h2>
+
+            <p className="mt-1 text-sm text-[#898cc0]">
+              Choose your source, topic and preferred explanation
+              level.
+            </p>
+
+          </div>
+
+        </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
 
           {/* Document */}
           <div>
+
             <label
               htmlFor="explanation-document"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-2 block text-sm font-medium text-[#d9d4eb]"
             >
               Study Material
             </label>
 
             {documentsLoading ? (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <p className="text-sm text-blue-700">
-                  Loading your uploaded study materials...
+              <div
+                className="flex min-h-[50px] items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-4 py-3"
+                role="status"
+              >
+
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+                <p className="text-sm text-[#c9b4ff]">
+                  Loading materials...
                 </p>
+
               </div>
             ) : documents.length === 0 &&
               !documentsError ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-4">
 
-                <p className="font-medium text-amber-900">
+                <p className="font-medium text-amber-200">
                   No uploaded study materials
                 </p>
 
-                <p className="mt-1 text-sm leading-6 text-amber-800">
+                <p className="mt-1 text-sm leading-6 text-amber-100/70">
                   Upload a PDF, DOCX or TXT document before
                   generating a concept explanation.
                 </p>
 
                 <Link
                   to="/upload"
-                  className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
                 >
                   Upload Study Material
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m9 18 6-6-6-6"
+                    />
+                  </svg>
+
                 </Link>
 
               </div>
@@ -334,7 +398,7 @@ function Explanation() {
                   setError('')
                   setRetryableError(false)
                 }}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
               >
                 <option value="">
                   Select a document
@@ -350,13 +414,15 @@ function Explanation() {
                 ))}
               </select>
             )}
+
           </div>
 
           {/* Explanation Level */}
           <div>
+
             <label
               htmlFor="explanation-level"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-2 block text-sm font-medium text-[#d9d4eb]"
             >
               Explanation Level
             </label>
@@ -370,7 +436,7 @@ function Explanation() {
                 setError('')
                 setRetryableError(false)
               }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
             >
               <option value="beginner">
                 Beginner
@@ -384,6 +450,12 @@ function Explanation() {
                 Advanced
               </option>
             </select>
+
+            <p className="mt-2 text-xs leading-5 text-[#727494]">
+              Choose how detailed and technical the explanation
+              should be.
+            </p>
+
           </div>
 
         </div>
@@ -393,7 +465,7 @@ function Explanation() {
 
           <label
             htmlFor="concept"
-            className="mb-2 block text-sm font-medium text-gray-700"
+            className="mb-2 block text-sm font-medium text-[#d9d4eb]"
           >
             Concept or Topic
           </label>
@@ -409,10 +481,10 @@ function Explanation() {
               setRetryableError(false)
             }}
             placeholder="e.g. Machine learning, database normalisation..."
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition placeholder:text-[#5f5b78] focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
           />
 
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm leading-6 text-[#727494]">
             Enter a concept that appears in your selected study
             material.
           </p>
@@ -421,8 +493,11 @@ function Explanation() {
 
         {/* Document Error */}
         {documentsError && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-700">
+          <div
+            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            role="alert"
+          >
+            <p className="text-sm leading-6 text-red-300">
               {documentsError}
             </p>
           </div>
@@ -430,39 +505,128 @@ function Explanation() {
 
         {/* AI Consent Status */}
         <div className="mt-6">
+
           {consentInitialLoading ? (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm text-blue-700">
+            <div
+              className="flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
+              role="status"
+            >
+
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+              <p className="text-sm text-[#c9b4ff]">
                 Checking your AI processing consent...
               </p>
+
             </div>
           ) : consentStatus !== 'granted' ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
 
-              <p className="font-medium text-amber-900">
-                AI processing consent required
-              </p>
+              <div className="flex items-start gap-3">
 
-              <p className="mt-1 text-sm leading-6 text-amber-800">
-                Grant AI processing consent from your Dashboard
-                before generating AI study content.
-              </p>
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
 
-              <Link
-                to="/dashboard"
-                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                Manage AI Consent
-              </Link>
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 3 4 7v5c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V7l-8-4Z"
+                    />
+                  </svg>
+
+                </div>
+
+                <div>
+
+                  <p className="font-medium text-amber-200">
+                    AI processing consent required
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                    Grant AI processing consent from your Dashboard
+                    before generating AI study content.
+                  </p>
+
+                  <Link
+                    to="/dashboard"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
+                  >
+                    Manage AI Consent
+
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m9 18 6-6-6-6"
+                      />
+                    </svg>
+
+                  </Link>
+
+                </div>
+
+              </div>
 
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m5 12 4 4L19 6"
+                    />
+                  </svg>
+
+                </div>
+
+                <p className="text-sm font-medium text-emerald-300">
+                  AI processing consent is granted.
+                </p>
+
+              </div>
+
+            </div>
+          )}
+
         </div>
 
         {/* Consent Error */}
         {consentError && (
-          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-700">
+          <div
+            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            role="alert"
+          >
+            <p className="text-sm leading-6 text-red-300">
               {consentError}
             </p>
           </div>
@@ -471,23 +635,55 @@ function Explanation() {
         {/* Explanation Error */}
         {error && (
           <div
-            className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4"
+            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
             role="alert"
           >
-            <p className="text-sm text-red-700">
-              {error}
-            </p>
 
-            {retryableError && (
-              <button
-                type="button"
-                onClick={handleGenerateExplanation}
-                disabled={generationLoading}
-                className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {generationLoading ? 'Retrying...' : 'Retry'}
-              </button>
-            )}
+            <div className="flex items-start gap-3">
+
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-400/10 text-red-300">
+
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                  />
+                </svg>
+
+              </div>
+
+              <div>
+
+                <p className="text-sm leading-6 text-red-300">
+                  {error}
+                </p>
+
+                {retryableError && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateExplanation}
+                    disabled={generationLoading}
+                    className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {generationLoading
+                      ? 'Retrying...'
+                      : 'Retry'}
+                  </button>
+                )}
+
+              </div>
+
+            </div>
+
           </div>
         )}
 
@@ -504,11 +700,17 @@ function Explanation() {
               consentStatus !== 'granted' ||
               generationLoading
             }
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
           >
+
+            {generationLoading && (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            )}
+
             {generationLoading
               ? 'Generating Explanation...'
               : 'Explain Concept'}
+
           </button>
 
         </div>
@@ -517,23 +719,23 @@ function Explanation() {
 
       {/* Generated Explanation */}
       {generatedOutput && (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mt-8 overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
 
-          <div className="border-b border-gray-200 pb-5">
+          <div className="border-b border-[#2a1b4d] px-6 py-5 sm:px-7">
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
 
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <h2 className="text-2xl font-semibold text-[#f3f0ff]">
                 {generatedOutput.concept || concept}
               </h2>
 
               {generatedOutput.is_ai_generated && (
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                <span className="rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-xs font-semibold text-[#c9b4ff]">
                   AI Generated
                 </span>
               )}
 
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+              <span className="rounded-full border border-[#a97cff]/25 bg-[#a97cff]/10 px-3 py-1 text-xs font-semibold text-[#d9c9ff]">
                 {getLevelLabel(
                   generatedOutput.level ||
                     explanationLevel
@@ -542,32 +744,92 @@ function Explanation() {
 
             </div>
 
-            <p className="mt-2 text-sm text-gray-500">
-              Source:{' '}
-              {generatedOutput.file_name ||
-                selectedDocumentName}
-            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#727494]">
+
+              <p>
+                Source:{' '}
+                <span className="text-[#a6a8c7]">
+                  {generatedOutput.file_name ||
+                    selectedDocumentName}
+                </span>
+              </p>
+
+              <p>
+                Level:{' '}
+                <span className="text-[#a6a8c7]">
+                  {getLevelLabel(
+                    generatedOutput.level ||
+                      explanationLevel
+                  )}
+                </span>
+              </p>
+
+            </div>
 
           </div>
 
           {/* Real AI Explanation */}
-          <div className="mt-6">
-            <p className="whitespace-pre-wrap leading-7 text-gray-700">
-              {generatedOutput.content}
-            </p>
-          </div>
+          <div className="px-6 py-7 sm:px-7">
 
-          {/* Responsible AI Warning */}
-          <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5">
+            <div className="relative overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#120928]/50 p-5 sm:p-6">
 
-            <h3 className="font-semibold text-amber-900">
-              AI-Generated Content
-            </h3>
+              <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-[#7a44ff]/10 blur-3xl" />
 
-            <p className="mt-1 text-sm leading-6 text-amber-800">
-              {disclaimer ||
-                'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
-            </p>
+              <div className="relative">
+
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+                  Explanation
+                </p>
+
+                <p className="whitespace-pre-wrap text-[15px] leading-7 text-[#d9d4eb]">
+                  {generatedOutput.content}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Responsible AI Warning */}
+            <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
+
+              <div className="flex items-start gap-3">
+
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
+
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                    />
+                  </svg>
+
+                </div>
+
+                <div>
+
+                  <h3 className="font-semibold text-amber-200">
+                    AI-Generated Content
+                  </h3>
+
+                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                    {disclaimer ||
+                      'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
 
           </div>
 

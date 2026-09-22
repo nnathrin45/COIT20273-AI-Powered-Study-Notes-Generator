@@ -7,6 +7,7 @@ const authenticateUser = require("../middleware/auth.middleware");
 const {
   generateOutput,
   getOutputsForFile,
+  deleteOutput,
   submitQuizAttempt,
   getQuizAttempts
 } = require("../controllers/ai.controller");
@@ -16,6 +17,9 @@ router.post("/generate", authenticateUser, generateOutput);
 
 // Retrieve content already generated for a document
 router.get("/outputs/:fileId", authenticateUser, getOutputsForFile);
+
+// Delete one generated output belonging to the authenticated user
+router.delete("/outputs/:outputId", authenticateUser, deleteOutput);
 
 // Submit answers to a generated quiz and receive the score (FR11.2)
 router.post("/quiz/:outputId/attempt", authenticateUser, submitQuizAttempt);

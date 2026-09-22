@@ -87,3 +87,33 @@ CREATE TABLE IF NOT EXISTS study_plans (
 
   INDEX idx_study_plans_user_deadline (user_id, deadline)
 );
+
+-- Independent recent activity history.
+-- Activity records are separate from study resources so users can clear
+-- their history without deleting uploaded files, AI outputs, quiz attempts,
+-- or study plans.
+CREATE TABLE IF NOT EXISTS activity_history (
+  activity_id    INT AUTO_INCREMENT PRIMARY KEY,
+  user_id        INT NOT NULL,
+  activity_type  VARCHAR(50) NOT NULL,
+  detail         VARCHAR(500) NOT NULL,
+  source_type    VARCHAR(50) NULL,
+  source_id      INT NULL,
+  occurred_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id)
+    REFERENCES users(user_id)
+    ON DELETE CASCADE,
+
+  INDEX idx_activity_history_user_date (
+    user_id,
+    occurred_at
+  ),
+
+  UNIQUE KEY uq_activity_history_source (
+    user_id,
+    activity_type,
+    source_type,
+    source_id
+  )
+);

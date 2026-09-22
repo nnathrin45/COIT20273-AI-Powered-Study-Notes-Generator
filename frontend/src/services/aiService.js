@@ -51,3 +51,13 @@ export const getAIOutputs = async (fileId) => {
     }
   )
 }
+
+export const deleteAIOutput = async (outputId) => {
+  return apiRequest(
+    `/api/ai/outputs/${outputId}`,
+    {
+      method: 'DELETE',
+      requiresAuth: true,
+    }
+  )
+}

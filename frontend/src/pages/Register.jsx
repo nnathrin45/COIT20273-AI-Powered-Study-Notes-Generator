@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { registerUser } from '../services/authService'
 
+const isValidEmail = (email) => {
+  const emailPattern =
+    /^[A-Za-z0-9_%+-]+(?:\.[A-Za-z0-9_%+-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/
+
+  return emailPattern.test(email)
+}
+
 function Register() {
   const navigate = useNavigate()
 
@@ -30,6 +37,16 @@ function Register() {
       !confirmPassword
     ) {
       setError('Please complete all fields.')
+      return
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.')
       return
     }
 
@@ -116,9 +133,10 @@ function Register() {
               id="name"
               type="text"
               value={fullName}
-              onChange={(event) =>
+              onChange={(event) => {
                 setFullName(event.target.value)
-              }
+                setError('')
+              }}
               placeholder="Enter your full name"
               autoComplete="name"
               disabled={isLoading}
@@ -140,9 +158,10 @@ function Register() {
               id="email"
               type="email"
               value={email}
-              onChange={(event) =>
+              onChange={(event) => {
                 setEmail(event.target.value)
-              }
+                setError('')
+              }}
               placeholder="Enter your email"
               autoComplete="email"
               disabled={isLoading}
@@ -164,12 +183,14 @@ function Register() {
               id="password"
               type="password"
               value={password}
-              onChange={(event) =>
+              onChange={(event) => {
                 setPassword(event.target.value)
-              }
+                setError('')
+              }}
               placeholder="Create a password"
               autoComplete="new-password"
               disabled={isLoading}
+              minLength={8}
               className="w-full rounded-lg border border-gray-300 px-4 py-3
                          focus:outline-none focus:ring-2 focus:ring-blue-500
                          disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -188,11 +209,13 @@ function Register() {
               id="confirmPassword"
               type="password"
               value={confirmPassword}
-              onChange={(event) =>
+              onChange={(event) => {
                 setConfirmPassword(event.target.value)
-              }
+                setError('')
+              }}
               placeholder="Confirm your password"
               autoComplete="new-password"
+              minLength={8}
               disabled={isLoading}
               className="w-full rounded-lg border border-gray-300 px-4 py-3
                          focus:outline-none focus:ring-2 focus:ring-blue-500

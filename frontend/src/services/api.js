@@ -56,6 +56,17 @@ export const apiRequest = async (
     options
   )
 
+  // If an authenticated request is rejected because the
+  // session token is missing, invalid or expired, remove the
+  // stored token and return the user to the Login page.
+  if (requiresAuth && response.status === 401) {
+    removeAuthToken()
+
+    if (window.location.pathname !== '/login') {
+      window.location.replace('/login')
+    }
+  }
+
   let data
 
   try {
