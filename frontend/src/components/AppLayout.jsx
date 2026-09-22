@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { logoutUser } from '../services/authService'
+import studyaLogo from '../assets/studya-logo.png'
 
 const menuItems = [
   {
@@ -122,30 +123,17 @@ function MenuIcon({ children }) {
 
 function SidebarContent({
   onNavigate,
-  onLogout,
 }) {
   return (
     <>
       {/* Brand */}
-      <div className="flex h-20 items-center border-b border-[#2a1b4d] px-6">
+      <div className="flex h-20 items-center border-b border-[#2a1b4d] px-4">
 
-        <div className="flex items-center gap-3">
-
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-lg font-bold text-white shadow-[0_0_20px_rgba(122,68,255,0.25)]">
-            AI
-          </div>
-
-          <div>
-            <h1 className="text-[17px] font-bold tracking-tight text-[#c2c4e4]">
-              AI Study Notes
-            </h1>
-
-            <p className="mt-0.5 text-xs text-[#898cc0]">
-              Study smarter with AI
-            </p>
-          </div>
-
-        </div>
+        <img
+          src={studyaLogo}
+          alt="Study AI - AI-Powered Study Notes"
+          className="h-auto w-full max-w-[220px] object-contain"
+        />
 
       </div>
 
@@ -184,27 +172,6 @@ function SidebarContent({
         </nav>
 
       </div>
-
-      {/* Sign Out */}
-      <div className="border-t border-[#2a1b4d] p-4">
-
-        <button
-          type="button"
-          onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-[#898cc0] transition hover:bg-red-500/10 hover:text-red-400"
-        >
-          <MenuIcon>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"
-            />
-          </MenuIcon>
-
-          Sign Out
-        </button>
-
-      </div>
     </>
   )
 }
@@ -213,7 +180,51 @@ function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] =
     useState(false)
 
+  const [profileMenuOpen, setProfileMenuOpen] =
+    useState(false)
+
+  const profileMenuRef = useRef(null)
+
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
+        setProfileMenuOpen(false)
+      }
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setProfileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside
+    )
+
+    document.addEventListener(
+      'keydown',
+      handleEscape
+    )
+
+    return () => {
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      )
+
+      document.removeEventListener(
+        'keydown',
+        handleEscape
+      )
+    }
+  }, [])
 
   const handleLogout = () => {
     logoutUser()
@@ -232,7 +243,6 @@ function AppLayout() {
 
         <SidebarContent
           onNavigate={() => {}}
-          onLogout={handleLogout}
         />
 
       </aside>
@@ -288,7 +298,6 @@ function AppLayout() {
               onNavigate={() =>
                 setMobileMenuOpen(false)
               }
-              onLogout={handleLogout}
             />
 
           </aside>
@@ -347,25 +356,193 @@ function AppLayout() {
 
             </div>
 
-            {/* User */}
-            <div className="flex shrink-0 items-center gap-3">
+            {/* User Profile Menu */}
+            <div
+              ref={profileMenuRef}
+              className="relative shrink-0"
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setProfileMenuOpen((current) => !current)
+                }
+                className="group flex items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-[#7a44ff]/40"
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+              >
+                <div className="hidden text-right sm:block">
 
-              <div className="hidden text-right sm:block">
+                  <p className="text-sm font-semibold text-[#c2c4e4]">
+                    Student
+                  </p>
 
-                <p className="text-sm font-semibold text-[#c2c4e4]">
-                  Student
-                </p>
+                  <p className="text-xs text-[#898cc0]">
+                    Learning workspace
+                  </p>
 
-                <p className="text-xs text-[#898cc0]">
-                  Learning workspace
-                </p>
+                </div>
 
-              </div>
+                <div className="relative">
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-sm font-bold text-white shadow-[0_0_18px_rgba(122,68,255,0.3)]">
-                S
-              </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-sm font-bold text-white shadow-[0_0_18px_rgba(122,68,255,0.3)]">
+                    S
+                  </div>
 
+                  {/* Online indicator */}
+                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#120928] bg-emerald-400" />
+
+                </div>
+
+                {/* Chevron */}
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className={`hidden h-4 w-4 text-[#898cc0] transition-transform duration-200 sm:block ${
+                    profileMenuOpen
+                      ? 'rotate-180'
+                      : ''
+                  }`}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m6 9 6 6 6-6"
+                  />
+                </svg>
+              </button>
+
+              {/* Dropdown */}
+              {profileMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-xl border border-[#39245f] bg-[#160b32] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
+                >
+
+                  {/* User information */}
+                  <div className="border-b border-[#2a1b4d] px-3 py-3">
+
+                    <div className="flex items-center gap-3">
+
+                      <div className="relative">
+
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] font-bold text-white">
+                          S
+                        </div>
+
+                        <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#160b32] bg-emerald-400" />
+
+                      </div>
+
+                      <div className="min-w-0">
+
+                        <p className="truncate text-sm font-semibold text-white">
+                          Student
+                        </p>
+
+                        <p className="text-xs text-[#898cc0]">
+                          Learning workspace
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <div className="py-2">
+
+                    {/* Profile Settings */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false)
+                        navigate('/privacy')
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Zm7-3.5a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.5 1a8 8 0 0 0-2-1.2L14 3h-4l-.4 2.6a8 8 0 0 0-2 1.2l-2.5-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.5-1a8 8 0 0 0 2 1.2L10 21h4l.4-2.6a8 8 0 0 0 2-1.2l2.5 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z"
+                        />
+                      </svg>
+
+                      Profile Settings
+                    </button>
+
+                    {/* Privacy */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false)
+                        navigate('/privacy')
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 3 5 6v5c0 4.5 2.8 8.3 7 10 4.2-1.7 7-5.5 7-10V6l-7-3Zm0 5v4m0 4h.01"
+                        />
+                      </svg>
+
+                      Privacy & Consent
+                    </button>
+
+                  </div>
+
+                  <div className="border-t border-[#2a1b4d] pt-2">
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"
+                        />
+                      </svg>
+
+                      Sign Out
+                    </button>
+
+                  </div>
+
+                </div>
+              )}
             </div>
 
           </div>
