@@ -1,6 +1,7 @@
 const db = require("../config/database");
 const { hasActiveConsent } = require("../services/consent.service");
 const { generate } = require("../services/ai.service");
+const { logActivity } = require("../services/activity.service");
 
 const SUPPORTED_TYPES = ["summary", "flashcards", "quiz", "explanation"];
 
@@ -92,6 +93,14 @@ const generateOutput = async (req, res) => {
        VALUES (?, ?, ?, ?, TRUE)`,
       [file.file_id, req.user.user_id, output_type, stored]
     );
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: `ai_${output_type}`,
+      detail: file.file_name,
+      sourceType: "ai_output",
+      sourceId: result.insertId
+    });
 
     res.status(201).json({
       status: "success",
@@ -273,9 +282,16 @@ const deleteOutput = async (req, res) => {
     // Returning 404 for another user's output avoids revealing
     // whether that resource exists.
     const [rows] = await db.execute(
-      `SELECT output_id, output_type
-       FROM ai_outputs
-       WHERE output_id = ? AND user_id = ?`,
+      `SELECT
+        ao.output_id,
+        ao.output_type,
+        uf.file_name
+      FROM ai_outputs ao
+      INNER JOIN uploaded_files uf
+        ON uf.file_id = ao.file_id
+        AND uf.user_id = ao.user_id
+      WHERE ao.output_id = ?
+        AND ao.user_id = ?`,
       [numericOutputId, req.user.user_id]
     );
 
@@ -302,6 +318,14 @@ const deleteOutput = async (req, res) => {
         message: "Saved material not found"
       });
     }
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: `ai_${output.output_type}_deleted`,
+      detail: output.file_name,
+      sourceType: "ai_output",
+      sourceId: numericOutputId
+    });
 
     return res.json({
       status: "success",
@@ -341,9 +365,17 @@ const submitQuizAttempt = async (req, res) => {
 
     // NFR3 - scoped to the requesting user
     const [rows] = await db.execute(
-      `SELECT output_id, output_type, content
-       FROM ai_outputs
-       WHERE output_id = ? AND user_id = ?`,
+      `SELECT
+        ao.output_id,
+        ao.output_type,
+        ao.content,
+        uf.file_name
+      FROM ai_outputs ao
+      INNER JOIN uploaded_files uf
+        ON uf.file_id = ao.file_id
+        AND uf.user_id = ao.user_id
+      WHERE ao.output_id = ?
+        AND ao.user_id = ?`,
       [outputId, req.user.user_id]
     );
 
@@ -402,6 +434,14 @@ const submitQuizAttempt = async (req, res) => {
        VALUES (?, ?, ?, ?, ?)`,
       [rows[0].output_id, req.user.user_id, JSON.stringify(answers), score, total]
     );
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: "quiz_attempt",
+      detail: rows[0].file_name,
+      sourceType: "quiz_attempt",
+      sourceId: saved.insertId
+    });
 
     res.status(201).json({
       status: "success",

@@ -1406,6 +1406,109 @@ The final Study Planner refinements did not introduce accessibility or responsiv
 
 ---
 
+### DEF-FINAL-06 - Missing Uploaded Resource Feedback
+
+**Severity:**
+Medium
+
+**Issue:**
+When an uploaded file was deleted in one browser tab, another tab containing a stale copy attempted to delete the same resource and correctly received HTTP 404 from the backend. However, the frontend initially did not retain a user-facing missing-resource message or automatically remove the stale item.
+
+**Corrective Action:**
+
+- Retained backend HTTP 404 handling.
+- Removed the stale uploaded-file entry from frontend state.
+- Reloaded the uploaded-material list from the backend.
+- Displayed a user-friendly missing-resource message after the list refresh.
+- Ensured the interface remained usable after the failed stale-resource operation.
+
+**Retest Result:**
+
+- Backend returned HTTP 404 for the deliberately stale resource.
+- Frontend displayed appropriate missing-resource feedback.
+- Stale uploaded-file entry was automatically removed.
+- Uploaded-material list was refreshed.
+- Page remained usable.
+- No JavaScript crash occurred.
+
+**Result:**
+PASS - Corrected and successfully retested
+
+---
+
+### DEF-FINAL-07 - Persistent Upload Success Messages
+
+**Severity:**
+Low
+
+**Issue:**
+Successful upload and uploaded-file deletion messages remained visible indefinitely until the page was manually refreshed.
+
+**Corrective Action:**
+
+- Added timed clearing of upload success feedback.
+- Added timed clearing of uploaded-file deletion success feedback.
+- Success messages now remain visible long enough to be read and then clear automatically.
+
+**Retest Result:**
+
+- Upload success message appeared correctly.
+- Upload success message automatically disappeared after approximately four seconds.
+- Delete success message appeared correctly.
+- Delete success message automatically disappeared after approximately four seconds.
+- No manual page refresh was required.
+- No unexpected JavaScript errors were observed.
+
+**Result:**
+PASS - Corrected and successfully retested
+
+---
+
+AUTH-FINAL-08 – EXPIRED JWT
+
+Expired token inserted: Yes
+Protected request returned 401: Yes
+Token automatically removed: Yes
+Redirected to Login: Yes
+Protected content inaccessible afterward: Yes
+Private data remained visible after redirect: No
+Unexpected JavaScript crash/error: No
+
+Result: PASS
+
+Observation:
+The currently rendered Dashboard remained visible immediately after manually replacing the stored token. Once a protected request occurred through navigation or page refresh, the expired token was rejected with HTTP 401, automatically removed, and the user was redirected to Login.
+
+---
+
+## AUTH-FINAL-08 - Expired Authentication Token
+
+**Objective:**
+Verify frontend and backend behaviour when a correctly signed JWT has expired.
+
+**Method:**
+
+A locally generated JWT using the application's configured signing secret was created with an already-expired expiry time. The expired token was inserted into browser local storage while the user was authenticated.
+
+**Observed Behaviour:**
+
+- The already-rendered Dashboard remained visible immediately after the stored token was replaced.
+- No new protected request had occurred at that point.
+- After navigating to another protected page or refreshing the current page, the expired token was sent to the backend.
+- The backend rejected the expired JWT with HTTP 401.
+- The frontend automatically removed the expired token from local storage.
+- The user was redirected to the Login page.
+- Protected application content could no longer be accessed using the expired token.
+- No application crash occurred.
+
+**Result:**
+PASS
+
+**Evidence / Notes:**
+Expired authentication was correctly enforced when the next protected request occurred. The currently rendered page does not automatically react to direct manual modification of local storage until navigation, refresh or another protected API request occurs. This does not allow the expired token to retrieve additional protected data.
+
+---
+
 # 10. Defects Identified During Final Verification
 
 This section records defects discovered during the final lecturer-feedback verification.

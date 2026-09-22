@@ -3,6 +3,7 @@ const db = require("../config/database");
 const { extractTextFromPDF } = require("../services/pdf.service");
 const { extractTextFromDOCX } = require("../services/docx.service");
 const { extractTextFromTXT } = require("../services/txt.service");
+const { logActivity } = require("../services/activity.service");
 
 const uploadFile = async (req, res) => {
   try {
@@ -62,6 +63,14 @@ const uploadFile = async (req, res) => {
         extractedText
       ]
     );
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: "upload",
+      detail: req.file.originalname,
+      sourceType: "uploaded_file",
+      sourceId: result.insertId
+    });
 
     res.status(201).json({
       status: "success",
