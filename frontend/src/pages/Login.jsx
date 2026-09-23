@@ -1,11 +1,19 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from 'react-router'
 import { loginUser } from '../services/authService'
 import studyaLogo from '../assets/studya-logo.png'
 
 function Login() {
 
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const verificationSuccess =
+    location.state?.successMessage || ''
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -38,7 +46,7 @@ function Login() {
       ) {
         setError(
           response.data.message ||
-            'Login failed. Please try again.'
+          'Login failed. Please try again.'
         )
         return
       }
@@ -155,6 +163,17 @@ function Login() {
                 Forgot password?
               </button>
             </div>
+
+            {verificationSuccess && (
+              <div
+                className="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
+                role="status"
+              >
+                <p className="text-sm text-emerald-300">
+                  {verificationSuccess}
+                </p>
+              </div>
+            )}
 
             {error && (
               <div
