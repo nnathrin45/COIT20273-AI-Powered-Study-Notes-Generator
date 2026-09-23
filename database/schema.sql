@@ -3,11 +3,12 @@
 -- Tables 4–5 added for AI integration and consent tracking (Member 3, issue #5)
 
 CREATE TABLE IF NOT EXISTS users (
-  user_id     INT AUTO_INCREMENT PRIMARY KEY,
-  full_name   VARCHAR(255) NOT NULL,
-  email       VARCHAR(255) NOT NULL UNIQUE,
-  password    VARCHAR(255) NOT NULL,          -- bcrypt hash
-  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+  user_id          INT AUTO_INCREMENT PRIMARY KEY,
+  full_name        VARCHAR(255) NOT NULL,
+  email            VARCHAR(255) NOT NULL UNIQUE,
+  password         VARCHAR(255) NOT NULL,
+  profile_picture  VARCHAR(255) NULL,
+  created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS notes (
