@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { logoutUser } from '../services/authService'
+import {
+  getProfilePicture,
+  getUserProfile,
+} from '../services/profileService'
 import studyaLogo from '../assets/studya-logo.png'
 
 const menuItems = [
@@ -235,6 +239,107 @@ function AppLayout() {
     })
   }
 
+  const [userProfile, setUserProfile] =
+    useState(null)
+
+  const [
+    headerProfilePicture,
+    setHeaderProfilePicture,
+  ] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    let currentPictureUrl = null
+
+    const loadUserProfile = async () => {
+      try {
+        const response =
+          await getUserProfile()
+
+        if (
+          !active ||
+          !response.ok ||
+          !response.data?.user
+        ) {
+          return
+        }
+
+        const user =
+          response.data.user
+
+        setUserProfile(user)
+
+        if (currentPictureUrl) {
+          URL.revokeObjectURL(
+            currentPictureUrl
+          )
+
+          currentPictureUrl = null
+        }
+
+        if (user.profile_picture) {
+          const pictureResponse =
+            await getProfilePicture()
+
+          if (
+            active &&
+            pictureResponse.ok &&
+            pictureResponse.blob
+          ) {
+            currentPictureUrl =
+              URL.createObjectURL(
+                pictureResponse.blob
+              )
+
+            setHeaderProfilePicture(
+              currentPictureUrl
+            )
+          } else if (active) {
+            setHeaderProfilePicture(null)
+          }
+        } else {
+          setHeaderProfilePicture(null)
+        }
+      } catch (error) {
+        console.error(
+          'Header profile fetch error:',
+          error
+        )
+      }
+    }
+
+    loadUserProfile()
+
+    window.addEventListener(
+      'profile-updated',
+      loadUserProfile
+    )
+
+    return () => {
+      active = false
+
+      window.removeEventListener(
+        'profile-updated',
+        loadUserProfile
+      )
+
+      if (currentPictureUrl) {
+        URL.revokeObjectURL(
+          currentPictureUrl
+        )
+      }
+    }
+  }, [])
+
+  const profileDisplayName =
+    userProfile?.full_name?.trim() ||
+    'Student'
+
+  const profileInitial =
+    profileDisplayName
+      .charAt(0)
+      .toUpperCase()
+
   return (
     <div className="min-h-screen bg-[#120928] text-[#c2c4e4]">
 
@@ -372,8 +477,11 @@ function AppLayout() {
               >
                 <div className="hidden text-right sm:block">
 
-                  <p className="text-sm font-semibold text-[#c2c4e4]">
-                    Student
+                  <p
+                    className="max-w-[180px] truncate text-sm font-semibold text-[#c2c4e4]"
+                    title={profileDisplayName}
+                  >
+                    {profileDisplayName}
                   </p>
 
                   <p className="text-xs text-[#898cc0]">
@@ -384,8 +492,18 @@ function AppLayout() {
 
                 <div className="relative">
 
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-sm font-bold text-white shadow-[0_0_18px_rgba(122,68,255,0.3)]">
-                    S
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-sm font-bold text-white shadow-[0_0_18px_rgba(122,68,255,0.3)]">
+
+                    {headerProfilePicture ? (
+                      <img
+                        src={headerProfilePicture}
+                        alt={`${profileDisplayName} profile`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      profileInitial
+                    )}
+
                   </div>
 
                   {/* Online indicator */}
@@ -429,8 +547,18 @@ function AppLayout() {
 
                       <div className="relative">
 
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] font-bold text-white">
-                          S
+                        <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] font-bold text-white">
+
+                          {headerProfilePicture ? (
+                            <img
+                              src={headerProfilePicture}
+                              alt={`${profileDisplayName} profile`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            profileInitial
+                          )}
+
                         </div>
 
                         <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#160b32] bg-emerald-400" />
@@ -439,8 +567,11 @@ function AppLayout() {
 
                       <div className="min-w-0">
 
-                        <p className="truncate text-sm font-semibold text-white">
-                          Student
+                        <p
+                          className="truncate text-sm font-semibold text-white"
+                          title={profileDisplayName}
+                        >
+                          {profileDisplayName}
                         </p>
 
                         <p className="text-xs text-[#898cc0]">
@@ -460,7 +591,7 @@ function AppLayout() {
                       type="button"
                       onClick={() => {
                         setProfileMenuOpen(false)
-                        navigate('/privacy')
+                        navigate('/profile')
                       }}
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
                     >

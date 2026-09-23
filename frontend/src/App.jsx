@@ -11,10 +11,10 @@ import Explanation from './pages/Explanation'
 import StudyPlanner from './pages/StudyPlanner'
 import SavedMaterials from './pages/SavedMaterials'
 import Progress from './pages/Progress'
-
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Privacy from './pages/Privacy'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -84,6 +84,11 @@ function App() {
           <Route
             path="/progress"
             element={<Progress />}
+          />
+
+          <Route
+            path="/profile"
+            element={<Profile />}
           />
 
           <Route
