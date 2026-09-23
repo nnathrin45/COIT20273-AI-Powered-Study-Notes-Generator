@@ -19,10 +19,23 @@ const {
   uploadProfilePicture,
   getProfilePicture,
   deleteProfilePicture,
-  changeUserPassword
+  changeUserPassword,
+  verifyUserEmail,
+  resendVerificationCode
 } = require("../controllers/user.controller");
 
 router.post("/register", registerUser);
+
+router.post(
+  "/verify-email",
+  verifyUserEmail
+);
+
+router.post(
+  "/resend-verification",
+  resendVerificationCode
+);
+
 router.post("/login", loginUser);
 
 router.get(

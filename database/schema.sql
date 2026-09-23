@@ -3,12 +3,17 @@
 -- Tables 4–5 added for AI integration and consent tracking (Member 3, issue #5)
 
 CREATE TABLE IF NOT EXISTS users (
-  user_id          INT AUTO_INCREMENT PRIMARY KEY,
-  full_name        VARCHAR(255) NOT NULL,
-  email            VARCHAR(255) NOT NULL UNIQUE,
-  password         VARCHAR(255) NOT NULL,
-  profile_picture  VARCHAR(255) NULL,
-  created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
+  user_id                       INT AUTO_INCREMENT PRIMARY KEY,
+  full_name                     VARCHAR(255) NOT NULL,
+  email                         VARCHAR(255) NOT NULL UNIQUE,
+  email_verified                TINYINT(1) NOT NULL DEFAULT 0,
+  email_verification_code_hash  VARCHAR(255) NULL,
+  email_verification_expires_at DATETIME NULL,
+  email_verification_sent_at    DATETIME NULL,
+  email_verification_attempts   INT NOT NULL DEFAULT 0,
+  password                      VARCHAR(255) NOT NULL,
+  profile_picture               VARCHAR(255) NULL,
+  created_at                    DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS notes (

@@ -15,6 +15,7 @@ import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Privacy from './pages/Privacy'
 import Profile from './pages/Profile'
+import VerifyEmail from './pages/VerifyEmail'
 
 function App() {
   return (
@@ -34,6 +35,11 @@ function App() {
       <Route
         path="/register"
         element={<Register />}
+      />
+
+      <Route
+        path="/verify-email"
+        element={<VerifyEmail />}
       />
 
       {/* Protected Application */}

@@ -79,6 +79,21 @@ function Register() {
         return
       }
 
+      const verificationEmail =
+        response.data?.email ||
+        email.trim().toLowerCase()
+
+      sessionStorage.setItem(
+        'pendingVerificationEmail',
+        verificationEmail
+      )
+
+      navigate('/verify-email', {
+        state: {
+          email: verificationEmail,
+        },
+      })
+
       setSuccess(
         response.data.message ||
           'Account created successfully.'
@@ -89,9 +104,6 @@ function Register() {
       setPassword('')
       setConfirmPassword('')
 
-      setTimeout(() => {
-        navigate('/login')
-      }, 1200)
     } catch (error) {
       console.error(
         'Registration error:',

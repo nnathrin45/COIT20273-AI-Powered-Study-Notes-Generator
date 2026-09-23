@@ -4,60 +4,180 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
 
+const {
+  generateVerificationCode,
+  hashVerificationCode,
+  sendVerificationCodeEmail
+} = require("../services/email.service");
+
 const registerUser = async (req, res) => {
+  let newUserId = null;
+
   try {
-    const { full_name, email, password } = req.body;
+    const fullName = String(req.body.full_name ?? "").trim();
+    const email = String(req.body.email ?? "").trim().toLowerCase();
+    const password = String(req.body.password ?? "");
 
-    // Check if email already exists
-    const [existingUser] = await db.execute(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
-
-    if (existingUser.length > 0) {
+    if (!fullName || !email || !password) {
       return res.status(400).json({
         status: "error",
-        message: "Email already exists"
+        message: "Full name, email, and password are required"
       });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const emailPattern =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // Save hashed password
-    await db.execute(
-      "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)",
-      [full_name, email, hashedPassword]
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Please enter a valid email address"
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        status: "error",
+        message: "Password must be at least 8 characters long"
+      });
+    }
+
+    const [existingUsers] = await db.execute(
+      `SELECT user_id
+       FROM users
+       WHERE email = ?`,
+      [email]
     );
 
-    res.status(201).json({
-      status: "success",
-      message: "User Registered Successfully"
+    if (existingUsers.length > 0) {
+      return res.status(409).json({
+        status: "error",
+        message: "An account with this email already exists"
+      });
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(password, 10);
+
+    const verificationCode =
+      generateVerificationCode();
+
+    const verificationCodeHash =
+      await hashVerificationCode(
+        verificationCode
+      );
+
+    const verificationExpiresAt =
+      new Date(Date.now() + 10 * 60 * 1000);
+
+    const verificationSentAt =
+      new Date();
+
+    const [result] = await db.execute(
+      `INSERT INTO users (
+        full_name,
+        email,
+        email_verified,
+        email_verification_code_hash,
+        email_verification_expires_at,
+        email_verification_sent_at,
+        email_verification_attempts,
+        password
+      )
+      VALUES (?, ?, 0, ?, ?, ?, 0, ?)`,
+      [
+        fullName,
+        email,
+        verificationCodeHash,
+        verificationExpiresAt,
+        verificationSentAt,
+        hashedPassword
+      ]
+    );
+
+    newUserId = result.insertId;
+
+    await sendVerificationCodeEmail({
+      to: email,
+      fullName,
+      code: verificationCode
     });
 
+    return res.status(201).json({
+      status: "success",
+      message:
+        "Account created. Please check your email for the verification code.",
+      verification_required: true,
+      email
+    });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Registration error:",
+      error
+    );
 
-    res.status(500).json({
+    /*
+     * If account creation succeeded but sending
+     * the verification email failed, remove the
+     * incomplete account so the user can retry.
+     */
+    if (newUserId) {
+      try {
+        await db.execute(
+          `DELETE FROM users
+           WHERE user_id = ?
+           AND email_verified = 0`,
+          [newUserId]
+        );
+      } catch (cleanupError) {
+        console.error(
+          "Registration cleanup error:",
+          cleanupError
+        );
+      }
+    }
+
+    return res.status(500).json({
       status: "error",
-      message: "Database Error"
+      message:
+        "Unable to create account or send verification email"
     });
   }
 };
 
 const loginUser = async (req, res) => {
   try {
+    const email = String(
+      req.body.email ?? ""
+    )
+      .trim()
+      .toLowerCase();
 
-    const { email, password } = req.body;
+    const password = String(
+      req.body.password ?? ""
+    );
 
-    // Find user
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email and password are required"
+      });
+    }
+
     const [users] = await db.execute(
-      "SELECT * FROM users WHERE email = ?",
+      `SELECT
+        user_id,
+        full_name,
+        email,
+        password,
+        email_verified
+       FROM users
+       WHERE email = ?`,
       [email]
     );
 
     if (users.length === 0) {
-      return res.status(400).json({
+      return res.status(401).json({
         status: "error",
         message: "Invalid Email or Password"
       });
@@ -65,17 +185,30 @@ const loginUser = async (req, res) => {
 
     const user = users[0];
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const passwordMatches =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
 
-    if (!isMatch) {
-      return res.status(400).json({
+    if (!passwordMatches) {
+      return res.status(401).json({
         status: "error",
         message: "Invalid Email or Password"
       });
     }
 
-    // Create JWT Token
+    if (!user.email_verified) {
+      return res.status(403).json({
+        status: "error",
+        code: "EMAIL_NOT_VERIFIED",
+        message:
+          "Please verify your email address before signing in.",
+        verification_required: true,
+        email: user.email
+      });
+    }
+
     const token = jwt.sign(
       {
         user_id: user.user_id,
@@ -87,20 +220,21 @@ const loginUser = async (req, res) => {
       }
     );
 
-    res.json({
+    return res.json({
       status: "success",
+      message: "Login successful",
       token
     });
-
   } catch (error) {
+    console.error(
+      "Login error:",
+      error
+    );
 
-    console.error(error);
-
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
-      message: "Login Failed"
+      message: "Unable to sign in"
     });
-
   }
 };
 
@@ -511,13 +645,291 @@ const changeUserPassword = async (req, res) => {
   }
 };
 
+const verifyUserEmail = async (req, res) => {
+  try {
+    const email = String(
+      req.body.email ?? ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const code = String(
+      req.body.code ?? ""
+    ).trim();
+
+    if (!email || !code) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Email and verification code are required"
+      });
+    }
+
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Verification code must be 6 digits"
+      });
+    }
+
+    const [users] = await db.execute(
+      `SELECT
+        user_id,
+        email_verified,
+        email_verification_code_hash,
+        email_verification_expires_at,
+        email_verification_attempts
+       FROM users
+       WHERE email = ?`,
+      [email]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Invalid email or verification code"
+      });
+    }
+
+    const user = users[0];
+
+    if (user.email_verified) {
+      return res.json({
+        status: "success",
+        message:
+          "Email address is already verified"
+      });
+    }
+
+    if (
+      !user.email_verification_code_hash ||
+      !user.email_verification_expires_at
+    ) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "No active verification code was found"
+      });
+    }
+
+    if (
+      Number(
+        user.email_verification_attempts
+      ) >= 5
+    ) {
+      return res.status(429).json({
+        status: "error",
+        message:
+          "Too many incorrect attempts. Please request a new verification code."
+      });
+    }
+
+    const expiresAt = new Date(
+      user.email_verification_expires_at
+    );
+
+    if (expiresAt.getTime() < Date.now()) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Verification code has expired. Please request a new code."
+      });
+    }
+
+    const codeMatches =
+      await bcrypt.compare(
+        code,
+        user.email_verification_code_hash
+      );
+
+    if (!codeMatches) {
+      await db.execute(
+        `UPDATE users
+         SET email_verification_attempts =
+             email_verification_attempts + 1
+         WHERE user_id = ?`,
+        [user.user_id]
+      );
+
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Invalid verification code"
+      });
+    }
+
+    await db.execute(
+      `UPDATE users
+       SET
+         email_verified = 1,
+         email_verification_code_hash = NULL,
+         email_verification_expires_at = NULL,
+         email_verification_sent_at = NULL,
+         email_verification_attempts = 0
+       WHERE user_id = ?`,
+      [user.user_id]
+    );
+
+    return res.json({
+      status: "success",
+      message:
+        "Email verified successfully. You can now sign in."
+    });
+  } catch (error) {
+    console.error(
+      "Email verification error:",
+      error
+    );
+
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Unable to verify email address"
+    });
+  }
+};
+
+const resendVerificationCode = async (req, res) => {
+  try {
+    const email = String(
+      req.body.email ?? ""
+    )
+      .trim()
+      .toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email address is required"
+      });
+    }
+
+    const [users] = await db.execute(
+      `SELECT
+        user_id,
+        full_name,
+        email,
+        email_verified,
+        email_verification_sent_at
+       FROM users
+       WHERE email = ?`,
+      [email]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "No account was found for this email address"
+      });
+    }
+
+    const user = users[0];
+
+    if (user.email_verified) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "This email address is already verified"
+      });
+    }
+
+    /*
+     * Prevent users from repeatedly requesting
+     * verification emails.
+     */
+    if (user.email_verification_sent_at) {
+      const lastSentAt = new Date(
+        user.email_verification_sent_at
+      ).getTime();
+
+      const secondsSinceLastSend =
+        Math.floor(
+          (Date.now() - lastSentAt) / 1000
+        );
+
+      if (secondsSinceLastSend < 60) {
+        const remainingSeconds =
+          60 - secondsSinceLastSend;
+
+        return res.status(429).json({
+          status: "error",
+          code: "VERIFICATION_RESEND_COOLDOWN",
+          message:
+            `Please wait ${remainingSeconds} seconds before requesting another code.`,
+          retry_after: remainingSeconds
+        });
+      }
+    }
+
+    const verificationCode =
+      generateVerificationCode();
+
+    const verificationCodeHash =
+      await hashVerificationCode(
+        verificationCode
+      );
+
+    const verificationExpiresAt =
+      new Date(
+        Date.now() + 10 * 60 * 1000
+      );
+
+    const verificationSentAt =
+      new Date();
+
+    await sendVerificationCodeEmail({
+      to: user.email,
+      fullName: user.full_name,
+      code: verificationCode
+    });
+
+    await db.execute(
+      `UPDATE users
+       SET
+         email_verification_code_hash = ?,
+         email_verification_expires_at = ?,
+         email_verification_sent_at = ?,
+         email_verification_attempts = 0
+       WHERE user_id = ?`,
+      [
+        verificationCodeHash,
+        verificationExpiresAt,
+        verificationSentAt,
+        user.user_id
+      ]
+    );
+
+    return res.json({
+      status: "success",
+      message:
+        "A new verification code has been sent to your email address."
+    });
+  } catch (error) {
+    console.error(
+      "Verification code resend error:",
+      error
+    );
+
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Unable to send a new verification code"
+    });
+  }
+};
+
 module.exports = {
   registerUser,
+  verifyUserEmail,
   loginUser,
   getUserProfile,
   updateUserProfile,
   uploadProfilePicture,
   getProfilePicture,
   deleteProfilePicture,
-  changeUserPassword
+  changeUserPassword,
+  resendVerificationCode
 };

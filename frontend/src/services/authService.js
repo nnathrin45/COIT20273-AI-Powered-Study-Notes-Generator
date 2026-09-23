@@ -50,3 +50,22 @@ export const loginUser = async (
 export const logoutUser = () => {
   removeAuthToken()
 }
+
+export const verifyEmail = async (email, code) => {
+  return apiRequest('/api/users/verify-email', {
+    method: 'POST',
+    body: {
+      email,
+      code,
+    },
+  })
+}
+
+export const resendVerificationCode = async (email) => {
+  return apiRequest('/api/users/resend-verification', {
+    method: 'POST',
+    body: {
+      email,
+    },
+  })
+}

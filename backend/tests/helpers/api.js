@@ -13,6 +13,7 @@
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const bcrypt = require("bcrypt");
 
 const BACKEND = path.join(__dirname, "..", "..");
 require("dotenv").config({ path: path.join(BACKEND, ".env") });
@@ -80,24 +81,62 @@ const request = async (method, endpoint, { token, body, form } = {}) => {
   return { status: res.status, data };
 };
 
-// Registers a throwaway account and returns its token
+// Creates a verified throwaway account and returns its token.
+// Test fixtures bypass the real email-delivery step so integration tests
+// remain deterministic and do not send external emails.
 const createUser = async () => {
-  const email = `${TEST_EMAIL_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.invalid`;
+  const email =
+    `${TEST_EMAIL_PREFIX}${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}@example.invalid`;
+
   const password = "Passw0rd!";
 
-  await request("POST", "/api/users/register", {
-    body: { full_name: "Automated Test", email, password }
-  });
+  const hashedPassword =
+    await bcrypt.hash(password, 10);
 
-  const login = await request("POST", "/api/users/login", {
-    body: { email, password }
-  });
+  const conn = await connect();
 
-  if (!login.data || !login.data.token) {
-    throw new Error("Could not obtain a token for the test user");
+  try {
+    await conn.execute(
+      `INSERT INTO users (
+        full_name,
+        email,
+        email_verified,
+        password
+      )
+      VALUES (?, ?, 1, ?)`,
+      [
+        "Automated Test",
+        email,
+        hashedPassword
+      ]
+    );
+  } finally {
+    await conn.end();
   }
 
-  return { email, token: login.data.token };
+  const login = await request(
+    "POST",
+    "/api/users/login",
+    {
+      body: {
+        email,
+        password
+      }
+    }
+  );
+
+  if (!login.data || !login.data.token) {
+    throw new Error(
+      "Could not obtain a token for the test user"
+    );
+  }
+
+  return {
+    email,
+    token: login.data.token
+  };
 };
 
 // Uploads a file from a Buffer without writing a temporary file to disk
