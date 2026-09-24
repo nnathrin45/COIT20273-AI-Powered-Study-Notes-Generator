@@ -162,7 +162,7 @@ function Quiz() {
         ) {
           setConsentStatus('revoked')
           setError(
-            'AI processing consent is required. Please manage your consent from the Dashboard.'
+            'AI processing consent is required. Please manage your consent from the Privacy & Consent page.'
           )
           setRetryableError(false)
           return
@@ -585,12 +585,11 @@ function Quiz() {
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-amber-100/70">
-                    Grant AI processing consent from your Dashboard
-                    before generating AI study content.
+                    Grant AI processing consent before generating AI study content.
                   </p>
 
                   <Link
-                    to="/dashboard"
+                    to="/privacy"
                     className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
                   >
                     Manage AI Consent
