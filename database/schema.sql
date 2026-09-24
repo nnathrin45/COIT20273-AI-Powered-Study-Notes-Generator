@@ -11,6 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
   email_verification_expires_at DATETIME NULL,
   email_verification_sent_at    DATETIME NULL,
   email_verification_attempts   INT NOT NULL DEFAULT 0,
+
+  login_code_hash VARCHAR(255) NULL,
+  login_code_expires_at DATETIME NULL,
+  login_code_sent_at DATETIME NULL,
+  login_code_attempts INT NOT NULL DEFAULT 0,
+
   password                      VARCHAR(255) NOT NULL,
   profile_picture               VARCHAR(255) NULL,
   created_at                    DATETIME DEFAULT CURRENT_TIMESTAMP

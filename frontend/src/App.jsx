@@ -16,6 +16,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Privacy from './pages/Privacy'
 import Profile from './pages/Profile'
 import VerifyEmail from './pages/VerifyEmail'
+import VerifyLogin from './pages/VerifyLogin'
 
 function App() {
   return (
@@ -40,6 +41,11 @@ function App() {
       <Route
         path="/verify-email"
         element={<VerifyEmail />}
+      />
+
+      <Route
+        path="/verify-login"
+        element={<VerifyLogin />}
       />
 
       {/* Protected Application */}
