@@ -7,7 +7,8 @@ const path = require("path");
 const {
   generateVerificationCode,
   hashVerificationCode,
-  sendVerificationCodeEmail
+  sendVerificationCodeEmail,
+  sendLoginCodeEmail
 } = require("../services/email.service");
 
 const registerUser = async (req, res) => {
@@ -170,7 +171,11 @@ const loginUser = async (req, res) => {
         full_name,
         email,
         password,
-        email_verified
+        email_verified,
+        login_code_hash,
+        login_code_expires_at,
+        login_code_sent_at,
+        login_code_attempts
        FROM users
        WHERE email = ?`,
       [email]
@@ -209,6 +214,269 @@ const loginUser = async (req, res) => {
       });
     }
 
+    const challengeToken = jwt.sign(
+      {
+        user_id: user.user_id,
+        purpose: "login-2fa"
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "10m"
+      }
+    );
+
+    if (user.login_code_sent_at) {
+      const sentAt =
+        new Date(user.login_code_sent_at);
+
+      const elapsedSeconds =
+        Math.floor(
+          (Date.now() - sentAt.getTime()) / 1000
+        );
+
+      if (
+        elapsedSeconds >= 0 &&
+        elapsedSeconds < 60 &&
+        user.login_code_hash
+      ) {
+        const retryAfter =
+          60 - elapsedSeconds;
+
+        return res.json({
+          status: "success",
+          code: "LOGIN_2FA_REQUIRED",
+          message:
+            "A sign-in verification code was recently sent to your email.",
+          two_factor_required: true,
+          challenge_token: challengeToken,
+          retry_after: retryAfter
+        });
+      }
+    }
+
+    const loginCode =
+      generateVerificationCode();
+
+    const loginCodeHash =
+      await hashVerificationCode(loginCode);
+
+    const expiresAt =
+      new Date(
+        Date.now() + 10 * 60 * 1000
+      );
+
+    const sentAt = new Date();
+
+    await db.execute(
+      `UPDATE users
+       SET
+         login_code_hash = ?,
+         login_code_expires_at = ?,
+         login_code_sent_at = ?,
+         login_code_attempts = 0
+       WHERE user_id = ?`,
+      [
+        loginCodeHash,
+        expiresAt,
+        sentAt,
+        user.user_id
+      ]
+    );
+
+    try {
+      await sendLoginCodeEmail({
+        to: user.email,
+        fullName: user.full_name,
+        code: loginCode
+      });
+    } catch (emailError) {
+      await db.execute(
+        `UPDATE users
+         SET
+           login_code_hash = NULL,
+           login_code_expires_at = NULL,
+           login_code_sent_at = NULL,
+           login_code_attempts = 0
+         WHERE user_id = ?`,
+        [user.user_id]
+      );
+
+      throw emailError;
+    }
+
+    return res.json({
+      status: "success",
+      code: "LOGIN_2FA_REQUIRED",
+      message:
+        "A sign-in verification code has been sent to your email.",
+      two_factor_required: true,
+      challenge_token: challengeToken,
+      retry_after: 60
+    });
+  } catch (error) {
+    console.error(
+      "Login error:",
+      error
+    );
+
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Unable to send the sign-in verification code"
+    });
+  }
+};
+
+const verifyLoginCode = async (req, res) => {
+  try {
+    const challengeToken = String(
+      req.body.challenge_token ?? ""
+    ).trim();
+
+    const code = String(
+      req.body.code ?? ""
+    ).trim();
+
+    if (!challengeToken || !code) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Login challenge and verification code are required"
+      });
+    }
+
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Verification code must contain exactly 6 digits"
+      });
+    }
+
+    let challenge;
+
+    try {
+      challenge = jwt.verify(
+        challengeToken,
+        process.env.JWT_SECRET
+      );
+    } catch {
+      return res.status(401).json({
+        status: "error",
+        code: "LOGIN_CHALLENGE_EXPIRED",
+        message:
+          "Your sign-in verification session has expired. Please sign in again."
+      });
+    }
+
+    if (
+      challenge.purpose !== "login-2fa" ||
+      !challenge.user_id
+    ) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Invalid sign-in verification session"
+      });
+    }
+
+    const [users] = await db.execute(
+      `SELECT
+        user_id,
+        email,
+        email_verified,
+        login_code_hash,
+        login_code_expires_at,
+        login_code_attempts
+       FROM users
+       WHERE user_id = ?`,
+      [challenge.user_id]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Invalid sign-in verification session"
+      });
+    }
+
+    const user = users[0];
+
+    if (!user.email_verified) {
+      return res.status(403).json({
+        status: "error",
+        code: "EMAIL_NOT_VERIFIED",
+        message:
+          "Please verify your email address before signing in."
+      });
+    }
+
+    if (
+      !user.login_code_hash ||
+      !user.login_code_expires_at
+    ) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "No active sign-in verification code was found. Please sign in again."
+      });
+    }
+
+    if (user.login_code_attempts >= 5) {
+      return res.status(429).json({
+        status: "error",
+        code: "LOGIN_CODE_ATTEMPTS_EXCEEDED",
+        message:
+          "Too many incorrect verification attempts. Please sign in again."
+      });
+    }
+
+    const expiresAt =
+      new Date(user.login_code_expires_at);
+
+    if (expiresAt.getTime() < Date.now()) {
+      return res.status(400).json({
+        status: "error",
+        code: "LOGIN_CODE_EXPIRED",
+        message:
+          "The sign-in verification code has expired. Please sign in again."
+      });
+    }
+
+    const codeMatches =
+      await bcrypt.compare(
+        code,
+        user.login_code_hash
+      );
+
+    if (!codeMatches) {
+      await db.execute(
+        `UPDATE users
+         SET login_code_attempts =
+           login_code_attempts + 1
+         WHERE user_id = ?`,
+        [user.user_id]
+      );
+
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Invalid sign-in verification code"
+      });
+    }
+
+    await db.execute(
+      `UPDATE users
+       SET
+         login_code_hash = NULL,
+         login_code_expires_at = NULL,
+         login_code_sent_at = NULL,
+         login_code_attempts = 0
+       WHERE user_id = ?`,
+      [user.user_id]
+    );
+
     const token = jwt.sign(
       {
         user_id: user.user_id,
@@ -222,18 +490,185 @@ const loginUser = async (req, res) => {
 
     return res.json({
       status: "success",
-      message: "Login successful",
+      message: "Sign-in verification successful",
       token
     });
   } catch (error) {
     console.error(
-      "Login error:",
+      "Login verification error:",
       error
     );
 
     return res.status(500).json({
       status: "error",
-      message: "Unable to sign in"
+      message:
+        "Unable to verify the sign-in code"
+    });
+  }
+};
+
+const resendLoginCode = async (req, res) => {
+  try {
+    const challengeToken = String(
+      req.body.challenge_token ?? ""
+    ).trim();
+
+    if (!challengeToken) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Login challenge is required"
+      });
+    }
+
+    let challenge;
+
+    try {
+      challenge = jwt.verify(
+        challengeToken,
+        process.env.JWT_SECRET
+      );
+    } catch {
+      return res.status(401).json({
+        status: "error",
+        code: "LOGIN_CHALLENGE_EXPIRED",
+        message:
+          "Your sign-in verification session has expired. Please sign in again."
+      });
+    }
+
+    if (
+      challenge.purpose !== "login-2fa" ||
+      !challenge.user_id
+    ) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Invalid sign-in verification session"
+      });
+    }
+
+    const [users] = await db.execute(
+      `SELECT
+        user_id,
+        full_name,
+        email,
+        email_verified,
+        login_code_sent_at
+       FROM users
+       WHERE user_id = ?`,
+      [challenge.user_id]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        status: "error",
+        message:
+          "Invalid sign-in verification session"
+      });
+    }
+
+    const user = users[0];
+
+    if (!user.email_verified) {
+      return res.status(403).json({
+        status: "error",
+        code: "EMAIL_NOT_VERIFIED",
+        message:
+          "Please verify your email address before signing in."
+      });
+    }
+
+    if (user.login_code_sent_at) {
+      const sentAt =
+        new Date(user.login_code_sent_at);
+
+      const elapsedSeconds =
+        Math.floor(
+          (Date.now() - sentAt.getTime()) / 1000
+        );
+
+      if (
+        elapsedSeconds >= 0 &&
+        elapsedSeconds < 60
+      ) {
+        const retryAfter =
+          60 - elapsedSeconds;
+
+        return res.status(429).json({
+          status: "error",
+          code: "LOGIN_RESEND_COOLDOWN",
+          message:
+            `Please wait ${retryAfter} seconds before requesting another code.`,
+          retry_after: retryAfter
+        });
+      }
+    }
+
+    const loginCode =
+      generateVerificationCode();
+
+    const loginCodeHash =
+      await hashVerificationCode(loginCode);
+
+    const expiresAt =
+      new Date(
+        Date.now() + 10 * 60 * 1000
+      );
+
+    const sentAt = new Date();
+
+    await sendLoginCodeEmail({
+      to: user.email,
+      fullName: user.full_name,
+      code: loginCode
+    });
+
+    await db.execute(
+      `UPDATE users
+      SET
+        login_code_hash = ?,
+        login_code_expires_at = ?,
+        login_code_sent_at = ?,
+        login_code_attempts = 0
+      WHERE user_id = ?`,
+      [
+        loginCodeHash,
+        expiresAt,
+        sentAt,
+        user.user_id
+      ]
+    );
+
+    const refreshedChallengeToken = jwt.sign(
+      {
+        user_id: user.user_id,
+        purpose: "login-2fa"
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "10m"
+      }
+    );
+
+    return res.json({
+      status: "success",
+      message:
+        "A new sign-in verification code has been sent to your email.",
+      challenge_token: refreshedChallengeToken,
+      retry_after: 60
+    });
+
+  } catch (error) {
+    console.error(
+      "Login code resend error:",
+      error
+    );
+
+    return res.status(500).json({
+      status: "error",
+      message:
+        "Unable to resend the sign-in verification code"
     });
   }
 };
@@ -925,6 +1360,8 @@ module.exports = {
   registerUser,
   verifyUserEmail,
   loginUser,
+  verifyLoginCode,
+  resendLoginCode,
   getUserProfile,
   updateUserProfile,
   uploadProfilePicture,

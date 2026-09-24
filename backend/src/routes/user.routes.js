@@ -14,6 +14,8 @@ const {
 const {
   registerUser,
   loginUser,
+  verifyLoginCode,
+  resendLoginCode,
   getUserProfile,
   updateUserProfile,
   uploadProfilePicture,
@@ -37,6 +39,16 @@ router.post(
 );
 
 router.post("/login", loginUser);
+
+router.post(
+  "/verify-login-code",
+  verifyLoginCode
+);
+
+router.post(
+  "/resend-login-code",
+  resendLoginCode
+);
 
 router.get(
   "/profile",

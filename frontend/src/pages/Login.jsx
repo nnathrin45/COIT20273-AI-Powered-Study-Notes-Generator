@@ -51,7 +51,43 @@ function Login() {
         return
       }
 
-      navigate('/dashboard')
+      if (
+        response.data.code === 'LOGIN_2FA_REQUIRED' &&
+        response.data.challenge_token
+      ) {
+        const challengeToken =
+          response.data.challenge_token
+
+        sessionStorage.setItem(
+          'pendingLoginChallenge',
+          challengeToken
+        )
+
+        sessionStorage.setItem(
+          'pendingLoginEmail',
+          trimmedEmail
+        )
+
+        navigate('/verify-login', {
+          state: {
+            email: trimmedEmail,
+            retryAfter:
+              response.data.retry_after || 60,
+          },
+        })
+
+        return
+      }
+
+      if (response.data.token) {
+        navigate('/dashboard')
+        return
+      }
+
+      setError(
+        'Unable to complete sign in. Please try again.'
+      )
+
     } catch (error) {
       console.error('Login error:', error)
 
