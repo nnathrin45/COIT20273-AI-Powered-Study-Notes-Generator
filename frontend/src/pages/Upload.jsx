@@ -21,6 +21,8 @@ function Upload() {
   const [deletingFileId, setDeletingFileId] = useState(null)
   const [filesError, setFilesError] = useState('')
   const [filesStatus, setFilesStatus] = useState('')
+  const [uploadedMaterialsOpen, setUploadedMaterialsOpen] =
+    useState(false)
 
   const MAX_FILE_SIZE = 15 * 1024 * 1024
   const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt']
@@ -38,7 +40,7 @@ function Upload() {
       ) {
         setFilesError(
           response.data?.message ||
-            'Unable to load uploaded materials.'
+          'Unable to load uploaded materials.'
         )
 
         return
@@ -207,7 +209,7 @@ function Upload() {
             } else {
               setError(
                 response.data?.message ||
-                  'The document could not be uploaded.'
+                'The document could not be uploaded.'
               )
             }
         }
@@ -292,7 +294,7 @@ function Upload() {
 
         setFilesError(
           response.data?.message ||
-            'Unable to delete the uploaded file.'
+          'Unable to delete the uploaded file.'
         )
         return
       }
@@ -670,12 +672,33 @@ function Upload() {
       </form>
 
       {/* Uploaded Materials */}
-      <section className="mt-8 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
+      <section className="group mt-8 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 transition-all duration-300 hover:border-[#7a44ff] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)] sm:p-7">
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() =>
+            setUploadedMaterialsOpen(
+              (current) => !current
+            )
+          }
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Enter' ||
+              event.key === ' '
+            ) {
+              event.preventDefault()
 
+              setUploadedMaterialsOpen(
+                (current) => !current
+              )
+            }
+          }}
+          aria-expanded={uploadedMaterialsOpen}
+          aria-controls="uploaded-materials-content"
+          className="flex cursor-pointer flex-wrap items-center justify-between gap-4 text-left focus:outline-none"
+        >
           <div>
-
             <p className="mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
               Library
             </p>
@@ -687,83 +710,21 @@ function Upload() {
             <p className="mt-1 text-sm text-[#898cc0]">
               Review or delete study documents you previously uploaded.
             </p>
-
           </div>
 
-          <button
-            type="button"
-            onClick={loadUploadedFiles}
-            disabled={isLoadingFiles}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#19103a] px-4 py-2 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-
-            <svg
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className={`h-4 w-4 ${
-                isLoadingFiles ? 'animate-spin' : ''
-              }`}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                loadUploadedFiles()
+              }}
+              onKeyDown={(event) =>
+                event.stopPropagation()
+              }
+              disabled={isLoadingFiles}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#19103a] px-4 py-2 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M20 6v5h-5M4 18v-5h5m9.5-4A7 7 0 0 0 6 6.5L4 9m16 6-2 2.5A7 7 0 0 1 5.5 15"
-              />
-            </svg>
-
-            {isLoadingFiles
-              ? 'Refreshing...'
-              : 'Refresh'}
-
-          </button>
-
-        </div>
-
-        {/* Uploaded Files Error */}
-        {filesError && (
-          <div
-            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
-            role="alert"
-          >
-            <p className="text-sm leading-6 text-red-300">
-              {filesError}
-            </p>
-          </div>
-        )}
-
-        {/* Uploaded Files Success */}
-        {filesStatus && (
-          <div
-            className="mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
-            role="status"
-          >
-            <p className="text-sm text-emerald-300">
-              {filesStatus}
-            </p>
-          </div>
-        )}
-
-        {/* Loading */}
-        {isLoadingFiles ? (
-          <div className="mt-6 flex items-center gap-3">
-
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
-
-            <p className="text-sm text-[#898cc0]">
-              Loading uploaded materials...
-            </p>
-
-          </div>
-        ) : uploadedFiles.length === 0 ? (
-
-          /* Empty */
-          <div className="mt-6 rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-6 text-center">
-
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
               <svg
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
@@ -771,90 +732,185 @@ function Upload() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.8"
-                className="h-5 w-5"
+                className={`h-4 w-4 ${isLoadingFiles
+                    ? 'animate-spin'
+                    : ''
+                  }`}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M6 3h9l3 3v15H6V3Zm9 0v4h4"
+                  d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4m-4 4a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"
+                />
+              </svg>
+
+              Refresh
+            </button>
+
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#a97cff]">
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform duration-300 ${uploadedMaterialsOpen
+                    ? 'rotate-180'
+                    : ''
+                  }`}
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
             </div>
-
-            <p className="mt-3 text-sm text-[#898cc0]">
-              You have not uploaded any study materials yet.
-            </p>
-
           </div>
-        ) : (
+        </div>
 
-          /* File List */
-          <div className="mt-6 space-y-3">
+        <div
+          id="uploaded-materials-content"
+          className={`grid transition-all duration-300 ease-in-out ${uploadedMaterialsOpen
+            ? 'grid-rows-[1fr] opacity-100'
+            : 'grid-rows-[0fr] opacity-0'
+            }`}
+        >
+          <div className="min-h-0 overflow-hidden">
 
-            {uploadedFiles.map((file) => (
+            {/* Uploaded Files Error */}
+            {filesError && (
               <div
-                key={file.file_id}
-                className="group flex flex-col gap-4 rounded-lg border border-[#2a1b4d] bg-[#120928]/40 p-4 transition hover:border-[#7a44ff]/40 hover:bg-[#19103a] sm:flex-row sm:items-center sm:justify-between"
+                className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+                role="alert"
               >
+                <p className="text-sm leading-6 text-red-300">
+                  {filesError}
+                </p>
+              </div>
+            )}
 
-                <div className="flex min-w-0 items-start gap-3">
+            {/* Uploaded Files Success */}
+            {filesStatus && (
+              <div
+                className="mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
+                role="status"
+              >
+                <p className="text-sm text-emerald-300">
+                  {filesStatus}
+                </p>
+              </div>
+            )}
 
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
+            {/* Loading */}
+            {isLoadingFiles ? (
+              <div className="mt-6 flex items-center gap-3">
 
-                    <svg
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      className="h-5 w-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 3h9l3 3v15H6V3Zm9 0v4h4M9 11h6M9 15h6"
-                      />
-                    </svg>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
 
-                  </div>
-
-                  <div className="min-w-0">
-
-                    <p className="break-words font-medium text-[#e7e2f5]">
-                      {file.file_name}
-                    </p>
-
-                    <p className="mt-1 text-sm text-[#727494]">
-                      Uploaded:{' '}
-                      {formatUploadedDate(file.uploaded_at)}
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleDeleteUploadedFile(file)
-                  }
-                  disabled={
-                    deletingFileId === file.file_id
-                  }
-                  className="self-start rounded-lg border border-red-400/25 bg-red-500/[0.05] px-4 py-2 text-sm font-medium text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
-                >
-                  {deletingFileId === file.file_id
-                    ? 'Deleting...'
-                    : 'Delete'}
-                </button>
+                <p className="text-sm text-[#898cc0]">
+                  Loading uploaded materials...
+                </p>
 
               </div>
-            ))}
+            ) : uploadedFiles.length === 0 ? (
 
+              /* Empty */
+              <div className="mt-6 rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-6 text-center">
+
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 3h9l3 3v15H6V3Zm9 0v4h4"
+                    />
+                  </svg>
+                </div>
+
+                <p className="mt-3 text-sm text-[#898cc0]">
+                  You have not uploaded any study materials yet.
+                </p>
+
+              </div>
+            ) : (
+
+              /* File List */
+              <div className="mt-6 space-y-3">
+
+                {uploadedFiles.map((file) => (
+                  <div
+                    key={file.file_id}
+                    className="group flex flex-col gap-4 rounded-lg border border-[#2a1b4d] bg-[#120928]/40 p-4 transition hover:border-[#7a44ff]/40 hover:bg-[#19103a] sm:flex-row sm:items-center sm:justify-between"
+                  >
+
+                    <div className="flex min-w-0 items-start gap-3">
+
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
+
+                        <svg
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          className="h-5 w-5"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 3h9l3 3v15H6V3Zm9 0v4h4M9 11h6M9 15h6"
+                          />
+                        </svg>
+
+                      </div>
+
+                      <div className="min-w-0">
+
+                        <p className="break-words font-medium text-[#e7e2f5]">
+                          {file.file_name}
+                        </p>
+
+                        <p className="mt-1 text-sm text-[#727494]">
+                          Uploaded:{' '}
+                          {formatUploadedDate(file.uploaded_at)}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteUploadedFile(file)
+                      }
+                      disabled={
+                        deletingFileId === file.file_id
+                      }
+                      className="self-start rounded-lg border border-red-400/25 bg-red-500/[0.05] px-4 py-2 text-sm font-medium text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+                    >
+                      {deletingFileId === file.file_id
+                        ? 'Deleting...'
+                        : 'Delete'}
+                    </button>
+
+                  </div>
+                ))}
+
+              </div>
+            )}
           </div>
-        )}
-
+        </div>
       </section>
 
     </div>

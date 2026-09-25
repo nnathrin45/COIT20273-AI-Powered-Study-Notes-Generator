@@ -20,6 +20,8 @@ function SavedMaterials() {
 
   const [actionError, setActionError] = useState('')
   const [actionSuccess, setActionSuccess] = useState('')
+  const [savedMaterialsOpen, setSavedMaterialsOpen] =
+    useState(false)
 
   const loadSavedMaterials = async () => {
     setLoading(true)
@@ -36,7 +38,7 @@ function SavedMaterials() {
         } else {
           setError(
             uploadedResponse.data?.message ||
-              'Unable to retrieve your uploaded study materials.'
+            'Unable to retrieve your uploaded study materials.'
           )
         }
 
@@ -223,7 +225,7 @@ function SavedMaterials() {
 
         setActionError(
           response.data?.message ||
-            'Unable to delete the saved material.'
+          'Unable to delete the saved material.'
         )
 
         return
@@ -378,36 +380,36 @@ function SavedMaterials() {
                     {Array.isArray(
                       question.options
                     ) && (
-                      <div className="mt-4 space-y-2">
+                        <div className="mt-4 space-y-2">
 
-                        {question.options.map(
-                          (
-                            option,
-                            optionIndex
-                          ) => (
-                            <div
-                              key={optionIndex}
-                              className="flex gap-3 rounded-lg border border-[#2a1b4d] bg-[#160b32] px-4 py-3"
-                            >
+                          {question.options.map(
+                            (
+                              option,
+                              optionIndex
+                            ) => (
+                              <div
+                                key={optionIndex}
+                                className="flex gap-3 rounded-lg border border-[#2a1b4d] bg-[#160b32] px-4 py-3"
+                              >
 
-                              <span className="font-semibold text-[#a97cff]">
-                                {String.fromCharCode(
-                                  65 +
+                                <span className="font-semibold text-[#a97cff]">
+                                  {String.fromCharCode(
+                                    65 +
                                     optionIndex
-                                )}
-                                .
-                              </span>
+                                  )}
+                                  .
+                                </span>
 
-                              <p className="text-sm leading-6 text-[#c2c4e4]">
-                                {option}
-                              </p>
+                                <p className="text-sm leading-6 text-[#c2c4e4]">
+                                  {option}
+                                </p>
 
-                            </div>
-                          )
-                        )}
+                              </div>
+                            )
+                          )}
 
-                      </div>
-                    )}
+                        </div>
+                      )}
 
                   </div>
 
@@ -679,314 +681,364 @@ function SavedMaterials() {
 
       {!loading && !error && (
         <>
-          {/* Material Count */}
-          <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {/* Saved Materials Accordion */}
+          <section className="group mt-7 overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32] transition-all duration-300 hover:border-[#7a44ff] hover:shadow-[0_0_24px_rgba(122,68,255,0.20)]">
 
-            <p className="text-sm text-[#898cc0]">
-              Showing{' '}
-              <span className="font-semibold text-[#f3f0ff]">
-                {filteredMaterials.length}
-              </span>{' '}
-              saved material
-              {filteredMaterials.length !== 1
-                ? 's'
-                : ''}
-            </p>
+            {/* Accordion Header */}
+            <button
+              type="button"
+              onClick={() =>
+                setSavedMaterialsOpen(
+                  (current) => !current
+                )
+              }
+              aria-expanded={savedMaterialsOpen}
+              aria-controls="saved-materials-list-content"
+              className="relative flex w-full flex-col gap-3 px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7a44ff] sm:flex-row sm:items-center sm:justify-between"
+            >
 
-            {materials.length > 0 && (
-              <p className="text-xs text-[#727494]">
-                {materials.length} total saved
+              <p className="text-sm text-[#898cc0]">
+                Showing{' '}
+                <span className="font-semibold text-[#f3f0ff]">
+                  {filteredMaterials.length}
+                </span>{' '}
+                saved material
+                {filteredMaterials.length !== 1
+                  ? 's'
+                  : ''}
               </p>
-            )}
 
-          </div>
+              <div className="flex items-center gap-3">
+                {materials.length > 0 && (
+                  <span className="text-xs text-[#727494]">
+                    {materials.length} total saved
+                  </span>
+                )}
 
-          {/* Saved Materials */}
-          {filteredMaterials.length > 0 ? (
-            <div className="mt-4 space-y-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#a97cff]">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                    className={`h-4 w-4 transition-transform duration-300 ${
+                      savedMaterialsOpen
+                        ? 'rotate-180'
+                        : ''
+                    }`}
+                  >
+                    <path
+                      d="M5 7.5L10 12.5L15 7.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              </div>
 
-              {filteredMaterials.map(
-                (material) => {
-                  const isExpanded =
-                    expandedMaterialId ===
-                    material.outputId
+            </button>
 
-                  const isDeleting =
-                    deletingMaterialId ===
-                    material.outputId
+            {/* Saved Materials Content */}
+            <div
+              id="saved-materials-list-content"
+              aria-hidden={!savedMaterialsOpen}
+              className={`grid transition-all duration-300 ease-in-out ${
+                savedMaterialsOpen
+                  ? 'visible grid-rows-[1fr] opacity-100'
+                  : 'invisible grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div className="border-t border-[#2a1b4d] p-5">
+                  {filteredMaterials.length > 0 ? (
+                    <div className="space-y-4">
 
-                  const contentId =
-                    `saved-material-${material.outputId}`
+                      {filteredMaterials.map(
+                        (material) => {
+                          const isExpanded =
+                            expandedMaterialId ===
+                            material.outputId
 
-                  return (
-                    <article
-                      key={material.id}
-                      className="overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]"
-                    >
+                          const isDeleting =
+                            deletingMaterialId ===
+                            material.outputId
 
-                      {/* Material Summary */}
-                      <div className="p-5 sm:p-6">
+                          const contentId =
+                            `saved-material-${material.outputId}`
 
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-
-                          <div className="min-w-0">
-
-                            <div className="flex flex-wrap items-center gap-2">
-
-                              <span
-                                className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getTypeStyle(
-                                  material.type
-                                )}`}
-                              >
-                                {material.type}
-                              </span>
-
-                              {material.isAiGenerated && (
-                                <span className="inline-flex rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-xs font-semibold text-[#c9b4ff]">
-                                  AI Generated
-                                </span>
-                              )}
-
-                            </div>
-
-                            <h2 className="mt-4 text-lg font-semibold text-[#f3f0ff]">
-                              {material.title}
-                            </h2>
-
-                            <div className="mt-3 flex flex-col gap-1 text-sm text-[#898cc0]">
-
-                              <p className="break-words">
-                                <span className="text-[#727494]">
-                                  Source:
-                                </span>{' '}
-                                {material.source}
-                              </p>
-
-                              <p>
-                                <span className="text-[#727494]">
-                                  Saved:
-                                </span>{' '}
-                                {formatDate(
-                                  material.createdAt
-                                )}
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex shrink-0 flex-wrap gap-2">
-
-                            <button
-                              type="button"
-                              aria-expanded={
-                                isExpanded
-                              }
-                              aria-controls={
-                                contentId
-                              }
-                              onClick={() =>
-                                handleToggleMaterial(
-                                  material.outputId
-                                )
-                              }
-                              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-2.5 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10"
+                          return (
+                            <article
+                              key={material.id}
+                              className="overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]"
                             >
 
-                              {isExpanded
-                                ? 'Hide Material'
-                                : 'View Material'}
+                              {/* Material Summary */}
+                              <div className="p-5 sm:p-6">
 
-                              <svg
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                className={`h-4 w-4 transition-transform ${
-                                  isExpanded
-                                    ? 'rotate-180'
-                                    : ''
-                                }`}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="m6 9 6 6 6-6"
-                                />
-                              </svg>
+                                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
 
-                            </button>
+                                  <div className="min-w-0">
 
-                            <button
-                              type="button"
-                              disabled={isDeleting}
-                              onClick={() =>
-                                handleDeleteMaterial(
-                                  material
-                                )
-                              }
-                              className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
+                                    <div className="flex flex-wrap items-center gap-2">
 
-                              {isDeleting ? (
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-300/30 border-t-red-300" />
-                              ) : (
-                                <svg
-                                  aria-hidden="true"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  className="h-4 w-4"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M4 7h16M9 7V4h6v3m-9 0 1 14h10l1-14M10 11v6m4-6v6"
-                                  />
-                                </svg>
-                              )}
+                                      <span
+                                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getTypeStyle(
+                                          material.type
+                                        )}`}
+                                      >
+                                        {material.type}
+                                      </span>
 
-                              {isDeleting
-                                ? 'Deleting...'
-                                : 'Delete'}
+                                      {material.isAiGenerated && (
+                                        <span className="inline-flex rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-xs font-semibold text-[#c9b4ff]">
+                                          AI Generated
+                                        </span>
+                                      )}
 
-                            </button>
+                                    </div>
 
-                          </div>
+                                    <h2 className="mt-4 text-lg font-semibold text-[#f3f0ff]">
+                                      {material.title}
+                                    </h2>
 
-                        </div>
+                                    <div className="mt-3 flex flex-col gap-1 text-sm text-[#898cc0]">
 
-                      </div>
+                                      <p className="break-words">
+                                        <span className="text-[#727494]">
+                                          Source:
+                                        </span>{' '}
+                                        {material.source}
+                                      </p>
 
-                      {/* Inline Expanded Material */}
-                      {isExpanded && (
-                        <div
-                          id={contentId}
-                          className="border-t border-[#2a1b4d] bg-[#120928]/20 p-5 sm:p-6"
-                        >
+                                      <p>
+                                        <span className="text-[#727494]">
+                                          Saved:
+                                        </span>{' '}
+                                        {formatDate(
+                                          material.createdAt
+                                        )}
+                                      </p>
 
-                          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    </div>
 
-                            <div>
+                                  </div>
 
-                              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#a97cff]">
-                                Saved Content
-                              </p>
+                                  {/* Actions */}
+                                  <div className="flex shrink-0 flex-wrap gap-2">
 
-                              <h3 className="mt-1 text-lg font-semibold text-[#f3f0ff]">
-                                {material.type}
-                              </h3>
+                                    <button
+                                      type="button"
+                                      aria-expanded={
+                                        isExpanded
+                                      }
+                                      aria-controls={
+                                        contentId
+                                      }
+                                      onClick={() =>
+                                        handleToggleMaterial(
+                                          material.outputId
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-2.5 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10"
+                                    >
 
-                            </div>
+                                      {isExpanded
+                                        ? 'Hide Material'
+                                        : 'View Material'}
 
-                            <span className="w-fit rounded-full border border-[#2a1b4d] bg-[#160b32] px-3 py-1 text-xs text-[#898cc0]">
-                              {formatDate(
-                                material.createdAt
-                              )}
-                            </span>
+                                      <svg
+                                        aria-hidden="true"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        className={`h-4 w-4 transition-transform ${isExpanded
+                                          ? 'rotate-180'
+                                          : ''
+                                          }`}
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="m6 9 6 6 6-6"
+                                        />
+                                      </svg>
 
-                          </div>
+                                    </button>
 
-                          {renderMaterialContent(
-                            material
-                          )}
+                                    <button
+                                      type="button"
+                                      disabled={isDeleting}
+                                      onClick={() =>
+                                        handleDeleteMaterial(
+                                          material
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
 
-                          {material.isAiGenerated && (
-                            <div className="mt-5 rounded-xl border border-amber-400/20 bg-amber-500/10 p-5">
+                                      {isDeleting ? (
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-300/30 border-t-red-300" />
+                                      ) : (
+                                        <svg
+                                          aria-hidden="true"
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="1.8"
+                                          className="h-4 w-4"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M4 7h16M9 7V4h6v3m-9 0 1 14h10l1-14M10 11v6m4-6v6"
+                                          />
+                                        </svg>
+                                      )}
 
-                              <div className="flex items-start gap-3">
+                                      {isDeleting
+                                        ? 'Deleting...'
+                                        : 'Delete'}
 
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
+                                    </button>
 
-                                  <svg
-                                    aria-hidden="true"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    className="h-4 w-4"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
-                                    />
-                                  </svg>
-
-                                </div>
-
-                                <div>
-
-                                  <h4 className="font-semibold text-amber-200">
-                                    AI-Generated Content
-                                  </h4>
-
-                                  <p className="mt-1 text-sm leading-6 text-amber-200/80">
-                                    This content was generated
-                                    by AI and may contain errors
-                                    or omissions. Please check
-                                    it against your original
-                                    study material.
-                                  </p>
+                                  </div>
 
                                 </div>
 
                               </div>
 
-                            </div>
-                          )}
+                              {/* Inline Expanded Material */}
+                              {isExpanded && (
+                                <div
+                                  id={contentId}
+                                  className="border-t border-[#2a1b4d] bg-[#120928]/20 p-5 sm:p-6"
+                                >
 
-                        </div>
+                                  <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+
+                                    <div>
+
+                                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#a97cff]">
+                                        Saved Content
+                                      </p>
+
+                                      <h3 className="mt-1 text-lg font-semibold text-[#f3f0ff]">
+                                        {material.type}
+                                      </h3>
+
+                                    </div>
+
+                                    <span className="w-fit rounded-full border border-[#2a1b4d] bg-[#160b32] px-3 py-1 text-xs text-[#898cc0]">
+                                      {formatDate(
+                                        material.createdAt
+                                      )}
+                                    </span>
+
+                                  </div>
+
+                                  {renderMaterialContent(
+                                    material
+                                  )}
+
+                                  {material.isAiGenerated && (
+                                    <div className="mt-5 rounded-xl border border-amber-400/20 bg-amber-500/10 p-5">
+
+                                      <div className="flex items-start gap-3">
+
+                                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
+
+                                          <svg
+                                            aria-hidden="true"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            className="h-4 w-4"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                                            />
+                                          </svg>
+
+                                        </div>
+
+                                        <div>
+
+                                          <h4 className="font-semibold text-amber-200">
+                                            AI-Generated Content
+                                          </h4>
+
+                                          <p className="mt-1 text-sm leading-6 text-amber-200/80">
+                                            This content was generated
+                                            by AI and may contain errors
+                                            or omissions. Please check
+                                            it against your original
+                                            study material.
+                                          </p>
+
+                                        </div>
+
+                                      </div>
+
+                                    </div>
+                                  )}
+
+                                </div>
+                              )}
+
+                            </article>
+                          )
+                        }
                       )}
 
-                    </article>
-                  )
-                }
-              )}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-[#3a2860] bg-[#120928]/35 p-10 text-center">
 
-            </div>
-          ) : (
-            <div className="mt-6 rounded-xl border border-dashed border-[#3a2860] bg-[#160b32] p-10 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
 
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
+                        <svg
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          className="h-6 w-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16ZM4 5.5A2.5 2.5 0 0 0 6.5 8H20"
+                          />
+                        </svg>
 
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-6 w-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16ZM4 5.5A2.5 2.5 0 0 0 6.5 8H20"
-                  />
-                </svg>
+                      </div>
 
+                      <h2 className="mt-4 text-xl font-semibold text-[#f3f0ff]">
+                        No saved materials found
+                      </h2>
+
+                      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#898cc0]">
+                        {materials.length === 0
+                          ? 'Generate a summary, flashcard set, quiz or explanation to see it here.'
+                          : 'Try changing your search or filter selection.'}
+                      </p>
+
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <h2 className="mt-4 text-xl font-semibold text-[#f3f0ff]">
-                No saved materials found
-              </h2>
-
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#898cc0]">
-                {materials.length === 0
-                  ? 'Generate a summary, flashcard set, quiz or explanation to see it here.'
-                  : 'Try changing your search or filter selection.'}
-              </p>
-
             </div>
-          )}
 
+          </section>
         </>
       )}
 

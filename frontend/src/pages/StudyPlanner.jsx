@@ -23,6 +23,8 @@ function StudyPlanner() {
   const [deletingPlanId, setDeletingPlanId] = useState(null)
   const [expandedPlanId, setExpandedPlanId] = useState(null)
   const [generatedPlan, setGeneratedPlan] = useState(null)
+  const [savedPlansOpen, setSavedPlansOpen] =
+    useState(false)
 
   const loadStudyPlans = async () => {
     setPlansLoading(true)
@@ -34,7 +36,7 @@ function StudyPlanner() {
       if (!response.ok) {
         setPlansError(
           response.data?.message ||
-            'Unable to load your saved study plans.'
+          'Unable to load your saved study plans.'
         )
         return
       }
@@ -132,7 +134,7 @@ function StudyPlanner() {
           session: `Session ${sessionNumber}`,
           activity:
             activities[
-              (sessionNumber - 1) % activities.length
+            (sessionNumber - 1) % activities.length
             ],
           duration: `${minutesPerSession} minutes`,
         })
@@ -257,7 +259,7 @@ function StudyPlanner() {
         } else {
           setError(
             response.data?.message ||
-              'Unable to create the study plan.'
+            'Unable to create the study plan.'
           )
         }
 
@@ -317,7 +319,7 @@ function StudyPlanner() {
         } else {
           setPlansError(
             response.data?.message ||
-              'Unable to delete the study plan.'
+            'Unable to delete the study plan.'
           )
         }
 
@@ -569,11 +571,10 @@ function StudyPlanner() {
               return (
                 <label
                   key={day}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                    selected
-                      ? 'border-[#7a44ff] bg-[#7a44ff]/15 text-[#f3f0ff]'
-                      : 'border-[#2a1b4d] bg-[#120928]/45 text-[#a6a8c7] hover:border-[#7a44ff]/50 hover:bg-[#7a44ff]/10'
-                  }`}
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selected
+                    ? 'border-[#7a44ff] bg-[#7a44ff]/15 text-[#f3f0ff]'
+                    : 'border-[#2a1b4d] bg-[#120928]/45 text-[#a6a8c7] hover:border-[#7a44ff]/50 hover:bg-[#7a44ff]/10'
+                    }`}
                 >
 
                   <input
@@ -893,12 +894,20 @@ function StudyPlanner() {
       )}
 
       {/* Saved Study Plans */}
-      <div className="mt-8 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
+      <div className="group mt-8 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 transition-all duration-300 hover:border-[#7a44ff] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)] sm:p-7">
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-
+        <button
+          type="button"
+          onClick={() =>
+            setSavedPlansOpen(
+              (current) => !current
+            )
+          }
+          aria-expanded={savedPlansOpen}
+          aria-controls="saved-study-plans-content"
+          className="flex w-full flex-col gap-3 text-left focus:outline-none sm:flex-row sm:items-start sm:justify-between"
+        >
           <div>
-
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
               Your Library
             </p>
@@ -910,341 +919,372 @@ function StudyPlanner() {
             <p className="mt-2 text-sm text-[#898cc0]">
               Review study plans saved to your account.
             </p>
-
           </div>
 
-          {!plansLoading && savedPlans.length > 0 && (
-            <span className="w-fit rounded-full border border-[#2a1b4d] bg-[#120928]/45 px-3 py-1.5 text-xs font-medium text-[#898cc0]">
-              {savedPlans.length}{' '}
-              {savedPlans.length === 1 ? 'plan' : 'plans'}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {!plansLoading && savedPlans.length > 0 && (
+              <span className="w-fit rounded-full border border-[#2a1b4d] bg-[#120928]/45 px-3 py-1.5 text-xs font-medium text-[#898cc0]">
+                {savedPlans.length}{' '}
+                {savedPlans.length === 1 ? 'plan' : 'plans'}
+              </span>
+            )}
 
-        </div>
-
-        {plansLoading && (
-          <div
-            className="mt-5 flex items-center gap-3 rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 p-4"
-            role="status"
-          >
-
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
-
-            <p className="text-sm text-[#c9b4ff]">
-              Loading saved study plans...
-            </p>
-
-          </div>
-        )}
-
-        {plansError && (
-          <div
-            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
-            role="alert"
-          >
-            <p className="text-sm leading-6 text-red-300">
-              {plansError}
-            </p>
-          </div>
-        )}
-
-        {plansSuccess && (
-          <div
-            className="mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
-            role="status"
-          >
-            <p className="text-sm text-emerald-300">
-              {plansSuccess}
-            </p>
-          </div>
-        )}
-
-        {!plansLoading &&
-          !plansError &&
-          savedPlans.length === 0 && (
-            <div className="mt-5 rounded-xl border border-dashed border-[#3a2860] bg-[#120928]/35 p-8 text-center">
-
-              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
-
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#a97cff]">
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform duration-300 ${savedPlansOpen
+                    ? 'rotate-180'
+                    : ''
+                  }`}
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
                   stroke="currentColor"
                   strokeWidth="1.8"
-                  className="h-5 w-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
-                  />
-                </svg>
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </button>
+
+        <div
+          id="saved-study-plans-content"
+          aria-hidden={!savedPlansOpen}
+          className={`grid transition-all duration-300 ease-in-out ${savedPlansOpen
+            ? 'visible grid-rows-[1fr] opacity-100'
+            : 'invisible grid-rows-[0fr] opacity-0'
+            }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+
+            {plansLoading && (
+              <div
+                className="mt-5 flex items-center gap-3 rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 p-4"
+                role="status"
+              >
+
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+                <p className="text-sm text-[#c9b4ff]">
+                  Loading saved study plans...
+                </p>
 
               </div>
+            )}
 
-              <p className="mt-4 font-medium text-[#d9d4eb]">
-                No saved study plans yet
-              </p>
+            {plansError && (
+              <div
+                className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+                role="alert"
+              >
+                <p className="text-sm leading-6 text-red-300">
+                  {plansError}
+                </p>
+              </div>
+            )}
 
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#727494]">
-                Create your first plan above and it will appear
-                here for future reference.
-              </p>
+            {plansSuccess && (
+              <div
+                className="mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
+                role="status"
+              >
+                <p className="text-sm text-emerald-300">
+                  {plansSuccess}
+                </p>
+              </div>
+            )}
 
-            </div>
-          )}
+            {!plansLoading &&
+              !plansError &&
+              savedPlans.length === 0 && (
+                <div className="mt-5 rounded-xl border border-dashed border-[#3a2860] bg-[#120928]/35 p-8 text-center">
 
-        {!plansLoading &&
-          savedPlans.length > 0 && (
-            <div className="mt-6 space-y-4">
+                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
 
-              {savedPlans.map((plan) => {
-                const savedPlanData = parsePlanData(
-                  plan.plan_data
-                )
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-5 w-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
+                      />
+                    </svg>
 
-                const isExpanded =
-                  expandedPlanId === plan.plan_id
+                  </div>
 
-                return (
-                  <div
-                    key={plan.plan_id}
-                    className="overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#120928]/35"
-                  >
+                  <p className="mt-4 font-medium text-[#d9d4eb]">
+                    No saved study plans yet
+                  </p>
 
-                    <div className="p-5">
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#727494]">
+                    Create your first plan above and it will appear
+                    here for future reference.
+                  </p>
 
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                </div>
+              )}
 
-                        <div className="min-w-0">
+            {!plansLoading &&
+              savedPlans.length > 0 && (
+                <div className="mt-6 space-y-4">
 
-                          <div className="flex flex-wrap items-center gap-2">
+                  {savedPlans.map((plan) => {
+                    const savedPlanData = parsePlanData(
+                      plan.plan_data
+                    )
 
-                            <h3 className="font-semibold text-[#f3f0ff]">
-                              {plan.subject}
-                            </h3>
+                    const isExpanded =
+                      expandedPlanId === plan.plan_id
 
-                            <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-                              Saved
-                            </span>
+                    return (
+                      <div
+                        key={plan.plan_id}
+                        className="overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#120928]/35"
+                      >
+
+                        <div className="p-5">
+
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+
+                            <div className="min-w-0">
+
+                              <div className="flex flex-wrap items-center gap-2">
+
+                                <h3 className="font-semibold text-[#f3f0ff]">
+                                  {plan.subject}
+                                </h3>
+
+                                <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                                  Saved
+                                </span>
+
+                              </div>
+
+                              <p className="mt-2 text-sm text-[#898cc0]">
+                                {plan.topic}
+                              </p>
+
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedPlanId((currentId) =>
+                                    currentId === plan.plan_id
+                                      ? null
+                                      : plan.plan_id
+                                  )
+                                }
+                                aria-expanded={isExpanded}
+                                className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-4 py-2 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10"
+                              >
+
+                                {isExpanded
+                                  ? 'Hide Plan'
+                                  : 'View Plan'}
+
+                                <svg
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  className={`h-4 w-4 transition-transform ${isExpanded
+                                    ? 'rotate-180'
+                                    : ''
+                                    }`}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="m6 9 6 6 6-6"
+                                  />
+                                </svg>
+
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeletePlan(plan.plan_id)
+                                }
+                                disabled={
+                                  deletingPlanId === plan.plan_id
+                                }
+                                className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+
+                                {deletingPlanId === plan.plan_id && (
+                                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-300/30 border-t-red-300" />
+                                )}
+
+                                {deletingPlanId === plan.plan_id
+                                  ? 'Deleting...'
+                                  : 'Delete'}
+
+                              </button>
+
+                            </div>
 
                           </div>
 
-                          <p className="mt-2 text-sm text-[#898cc0]">
-                            {plan.topic}
-                          </p>
+                          <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
 
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedPlanId((currentId) =>
-                                currentId === plan.plan_id
-                                  ? null
-                                  : plan.plan_id
-                              )
-                            }
-                            aria-expanded={isExpanded}
-                            className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-4 py-2 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10"
-                          >
-
-                            {isExpanded
-                              ? 'Hide Plan'
-                              : 'View Plan'}
-
-                            <svg
-                              aria-hidden="true"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className={`h-4 w-4 transition-transform ${
-                                isExpanded
-                                  ? 'rotate-180'
-                                  : ''
-                              }`}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="m6 9 6 6 6-6"
-                              />
-                            </svg>
-
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDeletePlan(plan.plan_id)
-                            }
-                            disabled={
-                              deletingPlanId === plan.plan_id
-                            }
-                            className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-
-                            {deletingPlanId === plan.plan_id && (
-                              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-300/30 border-t-red-300" />
-                            )}
-
-                            {deletingPlanId === plan.plan_id
-                              ? 'Deleting...'
-                              : 'Delete'}
-
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                      <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-
-                        <div className="rounded-lg border border-[#2a1b4d] bg-[#160b32]/60 px-4 py-3">
-                          <p className="text-xs uppercase tracking-wide text-[#727494]">
-                            Deadline
-                          </p>
-                          <p className="mt-1 font-medium text-[#d9d4eb]">
-                            {formatStoredDeadline(plan.deadline)}
-                          </p>
-                        </div>
-
-                        <div className="rounded-lg border border-[#2a1b4d] bg-[#160b32]/60 px-4 py-3">
-                          <p className="text-xs uppercase tracking-wide text-[#727494]">
-                            Available Time
-                          </p>
-                          <p className="mt-1 font-medium text-[#d9d4eb]">
-                            {plan.available_hours} hours per week
-                          </p>
-                        </div>
-
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-
-                        {(plan.study_days || []).map((day) => (
-                          <span
-                            key={`${plan.plan_id}-${day}`}
-                            className="rounded-full border border-[#7a44ff]/20 bg-[#7a44ff]/10 px-3 py-1 text-sm font-medium text-[#c9b4ff]"
-                          >
-                            {day}
-                          </span>
-                        ))}
-
-                      </div>
-
-                    </div>
-
-                    {isExpanded && (
-                      <div className="border-t border-[#2a1b4d] bg-[#160b32]/40 p-5 sm:p-6">
-
-                        {savedPlanData?.sessions?.length > 0 ? (
-                          <>
-
-                            <div className="flex items-center justify-between gap-3">
-
-                              <h4 className="text-lg font-semibold text-[#f3f0ff]">
-                                Suggested Sessions
-                              </h4>
-
-                              <span className="rounded-full border border-[#2a1b4d] bg-[#120928]/50 px-3 py-1 text-xs text-[#898cc0]">
-                                {savedPlanData.sessions.length}{' '}
-                                sessions
-                              </span>
-
+                            <div className="rounded-lg border border-[#2a1b4d] bg-[#160b32]/60 px-4 py-3">
+                              <p className="text-xs uppercase tracking-wide text-[#727494]">
+                                Deadline
+                              </p>
+                              <p className="mt-1 font-medium text-[#d9d4eb]">
+                                {formatStoredDeadline(plan.deadline)}
+                              </p>
                             </div>
 
-                            <div className="mt-4 space-y-4">
+                            <div className="rounded-lg border border-[#2a1b4d] bg-[#160b32]/60 px-4 py-3">
+                              <p className="text-xs uppercase tracking-wide text-[#727494]">
+                                Available Time
+                              </p>
+                              <p className="mt-1 font-medium text-[#d9d4eb]">
+                                {plan.available_hours} hours per week
+                              </p>
+                            </div>
 
-                              {savedPlanData.sessions.map((session) => (
-                                <div
-                                  key={`${plan.plan_id}-${session.id}`}
-                                  className="rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-5"
-                                >
+                          </div>
 
-                                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="mt-4 flex flex-wrap gap-2">
 
-                                    <div>
+                            {(plan.study_days || []).map((day) => (
+                              <span
+                                key={`${plan.plan_id}-${day}`}
+                                className="rounded-full border border-[#7a44ff]/20 bg-[#7a44ff]/10 px-3 py-1 text-sm font-medium text-[#c9b4ff]"
+                              >
+                                {day}
+                              </span>
+                            ))}
 
-                                      <div className="flex flex-wrap items-center gap-2">
+                          </div>
 
-                                        <p className="font-semibold text-[#f3f0ff]">
-                                          {session.session}
-                                        </p>
+                        </div>
 
-                                        {session.day && (
-                                          <span className="rounded-full bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-medium text-[#c9b4ff]">
-                                            {session.day}
-                                          </span>
-                                        )}
+                        {isExpanded && (
+                          <div className="border-t border-[#2a1b4d] bg-[#160b32]/40 p-5 sm:p-6">
+
+                            {savedPlanData?.sessions?.length > 0 ? (
+                              <>
+
+                                <div className="flex items-center justify-between gap-3">
+
+                                  <h4 className="text-lg font-semibold text-[#f3f0ff]">
+                                    Suggested Sessions
+                                  </h4>
+
+                                  <span className="rounded-full border border-[#2a1b4d] bg-[#120928]/50 px-3 py-1 text-xs text-[#898cc0]">
+                                    {savedPlanData.sessions.length}{' '}
+                                    sessions
+                                  </span>
+
+                                </div>
+
+                                <div className="mt-4 space-y-4">
+
+                                  {savedPlanData.sessions.map((session) => (
+                                    <div
+                                      key={`${plan.plan_id}-${session.id}`}
+                                      className="rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-5"
+                                    >
+
+                                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                                        <div>
+
+                                          <div className="flex flex-wrap items-center gap-2">
+
+                                            <p className="font-semibold text-[#f3f0ff]">
+                                              {session.session}
+                                            </p>
+
+                                            {session.day && (
+                                              <span className="rounded-full bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-medium text-[#c9b4ff]">
+                                                {session.day}
+                                              </span>
+                                            )}
+
+                                          </div>
+
+                                          {session.date && (
+                                            <p className="mt-2 text-xs text-[#727494]">
+                                              {new Date(
+                                                `${session.date}T00:00:00`
+                                              ).toLocaleDateString()}
+                                            </p>
+                                          )}
+
+                                          <p className="mt-3 text-sm leading-6 text-[#a6a8c7]">
+                                            {session.activity}
+                                          </p>
+
+                                        </div>
+
+                                        <span className="w-fit shrink-0 rounded-full border border-[#3a2860] bg-[#160b32] px-3 py-1.5 text-sm font-medium text-[#c9b4ff]">
+                                          {session.duration}
+                                        </span>
 
                                       </div>
 
-                                      {session.date && (
-                                        <p className="mt-2 text-xs text-[#727494]">
-                                          {new Date(
-                                            `${session.date}T00:00:00`
-                                          ).toLocaleDateString()}
-                                        </p>
-                                      )}
-
-                                      <p className="mt-3 text-sm leading-6 text-[#a6a8c7]">
-                                        {session.activity}
-                                      </p>
-
                                     </div>
-
-                                    <span className="w-fit shrink-0 rounded-full border border-[#3a2860] bg-[#160b32] px-3 py-1.5 text-sm font-medium text-[#c9b4ff]">
-                                      {session.duration}
-                                    </span>
-
-                                  </div>
+                                  ))}
 
                                 </div>
-                              ))}
 
-                            </div>
+                                {savedPlanData.recommendation && (
+                                  <div className="mt-5 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
 
-                            {savedPlanData.recommendation && (
-                              <div className="mt-5 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
+                                    <h4 className="font-semibold text-[#d9c9ff]">
+                                      Study Recommendation
+                                    </h4>
 
-                                <h4 className="font-semibold text-[#d9c9ff]">
-                                  Study Recommendation
-                                </h4>
+                                    <p className="mt-2 text-sm leading-6 text-[#b9acd5]">
+                                      {savedPlanData.recommendation}
+                                    </p>
 
-                                <p className="mt-2 text-sm leading-6 text-[#b9acd5]">
-                                  {savedPlanData.recommendation}
-                                </p>
+                                  </div>
+                                )}
 
-                              </div>
+                              </>
+                            ) : (
+                              <p className="text-sm leading-6 text-[#898cc0]">
+                                Detailed session information is not
+                                available for this saved plan.
+                              </p>
                             )}
 
-                          </>
-                        ) : (
-                          <p className="text-sm leading-6 text-[#898cc0]">
-                            Detailed session information is not
-                            available for this saved plan.
-                          </p>
+                          </div>
                         )}
 
                       </div>
-                    )}
+                    )
+                  })}
 
-                  </div>
-                )
-              })}
+                </div>
+              )}
 
-            </div>
-          )}
+          </div>
 
+        </div>
       </div>
-
     </div>
   )
 }
