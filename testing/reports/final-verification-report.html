@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Final Verification Report — Member 3</title>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:2rem auto;max-width:1100px;padding:0 1rem;color:#1a1a1a;line-height:1.5}
+ h1{margin-bottom:.25rem} h2{margin-top:2.5rem;border-bottom:2px solid #eee;padding-bottom:.3rem}
+ .sub{color:#666;margin-top:0}
+ .banner{padding:1rem 1.25rem;border-radius:8px;font-weight:600;margin:1.5rem 0}
+ .ok{background:#e7f6ec;border:1px solid #9ad3ae;color:#14532d}
+ .bad{background:#fdeaea;border:1px solid #e79a9a;color:#7f1d1d}
+ table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.9rem}
+ th,td{border:1px solid #e3e3e3;padding:.5rem .6rem;text-align:left;vertical-align:top}
+ th{background:#f7f7f8}
+ .id{font-family:ui-monospace,Menlo,monospace;font-weight:600;white-space:nowrap}
+ .status{font-weight:700;white-space:nowrap}
+ tr.pass .status{color:#14532d} tr.fail .status{color:#7f1d1d}
+ tr.fail{background:#fff6f6} tr.detail td{background:#fff1f1;font-size:.85rem}
+ .num{text-align:right;white-space:nowrap} .item{color:#555}
+ .ev a{display:inline-block;font-size:.8rem;font-family:ui-monospace,Menlo,monospace}
+ .cards{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0}
+ .card{flex:1;min-width:180px;border:1px solid #e3e3e3;border-radius:8px;padding:.9rem}
+ .card .n{font-size:1.8rem;font-weight:700} .card .l{color:#666;font-size:.85rem}
+ .note{background:#f7f9fc;border-left:4px solid #9ab;padding:.8rem 1rem;margin:1rem 0;font-size:.92rem}
+ code{background:#f2f2f4;padding:.1rem .3rem;border-radius:3px;font-size:.88em}
+</style></head><body>
+
+<h1>Final Verification Report</h1>
+<p class="sub">Member 3 — Document Processing &amp; AI Integration · COIT20273 AI-Powered Study Notes Generator</p>
+<p class="sub">Run started 2026-09-21T10:51:14.717Z · duration 12.8s · traced to GitHub issue #119</p>
+
+<div class="banner ok">
+  ALL TESTS PASSED
+</div>
+
+<div class="cards">
+  <div class="card"><div class="n">71</div><div class="l">Regression tests</div></div>
+  <div class="card"><div class="n">33</div><div class="l">Final verification tests</div></div>
+  <div class="card"><div class="n">104</div><div class="l">Total executed</div></div>
+  <div class="card"><div class="n">0</div><div class="l">Failures</div></div>
+</div>
+
+<div class="note">
+  <strong>No Gemini quota was consumed by this run.</strong> Every behaviour that depends on the model is
+  exercised against a stubbed model, while the controller, consent check, database and HTTP server remain real.
+  Content quality is assessed separately — see Manual Verification below.
+</div>
+
+<h2>Final verification — traced to issue #119</h2>
+
+<h3>AI Integration</h3>
+<table>
+ <thead><tr><th>Test ID</th><th>Test</th><th>Issue #119 checklist item</th><th>Status</th><th>Time</th><th>Evidence</th></tr></thead>
+ <tbody>
+      <tr class="pass">
+        <td class="id">AI-01</td>
+        <td>summary generation stores and returns prose content (FR9.1, issue #119)</td>
+        <td class="item">Recheck Summary generation</td>
+        <td class="status">PASS</td>
+        <td class="num">0.401s</td>
+        <td class="ev"><a href="../evidence/AI-01-summary-generation.json">AI-01-summary-generation.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">AI-02</td>
+        <td>flashcard generation returns structured question and answer records (FR10.1)</td>
+        <td class="item">Recheck Flashcard generation</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/AI-02-flashcard-generation.json">AI-02-flashcard-generation.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">AI-03</td>
+        <td>practice quiz generation returns scoreable questions (FR11.1)</td>
+        <td class="item">Recheck Practice Quiz generation</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/AI-03-practice-quiz-generation.json">AI-03-practice-quiz-generation.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">AI-04</td>
+        <td>concept explanation reflects the requested concept and level (FR12.1)</td>
+        <td class="item">Recheck Concept Explanation generation</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/AI-04-concept-explanation-generation.json">AI-04-concept-explanation-generation.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">AI-05</td>
+        <td>structured content survives storage and is returned parsed (FR10.1, FR11.1)</td>
+        <td class="item">Verify generated structured responses are parsed correctly</td>
+        <td class="status">PASS</td>
+        <td class="num">0.004s</td>
+        <td class="ev"><a href="../evidence/AI-05-structured-response-round-trip.json">AI-05-structured-response-round-trip.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">AI-06</td>
+        <td>stored outputs stay bound to the generating user and document (NFR3)</td>
+        <td class="item">Verify saved AI outputs remain associated with the correct user/document</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/AI-06-output-ownership.json">AI-06-output-ownership.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">AI-07</td>
+        <td>another user cannot retrieve outputs generated from a document they do not own (NFR3)</td>
+        <td class="item">Verify saved AI outputs remain associated with the correct user/document</td>
+        <td class="status">PASS</td>
+        <td class="num">0.127s</td>
+        <td class="ev"><a href="../evidence/AI-07-cross-user-output-isolation.json">AI-07-cross-user-output-isolation.json</a></td>
+      </tr></tbody>
+</table>
+<h3>Document Processing</h3>
+<table>
+ <thead><tr><th>Test ID</th><th>Test</th><th>Issue #119 checklist item</th><th>Status</th><th>Time</th><th>Evidence</th></tr></thead>
+ <tbody>
+      <tr class="pass">
+        <td class="id">DP-01</td>
+        <td>PDF extraction recovers the source document in full (FR8, issue #119)</td>
+        <td class="item">Recheck PDF extraction</td>
+        <td class="status">PASS</td>
+        <td class="num">0.352s</td>
+        <td class="ev"><a href="../evidence/DP-01-pdf-extracted-text.txt">DP-01-pdf-extracted-text.txt</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">DP-02</td>
+        <td>DOCX extraction recovers the source document in full (FR8, issue #119)</td>
+        <td class="item">Recheck DOCX extraction</td>
+        <td class="status">PASS</td>
+        <td class="num">0.022s</td>
+        <td class="ev"><a href="../evidence/DP-02-docx-extracted-text.txt">DP-02-docx-extracted-text.txt</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">DP-03</td>
+        <td>TXT extraction recovers the source document in full (FR8, issue #119)</td>
+        <td class="item">Recheck TXT processing</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/DP-03-txt-extracted-text.txt">DP-03-txt-extracted-text.txt</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">DP-04</td>
+        <td>a scanned, image-only PDF is rejected with actionable advice (FR8.4, SR-DP4)</td>
+        <td class="item">Verify unreadable/scanned/no-text document handling</td>
+        <td class="status">PASS</td>
+        <td class="num">0.157s</td>
+        <td class="ev"><a href="../evidence/DP-04-scanned-pdf-rejected.json">DP-04-scanned-pdf-rejected.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">DP-05</td>
+        <td>extracted text is stored intact and retrievable (FR8, issue #119)</td>
+        <td class="item">Verify extracted text is stored and processed correctly</td>
+        <td class="status">PASS</td>
+        <td class="num">0.127s</td>
+        <td class="ev"><a href="../evidence/DP-05-extracted-text-storage.json">DP-05-extracted-text-storage.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">DP-06</td>
+        <td>an unsupported file type is rejected before any processing (FR6.1)</td>
+        <td class="item">Recheck malformed or unsupported document behaviour</td>
+        <td class="status">PASS</td>
+        <td class="num">0.117s</td>
+        <td class="ev"><a href="../evidence/DP-06-unsupported-file-type-rejected.json">DP-06-unsupported-file-type-rejected.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">DP-07</td>
+        <td>a corrupt file with an accepted extension fails safely (FR6.1, NFR5)</td>
+        <td class="item">Recheck malformed or unsupported document behaviour</td>
+        <td class="status">PASS</td>
+        <td class="num">0.120s</td>
+        <td class="ev"><a href="../evidence/DP-07-corrupt-document-handled-safely.json">DP-07-corrupt-document-handled-safely.json</a></td>
+      </tr></tbody>
+</table>
+<h3>Error Handling and Security</h3>
+<table>
+ <thead><tr><th>Test ID</th><th>Test</th><th>Issue #119 checklist item</th><th>Status</th><th>Time</th><th>Evidence</th></tr></thead>
+ <tbody>
+      <tr class="pass">
+        <td class="id">ERR-01</td>
+        <td>Gemini timeout returns 504 AI_TIMEOUT and preserves the document (NFR5, issue #119)</td>
+        <td class="item">Recheck Gemini timeout handling</td>
+        <td class="status">PASS</td>
+        <td class="num">0.403s</td>
+        <td class="ev"><a href="../evidence/ERR-01-gemini-timeout.json">ERR-01-gemini-timeout.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-02</td>
+        <td>Daily quota exhausted returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)</td>
+        <td class="item">Recheck quota/rate-limit handling</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/ERR-02-daily-quota-exhausted.json">ERR-02-daily-quota-exhausted.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-03</td>
+        <td>Short rate limit returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)</td>
+        <td class="item">Recheck quota/rate-limit handling</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/ERR-03-short-rate-limit.json">ERR-03-short-rate-limit.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-04</td>
+        <td>Malformed AI response returns 502 AI_MALFORMED_RESPONSE and preserves the document (NFR5, issue #119)</td>
+        <td class="item">Verify malformed AI responses are handled safely</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/ERR-04-malformed-ai-response.json">ERR-04-malformed-ai-response.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-05</td>
+        <td>Empty AI response returns 502 AI_EMPTY_RESPONSE and preserves the document (NFR5, issue #119)</td>
+        <td class="item">Verify empty AI responses are handled safely</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/ERR-05-empty-ai-response.json">ERR-05-empty-ai-response.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-06</td>
+        <td>Upstream service unavailable returns 503 AI_UNAVAILABLE and preserves the document (NFR5, issue #119)</td>
+        <td class="item">Verify AI errors return consistent API responses</td>
+        <td class="status">PASS</td>
+        <td class="num">0.001s</td>
+        <td class="ev"><a href="../evidence/ERR-06-upstream-service-unavailable.json">ERR-06-upstream-service-unavailable.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-07</td>
+        <td>every AI failure mode shares one response contract (NFR5, issue #119)</td>
+        <td class="item">Verify AI errors return consistent API responses</td>
+        <td class="status">PASS</td>
+        <td class="num">0.005s</td>
+        <td class="ev"><a href="../evidence/ERR-07-consistent-ai-error-contract.json">ERR-07-consistent-ai-error-contract.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">ERR-08</td>
+        <td>invalid input is rejected before the model is reached (FR12.1, issue #119)</td>
+        <td class="item">Review AI/document-processing endpoints for invalid input handling</td>
+        <td class="status">PASS</td>
+        <td class="num">0.002s</td>
+        <td class="ev"><a href="../evidence/ERR-08-invalid-input-handling.json">ERR-08-invalid-input-handling.json</a></td>
+      </tr></tbody>
+</table>
+<h3>Consent and Privacy</h3>
+<table>
+ <thead><tr><th>Test ID</th><th>Test</th><th>Issue #119 checklist item</th><th>Status</th><th>Time</th><th>Evidence</th></tr></thead>
+ <tbody>
+      <tr class="pass">
+        <td class="id">PRIV-01</td>
+        <td>generation is refused when consent has never been recorded (FR17.1)</td>
+        <td class="item">Verify AI requests cannot proceed without active consent</td>
+        <td class="status">PASS</td>
+        <td class="num">0.400s</td>
+        <td class="ev"><a href="../evidence/PRIV-01-consent-required-before-processing.json">PRIV-01-consent-required-before-processing.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">PRIV-02</td>
+        <td>revoking consent blocks further processing immediately (FR17.2)</td>
+        <td class="item">Verify revoked consent prevents new AI processing</td>
+        <td class="status">PASS</td>
+        <td class="num">0.137s</td>
+        <td class="ev"><a href="../evidence/PRIV-02-revoked-consent-blocks-processing.json">PRIV-02-revoked-consent-blocks-processing.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">PRIV-03</td>
+        <td>only the study material is sent to the model, with no account data (NFR3, privacy)</td>
+        <td class="item">Verify only required study-material content is sent for AI processing</td>
+        <td class="status">PASS</td>
+        <td class="num">0.129s</td>
+        <td class="ev"><a href="../evidence/PRIV-03-prompt-sent-to-model.txt">PRIV-03-prompt-sent-to-model.txt</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">PRIV-04</td>
+        <td>generated content is labelled and carries a disclaimer (FR16.1)</td>
+        <td class="item">Recheck responsible-AI labels/disclaimers in returned data</td>
+        <td class="status">PASS</td>
+        <td class="num">0.127s</td>
+        <td class="ev"><a href="../evidence/PRIV-04-responsible-ai-labelling.json">PRIV-04-responsible-ai-labelling.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">PRIV-05</td>
+        <td>no credential is exposed in a successful API response (security)</td>
+        <td class="item">Confirm sensitive credentials/API keys are not exposed</td>
+        <td class="status">PASS</td>
+        <td class="num">0.130s</td>
+        <td class="ev"><a href="../evidence/PRIV-05-no-credentials-in-api-responses.json">PRIV-05-no-credentials-in-api-responses.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">PRIV-06</td>
+        <td>an upstream failure does not leak the API key into the error response (security, NFR5)</td>
+        <td class="item">Confirm sensitive credentials/API keys are not exposed</td>
+        <td class="status">PASS</td>
+        <td class="num">0.157s</td>
+        <td class="ev"><a href="../evidence/PRIV-06-upstream-error-does-not-leak-credentials.json">PRIV-06-upstream-error-does-not-leak-credentials.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">PRIV-07</td>
+        <td>the environment file is excluded from version control (security)</td>
+        <td class="item">Confirm sensitive credentials/API keys are not exposed</td>
+        <td class="status">PASS</td>
+        <td class="num">0.039s</td>
+        <td class="ev"><a href="../evidence/PRIV-07-secrets-excluded-from-version-control.json">PRIV-07-secrets-excluded-from-version-control.json</a></td>
+      </tr></tbody>
+</table>
+<h3>Quality and Testing</h3>
+<table>
+ <thead><tr><th>Test ID</th><th>Test</th><th>Issue #119 checklist item</th><th>Status</th><th>Time</th><th>Evidence</th></tr></thead>
+ <tbody>
+      <tr class="pass">
+        <td class="id">QA-01</td>
+        <td>the full document-to-AI-output pipeline completes end to end (issue #119 readiness)</td>
+        <td class="item">Confirm Member 3 subsystem readiness</td>
+        <td class="status">PASS</td>
+        <td class="num">0.409s</td>
+        <td class="ev"><a href="../evidence/QA-01-full-pipeline-end-to-end.json">QA-01-full-pipeline-end-to-end.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">QA-02</td>
+        <td>quiz marking is objectively correct against a known answer key (FR11.2)</td>
+        <td class="item">Recheck quiz scoring tests</td>
+        <td class="status">PASS</td>
+        <td class="num">0.132s</td>
+        <td class="ev"><a href="../evidence/QA-02-quiz-marking-against-a-known-key.json">QA-02-quiz-marking-against-a-known-key.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">QA-03</td>
+        <td>consent is enforced for all four content types (FR17, issue #119)</td>
+        <td class="item">Recheck consent and AI guard tests</td>
+        <td class="status">PASS</td>
+        <td class="num">0.117s</td>
+        <td class="ev"><a href="../evidence/QA-03-consent-enforced-across-all-content-types.json">QA-03-consent-enforced-across-all-content-types.json</a></td>
+      </tr>
+      <tr class="pass">
+        <td class="id">QA-04</td>
+        <td>the recorded AI accuracy review is present and complete (risk R1, FR9–FR12)</td>
+        <td class="item">Review AI output accuracy against source documents</td>
+        <td class="status">PASS</td>
+        <td class="num">0.000s</td>
+        <td class="ev"><a href="../evidence/QA-04-ai-accuracy-review-artefact.json">QA-04-ai-accuracy-review-artefact.json</a></td>
+      </tr></tbody>
+</table>
+
+
+
+<h2>Regression suite</h2>
+<p>The 71 pre-existing tests, unchanged. These are the tests reported in Progress Report 2 and are re-run here to confirm nothing has regressed.</p>
+<table>
+ <thead><tr><th>Test</th><th>Status</th><th>Time</th></tr></thead>
+ <tbody>
+  <tr class="pass">
+   <td>a timeout is reported as 504 AI_TIMEOUT and marked retryable (T-23, NFR5)</td><td class="status">PASS</td><td class="num">0.961s</td>
+  </tr>
+  <tr class="pass">
+   <td>the uploaded document survives a timeout (NFR5, T-23)</td><td class="status">PASS</td><td class="num">0.126s</td>
+  </tr>
+  <tr class="pass">
+   <td>no partial output is stored when a generation times out (T-23)</td><td class="status">PASS</td><td class="num">0.124s</td>
+  </tr>
+  <tr class="pass">
+   <td>a retry after a timeout succeeds against the same document (NFR5, T-23)</td><td class="status">PASS</td><td class="num">0.124s</td>
+  </tr>
+  <tr class="pass">
+   <td>consent starts unrecorded and is not an error (FR17.1)</td><td class="status">PASS</td><td class="num">0.506s</td>
+  </tr>
+  <tr class="pass">
+   <td>consent is recorded and retrievable (FR17.1, NFR11)</td><td class="status">PASS</td><td class="num">0.121s</td>
+  </tr>
+  <tr class="pass">
+   <td>consent history is append-only, so the latest decision wins (NFR11)</td><td class="status">PASS</td><td class="num">0.123s</td>
+  </tr>
+  <tr class="pass">
+   <td>an invalid consent value is rejected (FR17.1)</td><td class="status">PASS</td><td class="num">0.114s</td>
+  </tr>
+  <tr class="pass">
+   <td>generation is refused when consent has never been given (FR17.1, T-20)</td><td class="status">PASS</td><td class="num">0.120s</td>
+  </tr>
+  <tr class="pass">
+   <td>generation is refused again after consent is revoked (FR17.2, T-22)</td><td class="status">PASS</td><td class="num">0.125s</td>
+  </tr>
+  <tr class="pass">
+   <td>consent is enforced for every output type, not only summaries (FR17)</td><td class="status">PASS</td><td class="num">0.140s</td>
+  </tr>
+  <tr class="pass">
+   <td>an unsupported output type is rejected before consent is considered (T-30)</td><td class="status">PASS</td><td class="num">0.002s</td>
+  </tr>
+  <tr class="pass">
+   <td>a missing file_id is rejected</td><td class="status">PASS</td><td class="num">0.002s</td>
+  </tr>
+  <tr class="pass">
+   <td>an explanation without a concept is rejected (FR12.1, T-44)</td><td class="status">PASS</td><td class="num">0.006s</td>
+  </tr>
+  <tr class="pass">
+   <td>an explanation with an unrecognised level is rejected (FR12.1, T-45)</td><td class="status">PASS</td><td class="num">0.005s</td>
+  </tr>
+  <tr class="pass">
+   <td>a document belonging to another user is reported as not found (NFR3, T-39)</td><td class="status">PASS</td><td class="num">0.119s</td>
+  </tr>
+  <tr class="pass">
+   <td>generation against a file with no extracted text advises re-uploading (FR8.4)</td><td class="status">PASS</td><td class="num">0.013s</td>
+  </tr>
+  <tr class="pass">
+   <td>the AI endpoints require authentication (NFR2, T-13)</td><td class="status">PASS</td><td class="num">0.005s</td>
+  </tr>
+  <tr class="pass">
+   <td>a fully correct attempt scores every question (FR11.2, T-34)</td><td class="status">PASS</td><td class="num">0.531s</td>
+  </tr>
+  <tr class="pass">
+   <td>a wholly incorrect attempt scores zero (FR11.2)</td><td class="status">PASS</td><td class="num">0.005s</td>
+  </tr>
+  <tr class="pass">
+   <td>a partial attempt records unanswered questions as incorrect (FR11.2, T-35)</td><td class="status">PASS</td><td class="num">0.007s</td>
+  </tr>
+  <tr class="pass">
+   <td>per-question results identify which answers were correct (FR11.2)</td><td class="status">PASS</td><td class="num">0.010s</td>
+  </tr>
+  <tr class="pass">
+   <td>each attempt is stored separately so retakes are preserved (FR11.2, T-36)</td><td class="status">PASS</td><td class="num">0.150s</td>
+  </tr>
+  <tr class="pass">
+   <td>the number of answers must match the number of questions (FR11.2, T-37)</td><td class="status">PASS</td><td class="num">0.003s</td>
+  </tr>
+  <tr class="pass">
+   <td>answers must be supplied as an array (FR11.2)</td><td class="status">PASS</td><td class="num">0.002s</td>
+  </tr>
+  <tr class="pass">
+   <td>an attempt cannot be submitted against a non-quiz output (T-38)</td><td class="status">PASS</td><td class="num">0.003s</td>
+  </tr>
+  <tr class="pass">
+   <td>a quiz belonging to another user cannot be attempted (NFR3)</td><td class="status">PASS</td><td class="num">0.126s</td>
+  </tr>
+  <tr class="pass">
+   <td>quiz attempt endpoints require authentication (NFR2)</td><td class="status">PASS</td><td class="num">0.003s</td>
+  </tr>
+  <tr class="pass">
+   <td>accepts a .txt upload and extracts its text (FR8.3, T-01)</td><td class="status">PASS</td><td class="num">0.678s</td>
+  </tr>
+  <tr class="pass">
+   <td>returns file_id so the caller can generate without a second lookup (FR6, T-48)</td><td class="status">PASS</td><td class="num">0.128s</td>
+  </tr>
+  <tr class="pass">
+   <td>rejects a file whose extension is not allowed (FR6.1, T-04)</td><td class="status">PASS</td><td class="num">0.124s</td>
+  </tr>
+  <tr class="pass">
+   <td>accepts .pdf, .docx and .txt extensions at the validation stage (FR6.1)</td><td class="status">PASS</td><td class="num">0.149s</td>
+  </tr>
+  <tr class="pass">
+   <td>rejects a file over the 15 MB limit (FR6.2, T-05)</td><td class="status">PASS</td><td class="num">0.143s</td>
+  </tr>
+  <tr class="pass">
+   <td>rejects a request with no file attached (T-07)</td><td class="status">PASS</td><td class="num">0.121s</td>
+  </tr>
+  <tr class="pass">
+   <td>rejects a document with no readable text (FR8.4)</td><td class="status">PASS</td><td class="num">0.116s</td>
+  </tr>
+  <tr class="pass">
+   <td>rejects a scanned, image-only PDF (FR8.4, SR-DP4, T-26)</td><td class="status">PASS</td><td class="num">0.121s</td>
+  </tr>
+  <tr class="pass">
+   <td>extracted PDF text carries no pdf-parse page markers (T-26)</td><td class="status">PASS</td><td class="num">0.145s</td>
+  </tr>
+  <tr class="pass">
+   <td>one user cannot read another user's document (NFR3, T-08)</td><td class="status">PASS</td><td class="num">0.232s</td>
+  </tr>
+  <tr class="pass">
+   <td>upload requires authentication (NFR2)</td><td class="status">PASS</td><td class="num">0.002s</td>
+  </tr>
+  <tr class="pass">
+   <td>buildPrompt includes the source material (T-15)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>buildPrompt instructs the model not to invent facts (T-15, risk R1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>buildPrompt rejects an unsupported output type (T-16)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>buildPrompt truncates long input on a word boundary (T-17, NFR1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>buildPrompt leaves short input untouched</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>explanation requires a concept (FR12.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>explanation rejects a blank concept (FR12.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>explanation rejects an unrecognised level (FR12.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>explanation accepts each documented level, and they differ (FR12.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>flashcard parser accepts a well-formed response (FR10.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>flashcard parser discards incomplete cards</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>flashcard parser rejects a non-array response</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>flashcard parser rejects a response with no usable cards</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>quiz parser labels question types correctly (FR11.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>quiz parser discards a question whose answer is not among its options (FR11.1)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>quiz parser rejects a response with no usable questions</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>a daily quota error is classified as AI_QUOTA_EXCEEDED (T-53, risk R3)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>a short rate limit is distinguished from the daily quota (T-53)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>an upstream 5xx is classified as AI_UNAVAILABLE (T-53)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>our own errors pass through unchanged (T-53)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>an unrecognised error is not disguised as a capacity problem (T-53)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>a request that does not return in time is rejected as AI_TIMEOUT (T-23)</td><td class="status">PASS</td><td class="num">0.022s</td>
+  </tr>
+  <tr class="pass">
+   <td>a request that returns in time is unaffected by the timeout (T-23)</td><td class="status">PASS</td><td class="num">0.001s</td>
+  </tr>
+  <tr class="pass">
+   <td>a request failing on its own merits keeps its own error (T-23)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>the production timeout is 60 seconds unless configured otherwise (NFR5)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>the timeout timer does not outlive the race (T-23)</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>TXT extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.004s</td>
+  </tr>
+  <tr class="pass">
+   <td>TXT extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.001s</td>
+  </tr>
+  <tr class="pass">
+   <td>DOCX extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.022s</td>
+  </tr>
+  <tr class="pass">
+   <td>DOCX extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.013s</td>
+  </tr>
+  <tr class="pass">
+   <td>PDF extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.091s</td>
+  </tr>
+  <tr class="pass">
+   <td>PDF extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.028s</td>
+  </tr>
+ </tbody>
+</table>
+
+<h2>Manual verification required</h2>
+<p>These checklist items cannot be settled by an automated assertion. They are listed so the boundary of the automated evidence is explicit.</p>
+<table>
+ <thead><tr><th>Issue #119 section</th><th>Checklist item</th><th>Why it is manual</th></tr></thead>
+ <tbody><tr><td>Consent and Privacy</td><td>Recheck responsible-AI labels/disclaimers in returned data</td><td>PRIV-04 proves the API returns the label and disclaimer. That they are visibly displayed on all four screens is the interface half of the FR16 metric and must be confirmed by looking at the running application.</td></tr><tr><td>Quality and Testing</td><td>Review AI output accuracy against source documents</td><td>Whether generated content is factually faithful is a judgement, not an assertion, and each check consumes Gemini quota. QA-04 confirms the recorded review exists and is complete; the review itself is in testing/ai-accuracy-review-2026-09-12.md.</td></tr><tr><td>Quality and Testing</td><td>Record final test results</td><td>Produced by this runner, but attaching the report and evidence to the submission is a manual step.</td></tr></tbody>
+</table>
+
+<h2>Reproducing this run</h2>
+<p>From the <code>backend</code> directory, with MySQL running and <code>backend/.env</code> present:</p>
+<p><code>npm run test:final</code></p>
+<p>Raw results: <a href="regression.junit.xml">regression.junit.xml</a> · <a href="final.junit.xml">final.junit.xml</a> ·
+   <a href="summary.json">summary.json</a>. Evidence artefacts are in <code>testing/evidence/</code>.</p>
+
+</body></html>

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const db = require("../config/database");
+const { logActivity } = require("../services/activity.service");
 
 // Retrieve all uploaded files belonging to the authenticated user
 const getUploadedFiles = async (req, res) => {
@@ -163,6 +164,14 @@ const deleteUploadedFile = async (req, res) => {
         );
       }
     }
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: "upload_deleted",
+      detail: file.file_name,
+      sourceType: "uploaded_file",
+      sourceId: file.file_id
+    });
 
     return res.status(200).json({
       status: "success",

@@ -3,11 +3,23 @@
 -- Tables 4–5 added for AI integration and consent tracking (Member 3, issue #5)
 
 CREATE TABLE IF NOT EXISTS users (
-  user_id     INT AUTO_INCREMENT PRIMARY KEY,
-  full_name   VARCHAR(255) NOT NULL,
-  email       VARCHAR(255) NOT NULL UNIQUE,
-  password    VARCHAR(255) NOT NULL,          -- bcrypt hash
-  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+  user_id                       INT AUTO_INCREMENT PRIMARY KEY,
+  full_name                     VARCHAR(255) NOT NULL,
+  email                         VARCHAR(255) NOT NULL UNIQUE,
+  email_verified                TINYINT(1) NOT NULL DEFAULT 0,
+  email_verification_code_hash  VARCHAR(255) NULL,
+  email_verification_expires_at DATETIME NULL,
+  email_verification_sent_at    DATETIME NULL,
+  email_verification_attempts   INT NOT NULL DEFAULT 0,
+
+  login_code_hash VARCHAR(255) NULL,
+  login_code_expires_at DATETIME NULL,
+  login_code_sent_at DATETIME NULL,
+  login_code_attempts INT NOT NULL DEFAULT 0,
+
+  password                      VARCHAR(255) NOT NULL,
+  profile_picture               VARCHAR(255) NULL,
+  created_at                    DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS notes (
@@ -86,4 +98,34 @@ CREATE TABLE IF NOT EXISTS study_plans (
     ON DELETE CASCADE,
 
   INDEX idx_study_plans_user_deadline (user_id, deadline)
+);
+
+-- Independent recent activity history.
+-- Activity records are separate from study resources so users can clear
+-- their history without deleting uploaded files, AI outputs, quiz attempts,
+-- or study plans.
+CREATE TABLE IF NOT EXISTS activity_history (
+  activity_id    INT AUTO_INCREMENT PRIMARY KEY,
+  user_id        INT NOT NULL,
+  activity_type  VARCHAR(50) NOT NULL,
+  detail         VARCHAR(500) NOT NULL,
+  source_type    VARCHAR(50) NULL,
+  source_id      INT NULL,
+  occurred_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id)
+    REFERENCES users(user_id)
+    ON DELETE CASCADE,
+
+  INDEX idx_activity_history_user_date (
+    user_id,
+    occurred_at
+  ),
+
+  UNIQUE KEY uq_activity_history_source (
+    user_id,
+    activity_type,
+    source_type,
+    source_id
+  )
 );

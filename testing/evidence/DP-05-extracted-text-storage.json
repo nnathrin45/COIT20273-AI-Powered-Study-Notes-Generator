@@ -1,0 +1,24 @@
+{
+  "test_id": "DP-05",
+  "title": "Extracted text storage",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:23.815Z",
+  "checking": "the text reported at upload, the text in the database and the text returned on retrieval are identical",
+  "request": {
+    "method": "GET",
+    "endpoint": "/api/uploaded/399"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "status": "success",
+      "file": {
+        "file_id": 399,
+        "file_name": "photosynthesis.txt",
+        "extracted_text": "Photosynthesis converts light energy into chemical energy stored as glucose. The light-dependent reactions occur in the thylakoid membrane and produce ATP and NADPH. The Calvin cycle occurs in the stroma and fixes carbon dioxide into sugar.",
+        "uploaded_at": "2026-09-21T10:51:23.000Z"
+      }
+    }
+  },
+  "notes": "upload reported 240 chars; database holds 240 chars"
+}

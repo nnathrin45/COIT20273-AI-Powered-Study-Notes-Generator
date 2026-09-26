@@ -1,0 +1,49 @@
+{
+  "test_id": "AI-06",
+  "title": "Output ownership",
+  "issue": "#119",
+  "captured_at": "2026-09-21T10:51:22.591Z",
+  "checking": "every stored output records the user and document it was generated from",
+  "request": null,
+  "response": {
+    "outputs": [
+      {
+        "output_id": 183,
+        "file_id": 397,
+        "user_id": 642,
+        "output_type": "summary"
+      },
+      {
+        "output_id": 184,
+        "file_id": 397,
+        "user_id": 642,
+        "output_type": "flashcards"
+      },
+      {
+        "output_id": 185,
+        "file_id": 397,
+        "user_id": 642,
+        "output_type": "quiz"
+      },
+      {
+        "output_id": 186,
+        "file_id": 397,
+        "user_id": 642,
+        "output_type": "explanation"
+      },
+      {
+        "output_id": 187,
+        "file_id": 397,
+        "user_id": 642,
+        "output_type": "quiz"
+      },
+      {
+        "output_id": 188,
+        "file_id": 397,
+        "user_id": 642,
+        "output_type": "summary"
+      }
+    ]
+  },
+  "notes": "expected user_id 642, file_id 397 on every row"
+}

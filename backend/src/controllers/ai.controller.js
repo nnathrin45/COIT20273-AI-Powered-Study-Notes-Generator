@@ -1,6 +1,7 @@
 const db = require("../config/database");
 const { hasActiveConsent } = require("../services/consent.service");
 const { generate } = require("../services/ai.service");
+const { logActivity } = require("../services/activity.service");
 
 const SUPPORTED_TYPES = ["summary", "flashcards", "quiz", "explanation"];
 
@@ -92,6 +93,14 @@ const generateOutput = async (req, res) => {
        VALUES (?, ?, ?, ?, TRUE)`,
       [file.file_id, req.user.user_id, output_type, stored]
     );
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: `ai_${output_type}`,
+      detail: file.file_name,
+      sourceType: "ai_output",
+      sourceId: result.insertId
+    });
 
     res.status(201).json({
       status: "success",
@@ -251,6 +260,93 @@ const getOutputsForFile = async (req, res) => {
   }
 };
 
+// Delete one previously generated AI output belonging to the authenticated user
+const deleteOutput = async (req, res) => {
+  try {
+    const { outputId } = req.params;
+
+    const numericOutputId = Number(outputId);
+
+    if (
+      !Number.isInteger(numericOutputId) ||
+      numericOutputId <= 0
+    ) {
+      return res.status(400).json({
+        status: "error",
+        code: "INVALID_OUTPUT_ID",
+        message: "A valid output ID is required"
+      });
+    }
+
+    // NFR3 - confirm ownership before deletion.
+    // Returning 404 for another user's output avoids revealing
+    // whether that resource exists.
+    const [rows] = await db.execute(
+      `SELECT
+        ao.output_id,
+        ao.output_type,
+        uf.file_name
+      FROM ai_outputs ao
+      INNER JOIN uploaded_files uf
+        ON uf.file_id = ao.file_id
+        AND uf.user_id = ao.user_id
+      WHERE ao.output_id = ?
+        AND ao.user_id = ?`,
+      [numericOutputId, req.user.user_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        code: "OUTPUT_NOT_FOUND",
+        message: "Saved material not found"
+      });
+    }
+
+    const output = rows[0];
+
+    const [result] = await db.execute(
+      `DELETE FROM ai_outputs
+       WHERE output_id = ? AND user_id = ?`,
+      [numericOutputId, req.user.user_id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        status: "error",
+        code: "OUTPUT_NOT_FOUND",
+        message: "Saved material not found"
+      });
+    }
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: `ai_${output.output_type}_deleted`,
+      detail: output.file_name,
+      sourceType: "ai_output",
+      sourceId: numericOutputId
+    });
+
+    return res.json({
+      status: "success",
+      message: "Saved material deleted successfully",
+      output: {
+        output_id: numericOutputId,
+        output_type: output.output_type
+      }
+    });
+
+  } catch (error) {
+    console.error("AI output delete error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      code: "AI_OUTPUT_DELETE_ERROR",
+      message: "Unable to delete saved material"
+    });
+  }
+};
+
 // FR11.2 - record a quiz attempt and return the score.
 // Marking happens on the server against the stored quiz, so a submitted answer
 // cannot be scored against anything the client supplies.
@@ -269,9 +365,17 @@ const submitQuizAttempt = async (req, res) => {
 
     // NFR3 - scoped to the requesting user
     const [rows] = await db.execute(
-      `SELECT output_id, output_type, content
-       FROM ai_outputs
-       WHERE output_id = ? AND user_id = ?`,
+      `SELECT
+        ao.output_id,
+        ao.output_type,
+        ao.content,
+        uf.file_name
+      FROM ai_outputs ao
+      INNER JOIN uploaded_files uf
+        ON uf.file_id = ao.file_id
+        AND uf.user_id = ao.user_id
+      WHERE ao.output_id = ?
+        AND ao.user_id = ?`,
       [outputId, req.user.user_id]
     );
 
@@ -330,6 +434,14 @@ const submitQuizAttempt = async (req, res) => {
        VALUES (?, ?, ?, ?, ?)`,
       [rows[0].output_id, req.user.user_id, JSON.stringify(answers), score, total]
     );
+
+    await logActivity({
+      userId: req.user.user_id,
+      activityType: "quiz_attempt",
+      detail: rows[0].file_name,
+      sourceType: "quiz_attempt",
+      sourceId: saved.insertId
+    });
 
     res.status(201).json({
       status: "success",
@@ -390,6 +502,7 @@ const getQuizAttempts = async (req, res) => {
 module.exports = {
   generateOutput,
   getOutputsForFile,
+  deleteOutput,
   submitQuizAttempt,
   getQuizAttempts
 };

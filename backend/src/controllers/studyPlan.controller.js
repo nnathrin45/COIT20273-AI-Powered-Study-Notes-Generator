@@ -1,4 +1,5 @@
 const db = require("../config/database");
+const { logActivity } = require("../services/activity.service");
 
 const createStudyPlan = async (req, res) => {
   try {
@@ -53,6 +54,14 @@ const createStudyPlan = async (req, res) => {
         planDataJson
       ]
     );
+
+    await logActivity({
+      userId: user_id,
+      activityType: "study_plan",
+      detail: `${subject} - ${topic}`,
+      sourceType: "study_plan",
+      sourceId: result.insertId
+    });
 
     res.status(201).json({
       status: "success",
@@ -134,11 +143,28 @@ const getStudyPlanById = async (req, res) => {
 const deleteStudyPlan = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.user_id;
+
+    const [plans] = await db.execute(
+      `SELECT plan_id, subject, topic
+       FROM study_plans
+       WHERE plan_id = ? AND user_id = ?`,
+      [id, userId]
+    );
+
+    if (plans.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Study plan not found"
+      });
+    }
+
+    const plan = plans[0];
 
     const [result] = await db.execute(
       `DELETE FROM study_plans
        WHERE plan_id = ? AND user_id = ?`,
-      [id, req.user.user_id]
+      [id, userId]
     );
 
     if (result.affectedRows === 0) {
@@ -147,6 +173,14 @@ const deleteStudyPlan = async (req, res) => {
         message: "Study plan not found"
       });
     }
+
+    await logActivity({
+      userId,
+      activityType: "study_plan_deleted",
+      detail: `${plan.subject} - ${plan.topic}`,
+      sourceType: "study_plan",
+      sourceId: plan.plan_id
+    });
 
     res.json({
       status: "success",

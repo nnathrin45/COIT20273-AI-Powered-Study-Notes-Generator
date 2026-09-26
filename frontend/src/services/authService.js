@@ -47,6 +47,67 @@ export const loginUser = async (
   return response
 }
 
+export const verifyLoginCode = async (
+  challengeToken,
+  code
+) => {
+  const response = await apiRequest(
+    '/api/users/verify-login-code',
+    {
+      method: 'POST',
+      requiresAuth: false,
+      body: {
+        challenge_token: challengeToken,
+        code,
+      },
+    }
+  )
+
+  if (
+    response.ok &&
+    response.data.status === 'success' &&
+    response.data.token
+  ) {
+    setAuthToken(response.data.token)
+  }
+
+  return response
+}
+
+export const resendLoginCode = async (
+  challengeToken
+) => {
+  return apiRequest(
+    '/api/users/resend-login-code',
+    {
+      method: 'POST',
+      requiresAuth: false,
+      body: {
+        challenge_token: challengeToken,
+      },
+    }
+  )
+}
+
 export const logoutUser = () => {
   removeAuthToken()
+}
+
+export const verifyEmail = async (email, code) => {
+  return apiRequest('/api/users/verify-email', {
+    method: 'POST',
+    body: {
+      email,
+      code,
+    },
+  })
+}
+
+export const resendVerificationCode = async (email) => {
+  return apiRequest('/api/users/resend-verification', {
+    method: 'POST',
+    body: {
+      email,
+    },
+  })
 }
