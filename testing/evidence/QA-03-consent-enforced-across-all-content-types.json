@@ -2,7 +2,7 @@
   "test_id": "QA-03",
   "title": "Consent enforced across all content types",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:27.231Z",
+  "captured_at": "2026-09-26T11:05:16.295Z",
   "checking": "all four content types are refused without consent, and none reaches the model",
   "request": null,
   "response": {

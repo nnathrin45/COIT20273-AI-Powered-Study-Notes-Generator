@@ -2,7 +2,7 @@
   "test_id": "PRIV-04",
   "title": "Responsible AI labelling",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:25.932Z",
+  "captured_at": "2026-09-26T11:05:13.693Z",
   "checking": "all four content types are flagged as AI-generated and returned with a disclaimer, and the flag survives retrieval",
   "request": null,
   "response": {
@@ -30,22 +30,22 @@
     ],
     "on_retrieval": [
       {
-        "output_id": 195,
+        "output_id": 45,
         "output_type": "explanation",
         "is_ai_generated": 1
       },
       {
-        "output_id": 194,
+        "output_id": 44,
         "output_type": "quiz",
         "is_ai_generated": 1
       },
       {
-        "output_id": 193,
+        "output_id": 43,
         "output_type": "flashcards",
         "is_ai_generated": 1
       },
       {
-        "output_id": 192,
+        "output_id": 42,
         "output_type": "summary",
         "is_ai_generated": 1
       }

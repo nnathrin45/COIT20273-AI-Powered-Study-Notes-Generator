@@ -2,7 +2,7 @@
   "test_id": "DP-07",
   "title": "Corrupt document handled safely",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:24.050Z",
+  "captured_at": "2026-09-26T11:05:09.455Z",
   "checking": "a file that passes extension validation but cannot be parsed returns a structured error and does not crash the server",
   "request": {
     "method": "POST",
