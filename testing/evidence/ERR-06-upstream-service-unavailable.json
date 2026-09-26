@@ -2,13 +2,13 @@
   "test_id": "ERR-06",
   "title": "Upstream service unavailable",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:24.783Z",
+  "captured_at": "2026-09-26T11:05:11.572Z",
   "checking": "the upstream service unavailable path returns a consistent, actionable error and leaves the uploaded document untouched",
   "request": {
     "method": "POST",
     "endpoint": "/api/ai/generate",
     "body": {
-      "file_id": 400,
+      "file_id": 87,
       "output_type": "summary"
     }
   },

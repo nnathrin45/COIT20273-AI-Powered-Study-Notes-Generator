@@ -188,11 +188,57 @@ const sendLoginCodeEmail = async ({ to, fullName, code }) => {
     });
 };
 
+/* =========================================================
+   FORGOT PASSWORD
+   ========================================================= */
+
+const sendPasswordResetCodeEmail = async ({
+    to,
+    fullName,
+    code
+}) => {
+    const safeName = fullName || "Student";
+
+    return sendEmail({
+        to,
+        subject: "Your StudyA password reset code",
+        text:
+            `Hi ${safeName},\n\n` +
+            `Your StudyA password reset code is: ${code}\n\n` +
+            `This code will expire in 10 minutes.\n\n` +
+            `If you did not request a password reset, you can safely ignore this email.`,
+
+        html: `
+            <div style="font-family: Arial, sans-serif;">
+                <h2>Reset your StudyA password</h2>
+
+                <p>Hi ${safeName},</p>
+
+                <p>
+                    Use the password reset code below to create a new password.
+                </p>
+
+                <h1>${code}</h1>
+
+                <p>
+                    This code will expire in <strong>10 minutes</strong>.
+                </p>
+
+                <p>
+                    If you did not request a password reset,
+                    you can safely ignore this email.
+                </p>
+            </div>
+        `
+    });
+};
+
 module.exports = {
-  sendEmail,
-  verifyEmailConnection,
-  generateVerificationCode,
-  hashVerificationCode,
-  sendVerificationCodeEmail,
-  sendLoginCodeEmail
+    sendEmail,
+    verifyEmailConnection,
+    generateVerificationCode,
+    hashVerificationCode,
+    sendVerificationCodeEmail,
+    sendLoginCodeEmail,
+    sendPasswordResetCodeEmail
 };

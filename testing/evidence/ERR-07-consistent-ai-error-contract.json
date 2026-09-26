@@ -2,7 +2,7 @@
   "test_id": "ERR-07",
   "title": "Consistent AI error contract",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:24.788Z",
+  "captured_at": "2026-09-26T11:05:11.582Z",
   "checking": "all AI failure modes return the same response shape with distinct, machine-readable codes",
   "request": null,
   "response": {
