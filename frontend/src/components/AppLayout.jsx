@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from 'react-router'
 import { logoutUser } from '../services/authService'
 import {
   getProfilePicture,
@@ -156,10 +161,9 @@ function SidebarContent({
               to={item.path}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-[#7a44ff]/15 text-[#a97cff]'
-                    : 'text-[#898cc0] hover:bg-white/[0.04] hover:text-[#c2c4e4]'
+                `group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive
+                  ? 'bg-[#7a44ff]/15 text-[#a97cff]'
+                  : 'text-[#898cc0] hover:bg-white/[0.04] hover:text-[#c2c4e4]'
                 }`
               }
             >
@@ -190,6 +194,8 @@ function AppLayout() {
   const profileMenuRef = useRef(null)
 
   const navigate = useNavigate()
+
+  const location = useLocation()
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -347,7 +353,7 @@ function AppLayout() {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] flex-col border-r border-[#2a1b4d] bg-[#160b32] lg:flex">
 
         <SidebarContent
-          onNavigate={() => {}}
+          onNavigate={() => { }}
         />
 
       </aside>
@@ -519,11 +525,10 @@ function AppLayout() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className={`hidden h-4 w-4 text-[#898cc0] transition-transform duration-200 sm:block ${
-                    profileMenuOpen
+                  className={`hidden h-4 w-4 text-[#898cc0] transition-transform duration-200 sm:block ${profileMenuOpen
                       ? 'rotate-180'
                       : ''
-                  }`}
+                    }`}
                 >
                   <path
                     strokeLinecap="round"
@@ -684,7 +689,12 @@ function AppLayout() {
         <main className="p-4 sm:p-6 lg:p-8">
 
           <div className="mx-auto w-full max-w-[1500px]">
-            <Outlet />
+            <div
+              key={location.pathname}
+              className="app-page-transition"
+            >
+              <Outlet />
+            </div>
           </div>
 
         </main>

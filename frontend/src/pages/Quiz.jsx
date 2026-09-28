@@ -50,7 +50,7 @@ function Quiz() {
           } else {
             setConsentError(
               response.data?.message ||
-                'Unable to retrieve your AI consent preference.'
+              'Unable to retrieve your AI consent preference.'
             )
           }
 
@@ -93,7 +93,7 @@ function Quiz() {
           } else {
             setDocumentsError(
               response.data?.message ||
-                'Unable to retrieve your uploaded study materials.'
+              'Unable to retrieve your uploaded study materials.'
             )
           }
 
@@ -186,7 +186,7 @@ function Quiz() {
 
         setError(
           response.data?.message ||
-            'Unable to generate the practice quiz. Please try again.'
+          'Unable to generate the practice quiz. Please try again.'
         )
         setRetryableError(response.data?.retryable === true)
         return
@@ -296,7 +296,7 @@ function Quiz() {
 
         setError(
           response.data?.message ||
-            'Unable to submit the quiz. Please try again.'
+          'Unable to submit the quiz. Please try again.'
         )
         return
       }
@@ -371,40 +371,71 @@ function Quiz() {
       {/* Quiz Generator */}
       <div className="rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
 
-        <div className="flex items-start gap-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+          <div className="flex items-start gap-3">
 
-            <svg
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="h-5 w-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 3h8a2 2 0 0 1 2 2v16H6V5a2 2 0 0 1 2-2Zm2 5h4m-4 4h4m-4 4h2"
-              />
-            </svg>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 3h8a2 2 0 0 1 2 2v16H6V5a2 2 0 0 1 2-2Zm2 5h4m-4 4h4m-4 4h2"
+                />
+              </svg>
+
+            </div>
+
+            <div>
+
+              <h2 className="text-xl font-semibold text-[#f3f0ff]">
+                Generate Quiz
+              </h2>
+
+              <p className="mt-1 text-sm text-[#898cc0]">
+                Select a study document to create an
+                AI-generated practice quiz.
+              </p>
+
+            </div>
 
           </div>
 
-          <div>
+          {!consentInitialLoading &&
+            consentStatus === 'granted' && (
+              <Link
+                to="/privacy"
+                title="AI processing consent is granted. Manage consent."
+                className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 transition hover:border-emerald-400/40 hover:bg-emerald-500/15"
+              >
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  className="h-3.5 w-3.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m5 12 4 4L19 6"
+                  />
+                </svg>
 
-            <h2 className="text-xl font-semibold text-[#f3f0ff]">
-              Generate Quiz
-            </h2>
-
-            <p className="mt-1 text-sm text-[#898cc0]">
-              Select a study document to create an
-              AI-generated practice quiz.
-            </p>
-
-          </div>
+                AI Consent On
+              </Link>
+            )}
 
         </div>
 
@@ -617,39 +648,7 @@ function Quiz() {
               </div>
 
             </div>
-          ) : (
-            <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
-
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
-
-                  <svg
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m5 12 4 4L19 6"
-                    />
-                  </svg>
-
-                </div>
-
-                <p className="text-sm font-medium text-emerald-300">
-                  AI processing consent is granted.
-                </p>
-
-              </div>
-
-            </div>
-          )}
+          ) : null}
 
         </div>
 
@@ -807,9 +806,8 @@ function Quiz() {
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#7a44ff] to-[#d83dff] transition-all duration-300"
               style={{
-                width: `${
-                  ((currentQuestion + 1) / questions.length) * 100
-                }%`,
+                width: `${((currentQuestion + 1) / questions.length) * 100
+                  }%`,
               }}
             />
 
@@ -926,11 +924,10 @@ function Quiz() {
               {/* Answer Feedback */}
               {attempt && currentResult && (
                 <div
-                  className={`mt-6 rounded-lg border p-4 ${
-                    currentResult.is_correct
-                      ? 'border-emerald-400/20 bg-emerald-500/10'
-                      : 'border-red-400/20 bg-red-500/10'
-                  }`}
+                  className={`mt-6 rounded-lg border p-4 ${currentResult.is_correct
+                    ? 'border-emerald-400/20 bg-emerald-500/10'
+                    : 'border-red-400/20 bg-red-500/10'
+                    }`}
                 >
 
                   {currentResult.is_correct ? (
