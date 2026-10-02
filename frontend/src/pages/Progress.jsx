@@ -9,11 +9,13 @@ import {
   deleteSelectedActivities,
   getProgress,
 } from '../services/progressService'
+import AnimatedSelect from '../components/AnimatedSelect'
 
 function Progress() {
   const [period, setPeriod] = useState('all')
   const [progress, setProgress] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [contentVisible, setContentVisible] = useState(true)
   const [error, setError] = useState('')
 
   const [selectedActivityIds, setSelectedActivityIds] =
@@ -21,6 +23,9 @@ function Progress() {
 
   const [activityActionLoading, setActivityActionLoading] =
     useState(false)
+
+  const [activityActionType, setActivityActionType] =
+    useState(null)
 
   const [activityError, setActivityError] =
     useState('')
@@ -53,7 +58,7 @@ function Progress() {
           } else {
             setError(
               response.data?.message ||
-                'Unable to load your progress.'
+              'Unable to load your progress.'
             )
           }
 
@@ -76,6 +81,10 @@ function Progress() {
         if (showLoading) {
           setLoading(false)
         }
+
+        window.setTimeout(() => {
+          setContentVisible(true)
+        }, 50)
       }
     },
     [period]
@@ -102,6 +111,18 @@ function Progress() {
       window.clearTimeout(timer)
     }
   }, [activityStatus])
+
+  const handlePeriodChange = (newPeriod) => {
+    if (newPeriod === period) {
+      return
+    }
+
+    setContentVisible(false)
+
+    window.setTimeout(() => {
+      setPeriod(newPeriod)
+    }, 200)
+  }
 
   const stats = {
     uploadedMaterials:
@@ -158,11 +179,11 @@ function Progress() {
   const questionAccuracy =
     progress?.total_questions > 0
       ? Math.round(
-          (
-            progress.total_correct /
-            progress.total_questions
-          ) * 100
-        )
+        (
+          progress.total_correct /
+          progress.total_questions
+        ) * 100
+      )
       : 0
 
   const getScoreStyle = (percentage) => {
@@ -327,6 +348,28 @@ function Progress() {
         return
       }
 
+      const actionStartedAt = Date.now()
+
+      const waitForMinimumFeedback = async () => {
+        const elapsedTime =
+          Date.now() - actionStartedAt
+
+        const remainingFeedbackTime = Math.max(
+          0,
+          2000 - elapsedTime
+        )
+
+        if (remainingFeedbackTime > 0) {
+          await new Promise((resolve) => {
+            window.setTimeout(
+              resolve,
+              remainingFeedbackTime
+            )
+          })
+        }
+      }
+
+      setActivityActionType('delete-selected')
       setActivityActionLoading(true)
       setActivityError('')
       setActivityStatus('')
@@ -345,7 +388,7 @@ function Progress() {
           } else {
             setActivityError(
               response.data?.message ||
-                'Unable to delete the selected activity history.'
+              'Unable to delete the selected activity history.'
             )
           }
 
@@ -355,6 +398,26 @@ function Progress() {
         const deletedCount = Number(
           response.data?.deleted_count ?? 0
         )
+
+        await waitForMinimumFeedback()
+
+        setActivityActionLoading(false)
+        setActivityActionType(null)
+        setSelectedActivityIds([])
+
+        await loadProgress({
+          showLoading: false,
+        })
+
+        if (deletedCount === 1) {
+          setActivityStatus(
+            '1 activity entry was removed from your history.'
+          )
+        } else {
+          setActivityStatus(
+            `${deletedCount} activity entries were removed from your history.`
+          )
+        }
 
         setSelectedActivityIds([])
 
@@ -381,7 +444,9 @@ function Progress() {
           'Unable to connect to the server while deleting activity history.'
         )
       } finally {
+        await waitForMinimumFeedback()
         setActivityActionLoading(false)
+        setActivityActionType(null)
       }
     }
 
@@ -396,6 +461,28 @@ function Progress() {
         return
       }
 
+      const actionStartedAt = Date.now()
+
+      const waitForMinimumFeedback = async () => {
+        const elapsedTime =
+          Date.now() - actionStartedAt
+
+        const remainingFeedbackTime = Math.max(
+          0,
+          2000 - elapsedTime
+        )
+
+        if (remainingFeedbackTime > 0) {
+          await new Promise((resolve) => {
+            window.setTimeout(
+              resolve,
+              remainingFeedbackTime
+            )
+          })
+        }
+      }
+
+      setActivityActionType('clear-history')
       setActivityActionLoading(true)
       setActivityError('')
       setActivityStatus('')
@@ -412,7 +499,7 @@ function Progress() {
           } else {
             setActivityError(
               response.data?.message ||
-                'Unable to clear your activity history.'
+              'Unable to clear your activity history.'
             )
           }
 
@@ -422,6 +509,26 @@ function Progress() {
         const deletedCount = Number(
           response.data?.deleted_count ?? 0
         )
+
+        await waitForMinimumFeedback()
+
+        setActivityActionLoading(false)
+        setActivityActionType(null)
+        setSelectedActivityIds([])
+
+        await loadProgress({
+          showLoading: false,
+        })
+
+        if (deletedCount === 0) {
+          setActivityStatus(
+            'Your activity history is already clear.'
+          )
+        } else {
+          setActivityStatus(
+            'Activity history cleared successfully.'
+          )
+        }
 
         setSelectedActivityIds([])
 
@@ -448,7 +555,9 @@ function Progress() {
           'Unable to connect to the server while clearing activity history.'
         )
       } finally {
+        await waitForMinimumFeedback()
         setActivityActionLoading(false)
+        setActivityActionType(null)
       }
     }
 
@@ -490,27 +599,26 @@ function Progress() {
             Time Period
           </label>
 
-          <select
+          <AnimatedSelect
             id="progress-period"
             value={period}
-            onChange={(event) =>
-              setPeriod(event.target.value)
-            }
-            disabled={loading}
-            className="w-full rounded-lg border border-[#2A1B4D] bg-[#120928] px-3 py-2.5 text-sm text-[#C2C4E4] outline-none transition focus:border-[#7A44FF] focus:ring-1 focus:ring-[#7A44FF] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="all">
-              All Time
-            </option>
-
-            <option value="week">
-              This Week
-            </option>
-
-            <option value="month">
-              This Month
-            </option>
-          </select>
+            disabled={loading || !contentVisible}
+            options={[
+              {
+                value: 'all',
+                label: 'All Time',
+              },
+              {
+                value: 'week',
+                label: 'This Week',
+              },
+              {
+                value: 'month',
+                label: 'This Month',
+              },
+            ]}
+            onChange={handlePeriodChange}
+          />
 
         </div>
 
@@ -540,321 +648,330 @@ function Progress() {
         </div>
       )}
 
-      {/* Main Statistics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        className={`transition-all duration-300 ease-out ${contentVisible
+          ? 'translate-y-0 opacity-100'
+          : 'pointer-events-none translate-y-2 opacity-0'
+          }`}
+      >
 
-        <div className={cardClass}>
+        {/* Main Statistics */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-          <div className="flex items-start justify-between gap-3">
+          <div className={cardClass}>
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Study Materials
-              </p>
+            <div className="flex items-start justify-between gap-3">
 
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.uploadedMaterials}
-              </p>
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Study Materials
+                </p>
+
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {stats.uploadedMaterials}
+                </p>
+              </div>
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M7 3.75h7l3 3V20.25H7V3.75Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+
+                  <path
+                    d="M14 3.75v3h3"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+              </div>
+
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M7 3.75h7l3 3V20.25H7V3.75Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-
-                <path
-                  d="M14 3.75v3h3"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-            </div>
+            <p className="mt-2 text-xs text-[#595C90]">
+              Uploaded documents
+            </p>
 
           </div>
 
-          <p className="mt-2 text-xs text-[#595C90]">
-            Uploaded documents
-          </p>
+          <div className={cardClass}>
 
-        </div>
+            <div className="flex items-start justify-between gap-3">
 
-        <div className={cardClass}>
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Flashcards
+                </p>
 
-          <div className="flex items-start justify-between gap-3">
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {stats.flashcardsGenerated}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Flashcards
-              </p>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
 
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.flashcardsGenerated}
-              </p>
-            </div>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="5"
+                    y="6"
+                    width="14"
+                    height="12"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+                  <path
+                    d="M8 9h8M8 12h5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
 
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <rect
-                  x="5"
-                  y="6"
-                  width="14"
-                  height="12"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-
-                <path
-                  d="M8 9h8M8 12h5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
+              </div>
 
             </div>
+
+            <p className="mt-2 text-xs text-[#595C90]">
+              Generated study sets
+            </p>
 
           </div>
 
-          <p className="mt-2 text-xs text-[#595C90]">
-            Generated study sets
-          </p>
+          <div className={cardClass}>
 
-        </div>
+            <div className="flex items-start justify-between gap-3">
 
-        <div className={cardClass}>
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Quizzes Completed
+                </p>
 
-          <div className="flex items-start justify-between gap-3">
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {stats.quizzesCompleted}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Quizzes Completed
-              </p>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
 
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.quizzesCompleted}
-              </p>
-            </div>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="6"
+                    y="4"
+                    width="12"
+                    height="16"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+                  <path
+                    d="m9 12 2 2 4-4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
 
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <rect
-                  x="6"
-                  y="4"
-                  width="12"
-                  height="16"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-
-                <path
-                  d="m9 12 2 2 4-4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              </div>
 
             </div>
+
+            <p className="mt-2 text-xs text-[#595C90]">
+              Practice attempts
+            </p>
 
           </div>
 
-          <p className="mt-2 text-xs text-[#595C90]">
-            Practice attempts
-          </p>
+          <div className={cardClass}>
 
-        </div>
+            <div className="flex items-start justify-between gap-3">
 
-        <div className={cardClass}>
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Average Score
+                </p>
 
-          <div className="flex items-start justify-between gap-3">
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {stats.averageScore}%
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Average Score
-              </p>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
 
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.averageScore}%
-              </p>
-            </div>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 18V12M12 18V7M18 18V4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 18V12M12 18V7M18 18V4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
+              </div>
 
             </div>
 
-          </div>
-
-          <p className="mt-2 text-xs text-[#595C90]">
-            Quiz performance
-          </p>
-
-        </div>
-
-      </div>
-
-      {/* Generated Resources / Accuracy */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
-
-        <div className={cardClass}>
-
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-            Resources
-          </p>
-
-          <h2 className="text-xl font-semibold text-white">
-            Generated Study Resources
-          </h2>
-
-          <p className="mt-1 text-sm text-[#898CC0]">
-            AI-generated resources for the selected period.
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Summaries
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.summariesGenerated}
-              </p>
-            </div>
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Study Plans
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.studyPlansCreated}
-              </p>
-            </div>
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Quizzes
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.quizzesGenerated}
-              </p>
-            </div>
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Explanations
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.explanationsGenerated}
-              </p>
-            </div>
+            <p className="mt-2 text-xs text-[#595C90]">
+              Quiz performance
+            </p>
 
           </div>
 
         </div>
 
-        <div className={cardClass}>
+        {/* Generated Resources / Accuracy */}
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
 
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-            Performance
-          </p>
+          <div className={cardClass}>
 
-          <h2 className="text-xl font-semibold text-white">
-            Quiz Question Accuracy
-          </h2>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+              Resources
+            </p>
 
-          <p className="mt-1 text-sm text-[#898CC0]">
-            Correct answers across your practice attempts.
-          </p>
+            <h2 className="text-xl font-semibold text-white">
+              Generated Study Resources
+            </h2>
 
-          <div className="mt-5">
-
-            <div className="flex items-center justify-between">
-
-              <span className="text-sm text-[#C2C4E4]">
-                Correct Answers
-              </span>
-
-              <span className="text-sm font-semibold text-white">
-                {questionAccuracy}%
-              </span>
-
-            </div>
-
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#120928]">
-
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] transition-all duration-500"
-                style={{
-                  width: `${questionAccuracy}%`,
-                }}
-              />
-
-            </div>
+            <p className="mt-1 text-sm text-[#898CC0]">
+              AI-generated resources for the selected period.
+            </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
 
               <div className={smallCardClass}>
                 <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                  Correct
+                  Summaries
                 </p>
 
                 <p className="mt-1 text-xl font-semibold text-white">
-                  {progress?.total_correct ?? 0}
+                  {stats.summariesGenerated}
                 </p>
               </div>
 
               <div className={smallCardClass}>
                 <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                  Questions
+                  Study Plans
                 </p>
 
                 <p className="mt-1 text-xl font-semibold text-white">
-                  {progress?.total_questions ?? 0}
+                  {stats.studyPlansCreated}
                 </p>
+              </div>
+
+              <div className={smallCardClass}>
+                <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                  Quizzes
+                </p>
+
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {stats.quizzesGenerated}
+                </p>
+              </div>
+
+              <div className={smallCardClass}>
+                <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                  Explanations
+                </p>
+
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {stats.explanationsGenerated}
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className={cardClass}>
+
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+              Performance
+            </p>
+
+            <h2 className="text-xl font-semibold text-white">
+              Quiz Question Accuracy
+            </h2>
+
+            <p className="mt-1 text-sm text-[#898CC0]">
+              Correct answers across your practice attempts.
+            </p>
+
+            <div className="mt-5">
+
+              <div className="flex items-center justify-between">
+
+                <span className="text-sm text-[#C2C4E4]">
+                  Correct Answers
+                </span>
+
+                <span className="text-sm font-semibold text-white">
+                  {questionAccuracy}%
+                </span>
+
+              </div>
+
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#120928]">
+
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] transition-all duration-500"
+                  style={{
+                    width: `${questionAccuracy}%`,
+                  }}
+                />
+
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+
+                <div className={smallCardClass}>
+                  <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                    Correct
+                  </p>
+
+                  <p className="mt-1 text-xl font-semibold text-white">
+                    {progress?.total_correct ?? 0}
+                  </p>
+                </div>
+
+                <div className={smallCardClass}>
+                  <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                    Questions
+                  </p>
+
+                  <p className="mt-1 text-xl font-semibold text-white">
+                    {progress?.total_questions ?? 0}
+                  </p>
+                </div>
+
               </div>
 
             </div>
@@ -863,433 +980,447 @@ function Progress() {
 
         </div>
 
-      </div>
+        {/* Quiz Performance */}
+        <section className="group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
 
-      {/* Quiz Performance */}
-      <section className="group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
+          <button
+            type="button"
+            onClick={() =>
+              setQuizPerformanceOpen(
+                (current) => !current
+              )
+            }
+            aria-expanded={quizPerformanceOpen}
+            aria-controls="quiz-performance-content"
+            style={{
+              backgroundColor: '#160B32',
+            }}
+            className="relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
+          >
 
-        <button
-          type="button"
-          onClick={() =>
-            setQuizPerformanceOpen(
-              (current) => !current
-            )
-          }
-          aria-expanded={quizPerformanceOpen}
-          aria-controls="quiz-performance-content"
-          style={{
-            backgroundColor: '#160B32',
-          }}
-          className="relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
-        >
+            <div>
 
-          <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+                Quiz History
+              </p>
 
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-              Quiz History
-            </p>
+              <h2 className="text-xl font-semibold text-white">
+                Quiz Performance
+              </h2>
 
-            <h2 className="text-xl font-semibold text-white">
-              Quiz Performance
-            </h2>
+              <p className="mt-1 text-sm text-[#898CC0]">
+                Review your recent practice quiz results.
+              </p>
 
-            <p className="mt-1 text-sm text-[#898CC0]">
-              Review your recent practice quiz results.
-            </p>
+            </div>
 
-          </div>
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
 
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              aria-hidden="true"
-              className={`h-4 w-4 transition-transform duration-300 ${
-                quizPerformanceOpen
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform duration-300 ${quizPerformanceOpen
                   ? 'rotate-180'
                   : ''
-              }`}
-            >
-              <path
-                d="M5 7.5L10 12.5L15 7.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+                  }`}
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
 
-          </div>
+            </div>
 
-        </button>
+          </button>
 
-        <div
-          id="quiz-performance-content"
-          aria-hidden={!quizPerformanceOpen}
-          className={`grid transition-all duration-300 ease-in-out ${
-            quizPerformanceOpen
+          <div
+            id="quiz-performance-content"
+            aria-hidden={!quizPerformanceOpen}
+            className={`grid transition-all duration-300 ease-in-out ${quizPerformanceOpen
               ? 'visible grid-rows-[1fr] opacity-100'
               : 'invisible grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="min-h-0 overflow-hidden">
+              }`}
+          >
+            <div className="min-h-0 overflow-hidden">
 
-            <div className="border-t border-[#2A1B4D]">
+              <div className="border-t border-[#2A1B4D]">
 
-              <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
 
-                <table className="min-w-full">
+                  <table className="min-w-full">
 
-                  <thead className="bg-[#120928]/60">
+                    <thead className="bg-[#120928]/60">
 
-                    <tr>
+                      <tr>
 
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Quiz
-                      </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Quiz
+                        </th>
 
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Score
-                      </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Score
+                        </th>
 
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Result
-                      </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Result
+                        </th>
 
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Date
-                      </th>
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Date
+                        </th>
 
-                    </tr>
+                      </tr>
 
-                  </thead>
+                    </thead>
 
-                  <tbody className="divide-y divide-[#2A1B4D]">
+                    <tbody className="divide-y divide-[#2A1B4D]">
 
-                    {!loading &&
-                      quizHistory.length === 0 && (
-                        <tr>
+                      {!loading &&
+                        quizHistory.length === 0 && (
+                          <tr>
 
-                          <td
-                            colSpan="4"
-                            className="px-5 py-8 text-center text-sm text-[#898CC0]"
-                          >
-                            No quiz attempts found for this time period.
+                            <td
+                              colSpan="4"
+                              className="px-5 py-8 text-center text-sm text-[#898CC0]"
+                            >
+                              No quiz attempts found for this time period.
+                            </td>
+
+                          </tr>
+                        )}
+
+                      {quizHistory.map((quiz) => (
+                        <tr
+                          key={quiz.attempt_id}
+                          className="transition hover:bg-[#211044]"
+                        >
+
+                          <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">
+                            {quiz.quiz_title}
+                          </td>
+
+                          <td className="px-5 py-4 text-sm text-[#898CC0]">
+                            {quiz.score}/{quiz.total}
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span
+                              className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreStyle(
+                                quiz.percentage
+                              )}`}
+                            >
+                              {quiz.percentage}%
+                            </span>
+
+                          </td>
+
+                          <td className="px-5 py-4 text-sm text-[#898CC0]">
+                            {formatDate(
+                              quiz.attempted_at
+                            )}
                           </td>
 
                         </tr>
-                      )}
+                      ))}
 
-                    {quizHistory.map((quiz) => (
-                      <tr
-                        key={quiz.attempt_id}
-                        className="transition hover:bg-[#211044]"
-                      >
+                    </tbody>
 
-                        <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">
-                          {quiz.quiz_title}
-                        </td>
+                  </table>
 
-                        <td className="px-5 py-4 text-sm text-[#898CC0]">
-                          {quiz.score}/{quiz.total}
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <span
-                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreStyle(
-                              quiz.percentage
-                            )}`}
-                          >
-                            {quiz.percentage}%
-                          </span>
-
-                        </td>
-
-                        <td className="px-5 py-4 text-sm text-[#898CC0]">
-                          {formatDate(
-                            quiz.attempted_at
-                          )}
-                        </td>
-
-                      </tr>
-                    ))}
-
-                  </tbody>
-
-                </table>
+                </div>
 
               </div>
 
             </div>
-
-          </div>
-        </div>
-
-      </section>
-
-      {/* Recent Activity */}
-      <section className="group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
-
-        <button
-          type="button"
-          onClick={() =>
-            setRecentActivityOpen(
-              (current) => !current
-            )
-          }
-          aria-expanded={recentActivityOpen}
-          aria-controls="recent-activity-content"
-          style={{
-            backgroundColor: '#160B32',
-          }}
-          className="relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
-        >
-
-          <div>
-
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-              Activity
-            </p>
-
-            <h2 className="text-xl font-semibold text-white">
-              Recent Activity
-            </h2>
-
-            <p className="mt-1 text-sm text-[#898CC0]">
-              Your latest study actions for the selected time period.
-            </p>
-
           </div>
 
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+        </section>
 
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              aria-hidden="true"
-              className={`h-4 w-4 transition-transform duration-300 ${
-                recentActivityOpen
+        {/* Recent Activity */}
+        <section className="group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
+
+          <button
+            type="button"
+            onClick={() =>
+              setRecentActivityOpen(
+                (current) => !current
+              )
+            }
+            aria-expanded={recentActivityOpen}
+            aria-controls="recent-activity-content"
+            style={{
+              backgroundColor: '#160B32',
+            }}
+            className="relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
+          >
+
+            <div>
+
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+                Activity
+              </p>
+
+              <h2 className="text-xl font-semibold text-white">
+                Recent Activity
+              </h2>
+
+              <p className="mt-1 text-sm text-[#898CC0]">
+                Your latest study actions for the selected time period.
+              </p>
+
+            </div>
+
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform duration-300 ${recentActivityOpen
                   ? 'rotate-180'
                   : ''
-              }`}
-            >
-              <path
-                d="M5 7.5L10 12.5L15 7.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+                  }`}
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
 
-          </div>
+            </div>
 
-        </button>
+          </button>
 
-        <div
-          id="recent-activity-content"
-          aria-hidden={!recentActivityOpen}
-          className={`grid transition-all duration-300 ease-in-out ${
-            recentActivityOpen
+          <div
+            id="recent-activity-content"
+            aria-hidden={!recentActivityOpen}
+            className={`grid transition-all duration-300 ease-in-out ${recentActivityOpen
               ? 'visible grid-rows-[1fr] opacity-100'
               : 'invisible grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="min-h-0 overflow-hidden">
+              }`}
+          >
+            <div className="min-h-0 overflow-hidden">
 
-            <div className="border-t border-[#2A1B4D] p-5">
+              <div className="border-t border-[#2A1B4D] p-5">
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
 
-                <button
-                  type="button"
-                  onClick={
-                    handleDeleteSelectedActivities
-                  }
-                  disabled={
-                    activityActionLoading ||
-                    selectedActivityIds.length === 0
-                  }
-                  className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {activityActionLoading
-                    ? 'Please wait...'
-                    : `Delete Selected${
-                        selectedActivityIds.length > 0
-                          ? ` (${selectedActivityIds.length})`
-                          : ''
-                      }`}
-                </button>
+                  <button
+                    type="button"
+                    onClick={
+                      handleDeleteSelectedActivities
+                    }
+                    disabled={
+                      activityActionLoading ||
+                      selectedActivityIds.length === 0
+                    }
+                    className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-300 transition-all duration-300 hover:border-red-400/50 hover:bg-red-500/10 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+                  >
+                    {activityActionLoading &&
+                      activityActionType === 'delete-selected' ? (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]"
+                        />
+                        Deleting...
+                      </>
+                    ) : (
+                      `Delete Selected${selectedActivityIds.length > 0
+                        ? ` (${selectedActivityIds.length})`
+                        : ''
+                      }`
+                    )}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={
-                    handleClearActivityHistory
-                  }
-                  disabled={
-                    activityActionLoading ||
-                    loading
-                  }
-                  className="rounded-lg border border-red-500/40 bg-[#301127] px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-[#40142F] focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {activityActionLoading
-                    ? 'Please wait...'
-                    : 'Clear Activity History'}
-                </button>
+                  <button
+                    type="button"
+                    onClick={
+                      handleClearActivityHistory
+                    }
+                    disabled={
+                      activityActionLoading ||
+                      loading
+                    }
+                    className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-lg border border-red-500/40 bg-[#301127] px-4 py-2 text-sm font-medium text-red-300 transition-all duration-300 hover:bg-[#40142F] focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+                  >
+                    {activityActionLoading &&
+                      activityActionType === 'clear-history' ? (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]"
+                        />
+                        Clearing...
+                      </>
+                    ) : (
+                      'Clear Activity History'
+                    )}
 
-              </div>
-
-              {activityStatus && (
-                <div
-                  className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <p className="text-sm text-emerald-300">
-                    {activityStatus}
-                  </p>
-                </div>
-              )}
-
-              {activityError && (
-                <div
-                  className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4"
-                  role="alert"
-                >
-                  <p className="text-sm text-red-300">
-                    {activityError}
-                  </p>
-                </div>
-              )}
-
-              {recentActivity.length > 0 && (
-                <div className="mt-4 flex flex-col gap-2 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-
-                  <label className="flex cursor-pointer items-center gap-3 text-sm text-[#C2C4E4]">
-
-                    <input
-                      type="checkbox"
-                      checked={
-                        allVisibleActivitiesSelected
-                      }
-                      onChange={
-                        handleSelectAllVisible
-                      }
-                      disabled={
-                        activityActionLoading
-                      }
-                      className="h-4 w-4 rounded accent-[#7A44FF]"
-                    />
-
-                    Select all visible
-
-                  </label>
-
-                  <span className="text-xs text-[#898CC0]">
-                    {selectedActivityIds.length}{' '}
-                    selected
-                  </span>
+                  </button>
 
                 </div>
-              )}
 
-              <div className="mt-3 divide-y divide-[#2A1B4D]">
-
-                {!loading &&
-                  recentActivity.length === 0 && (
-                    <p className="py-8 text-center text-sm text-[#898CC0]">
-                      No recent activity found for this time period.
+                {activityStatus && (
+                  <div
+                    className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <p className="text-sm text-emerald-300">
+                      {activityStatus}
                     </p>
-                  )}
+                  </div>
+                )}
 
-                {recentActivity.map(
-                  (activity) => {
-                    const activityId =
-                      Number(
-                        activity.activity_id
-                      )
+                {activityError && (
+                  <div
+                    className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4"
+                    role="alert"
+                  >
+                    <p className="text-sm text-red-300">
+                      {activityError}
+                    </p>
+                  </div>
+                )}
 
-                    const isSelected =
-                      selectedActivityIds.includes(
-                        activityId
-                      )
+                {recentActivity.length > 0 && (
+                  <div className="mt-4 flex flex-col gap-2 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 
-                    return (
-                      <div
-                        key={activity.activity_id}
-                        className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                      >
+                    <label className="flex cursor-pointer items-center gap-3 text-sm text-[#C2C4E4]">
 
-                        <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={
+                          allVisibleActivitiesSelected
+                        }
+                        onChange={
+                          handleSelectAllVisible
+                        }
+                        disabled={
+                          activityActionLoading
+                        }
+                        className="h-4 w-4 rounded accent-[#7A44FF]"
+                      />
 
-                          <input
-                            id={`activity-${activityId}`}
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() =>
-                              handleActivitySelection(
-                                activityId
-                              )
-                            }
-                            disabled={
-                              activityActionLoading
-                            }
-                            aria-label={`Select ${getActivityLabel(
-                              activity.activity_type
-                            )}`}
-                            className="mt-1 h-4 w-4 flex-shrink-0 rounded accent-[#7A44FF]"
-                          />
+                      Select all visible
 
-                          <div>
+                    </label>
 
-                            <label
-                              htmlFor={`activity-${activityId}`}
-                              className="cursor-pointer text-sm font-medium text-[#C2C4E4]"
-                            >
-                              {getActivityLabel(
+                    <span className="text-xs text-[#898CC0]">
+                      {selectedActivityIds.length}{' '}
+                      selected
+                    </span>
+
+                  </div>
+                )}
+
+                <div className="mt-3 divide-y divide-[#2A1B4D]">
+
+                  {!loading &&
+                    recentActivity.length === 0 && (
+                      <p className="py-8 text-center text-sm text-[#898CC0]">
+                        No recent activity found for this time period.
+                      </p>
+                    )}
+
+                  {recentActivity.map(
+                    (activity) => {
+                      const activityId =
+                        Number(
+                          activity.activity_id
+                        )
+
+                      const isSelected =
+                        selectedActivityIds.includes(
+                          activityId
+                        )
+
+                      return (
+                        <div
+                          key={activity.activity_id}
+                          className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+
+                          <div className="flex items-start gap-3">
+
+                            <input
+                              id={`activity-${activityId}`}
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() =>
+                                handleActivitySelection(
+                                  activityId
+                                )
+                              }
+                              disabled={
+                                activityActionLoading
+                              }
+                              aria-label={`Select ${getActivityLabel(
                                 activity.activity_type
-                              )}
-                            </label>
+                              )}`}
+                              className="mt-1 h-4 w-4 flex-shrink-0 rounded accent-[#7A44FF]"
+                            />
 
-                            <p className="mt-1 text-sm text-[#898CC0]">
-                              {activity.detail}
-                            </p>
+                            <div>
+
+                              <label
+                                htmlFor={`activity-${activityId}`}
+                                className="cursor-pointer text-sm font-medium text-[#C2C4E4]"
+                              >
+                                {getActivityLabel(
+                                  activity.activity_type
+                                )}
+                              </label>
+
+                              <p className="mt-1 text-sm text-[#898CC0]">
+                                {activity.detail}
+                              </p>
+
+                            </div>
 
                           </div>
 
+                          <p className="text-sm text-[#AEB1D1] sm:flex-shrink-0">
+                            {formatDateTime(
+                              activity.occurred_at
+                            )}
+                          </p>
+
                         </div>
+                      )
+                    }
+                  )}
 
-                        <p className="text-sm text-[#AEB1D1] sm:flex-shrink-0">
-                          {formatDateTime(
-                            activity.occurred_at
-                          )}
-                        </p>
+                </div>
 
-                      </div>
-                    )
-                  }
-                )}
+                <div className="mt-4 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3">
 
-              </div>
+                  <p className="text-xs leading-5 text-[#898CC0]">
+                    Removing activity history only removes entries from this
+                    list. Your uploaded study materials, generated AI content,
+                    quiz attempts and study plans are not deleted.
+                  </p>
 
-              <div className="mt-4 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3">
-
-                <p className="text-xs leading-5 text-[#898CC0]">
-                  Removing activity history only removes entries from this
-                  list. Your uploaded study materials, generated AI content,
-                  quiz attempts and study plans are not deleted.
-                </p>
+                </div>
 
               </div>
 
             </div>
-
           </div>
-        </div>
 
-      </section>
+        </section>
+
+      </div>
 
     </div>
   )

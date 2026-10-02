@@ -239,6 +239,8 @@ function StudyPlanner() {
       return
     }
 
+    const actionStartedAt = Date.now()
+
     try {
       setIsSaving(true)
 
@@ -267,10 +269,31 @@ function StudyPlanner() {
         return
       }
 
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+
+      setIsSaving(false)
+
       setSavedPlanId(response.data?.plan_id ?? null)
       setGeneratedPlan(planData)
       setGenerated(true)
-      setSuccess('Study plan created and saved successfully.')
+      setSuccess(
+        'Study plan created and saved successfully.'
+      )
 
       await loadStudyPlans()
     } catch (saveError) {
@@ -281,6 +304,23 @@ function StudyPlanner() {
       )
       setGenerated(false)
     } finally {
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+
       setIsSaving(false)
     }
   }
@@ -304,6 +344,8 @@ function StudyPlanner() {
       return
     }
 
+    const actionStartedAt = Date.now()
+
     setPlansError('')
     setPlansSuccess('')
     setDeletingPlanId(planId)
@@ -325,6 +367,25 @@ function StudyPlanner() {
 
         return
       }
+
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+
+      setDeletingPlanId(null)
 
       setSavedPlans((currentPlans) =>
         currentPlans.filter(
@@ -349,6 +410,23 @@ function StudyPlanner() {
         'Unable to connect to the server. Please try again.'
       )
     } finally {
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+
       setDeletingPlanId(null)
     }
   }
@@ -935,8 +1013,8 @@ function StudyPlanner() {
                 fill="none"
                 aria-hidden="true"
                 className={`h-4 w-4 transition-transform duration-300 ${savedPlansOpen
-                    ? 'rotate-180'
-                    : ''
+                  ? 'rotate-180'
+                  : ''
                   }`}
               >
                 <path
@@ -1103,7 +1181,7 @@ function StudyPlanner() {
                                   fill="none"
                                   stroke="currentColor"
                                   strokeWidth="2"
-                                  className={`h-4 w-4 transition-transform ${isExpanded
+                                  className={`h-4 w-4 transition-transform duration-300 ${isExpanded
                                     ? 'rotate-180'
                                     : ''
                                     }`}
@@ -1125,11 +1203,11 @@ function StudyPlanner() {
                                 disabled={
                                   deletingPlanId === plan.plan_id
                                 }
-                                className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="inline-flex min-w-[104px] items-center justify-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition-all duration-300 hover:border-red-400/50 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
                               >
 
                                 {deletingPlanId === plan.plan_id && (
-                                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-300/30 border-t-red-300" />
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]" />
                                 )}
 
                                 {deletingPlanId === plan.plan_id
@@ -1179,100 +1257,108 @@ function StudyPlanner() {
 
                         </div>
 
-                        {isExpanded && (
-                          <div className="border-t border-[#2a1b4d] bg-[#160b32]/40 p-5 sm:p-6">
+                        <div
+                          aria-hidden={!isExpanded}
+                          className={`grid transition-all duration-300 ease-in-out ${isExpanded
+                            ? 'visible grid-rows-[1fr] opacity-100'
+                            : 'invisible grid-rows-[0fr] opacity-0'
+                            }`}
+                        >
+                          <div className="min-h-0 overflow-hidden">
+                            <div className="border-t border-[#2a1b4d] bg-[#160b32]/40 p-5 sm:p-6">
 
-                            {savedPlanData?.sessions?.length > 0 ? (
-                              <>
+                              {savedPlanData?.sessions?.length > 0 ? (
+                                <>
 
-                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center justify-between gap-3">
 
-                                  <h4 className="text-lg font-semibold text-[#f3f0ff]">
-                                    Suggested Sessions
-                                  </h4>
+                                    <h4 className="text-lg font-semibold text-[#f3f0ff]">
+                                      Suggested Sessions
+                                    </h4>
 
-                                  <span className="rounded-full border border-[#2a1b4d] bg-[#120928]/50 px-3 py-1 text-xs text-[#898cc0]">
-                                    {savedPlanData.sessions.length}{' '}
-                                    sessions
-                                  </span>
+                                    <span className="rounded-full border border-[#2a1b4d] bg-[#120928]/50 px-3 py-1 text-xs text-[#898cc0]">
+                                      {savedPlanData.sessions.length}{' '}
+                                      sessions
+                                    </span>
 
-                                </div>
+                                  </div>
 
-                                <div className="mt-4 space-y-4">
+                                  <div className="mt-4 space-y-4">
 
-                                  {savedPlanData.sessions.map((session) => (
-                                    <div
-                                      key={`${plan.plan_id}-${session.id}`}
-                                      className="rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-5"
-                                    >
+                                    {savedPlanData.sessions.map((session) => (
+                                      <div
+                                        key={`${plan.plan_id}-${session.id}`}
+                                        className="rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-5"
+                                      >
 
-                                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-                                        <div>
+                                          <div>
 
-                                          <div className="flex flex-wrap items-center gap-2">
+                                            <div className="flex flex-wrap items-center gap-2">
 
-                                            <p className="font-semibold text-[#f3f0ff]">
-                                              {session.session}
-                                            </p>
+                                              <p className="font-semibold text-[#f3f0ff]">
+                                                {session.session}
+                                              </p>
 
-                                            {session.day && (
-                                              <span className="rounded-full bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-medium text-[#c9b4ff]">
-                                                {session.day}
-                                              </span>
+                                              {session.day && (
+                                                <span className="rounded-full bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-medium text-[#c9b4ff]">
+                                                  {session.day}
+                                                </span>
+                                              )}
+
+                                            </div>
+
+                                            {session.date && (
+                                              <p className="mt-2 text-xs text-[#727494]">
+                                                {new Date(
+                                                  `${session.date}T00:00:00`
+                                                ).toLocaleDateString()}
+                                              </p>
                                             )}
+
+                                            <p className="mt-3 text-sm leading-6 text-[#a6a8c7]">
+                                              {session.activity}
+                                            </p>
 
                                           </div>
 
-                                          {session.date && (
-                                            <p className="mt-2 text-xs text-[#727494]">
-                                              {new Date(
-                                                `${session.date}T00:00:00`
-                                              ).toLocaleDateString()}
-                                            </p>
-                                          )}
-
-                                          <p className="mt-3 text-sm leading-6 text-[#a6a8c7]">
-                                            {session.activity}
-                                          </p>
+                                          <span className="w-fit shrink-0 rounded-full border border-[#3a2860] bg-[#160b32] px-3 py-1.5 text-sm font-medium text-[#c9b4ff]">
+                                            {session.duration}
+                                          </span>
 
                                         </div>
 
-                                        <span className="w-fit shrink-0 rounded-full border border-[#3a2860] bg-[#160b32] px-3 py-1.5 text-sm font-medium text-[#c9b4ff]">
-                                          {session.duration}
-                                        </span>
-
                                       </div>
-
-                                    </div>
-                                  ))}
-
-                                </div>
-
-                                {savedPlanData.recommendation && (
-                                  <div className="mt-5 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
-
-                                    <h4 className="font-semibold text-[#d9c9ff]">
-                                      Study Recommendation
-                                    </h4>
-
-                                    <p className="mt-2 text-sm leading-6 text-[#b9acd5]">
-                                      {savedPlanData.recommendation}
-                                    </p>
+                                    ))}
 
                                   </div>
-                                )}
 
-                              </>
-                            ) : (
-                              <p className="text-sm leading-6 text-[#898cc0]">
-                                Detailed session information is not
-                                available for this saved plan.
-                              </p>
-                            )}
+                                  {savedPlanData.recommendation && (
+                                    <div className="mt-5 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
 
+                                      <h4 className="font-semibold text-[#d9c9ff]">
+                                        Study Recommendation
+                                      </h4>
+
+                                      <p className="mt-2 text-sm leading-6 text-[#b9acd5]">
+                                        {savedPlanData.recommendation}
+                                      </p>
+
+                                    </div>
+                                  )}
+
+                                </>
+                              ) : (
+                                <p className="text-sm leading-6 text-[#898cc0]">
+                                  Detailed session information is not
+                                  available for this saved plan.
+                                </p>
+                              )}
+
+                            </div>
                           </div>
-                        )}
+                        </div>
 
                       </div>
                     )

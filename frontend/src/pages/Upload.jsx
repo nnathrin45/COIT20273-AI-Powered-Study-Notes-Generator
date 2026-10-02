@@ -27,39 +27,58 @@ function Upload() {
   const MAX_FILE_SIZE = 15 * 1024 * 1024
   const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt']
 
-  const loadUploadedFiles = useCallback(async () => {
-    setIsLoadingFiles(true)
-    setFilesError('')
+  const loadUploadedFiles = useCallback(
+    async ({ minimumFeedbackMs = 0 } = {}) => {
+      const actionStartedAt = Date.now()
+      setIsLoadingFiles(true)
+      setFilesError('')
 
-    try {
-      const response = await getUploadedFiles()
+      try {
+        const response = await getUploadedFiles()
 
-      if (
-        !response.ok ||
-        response.data?.status !== 'success'
-      ) {
-        setFilesError(
-          response.data?.message ||
-          'Unable to load uploaded materials.'
+        if (
+          !response.ok ||
+          response.data?.status !== 'success'
+        ) {
+          setFilesError(
+            response.data?.message ||
+            'Unable to load uploaded materials.'
+          )
+
+          return
+        }
+
+        setUploadedFiles(response.data?.files || [])
+      } catch (loadError) {
+        console.error(
+          'Uploaded materials load error:',
+          loadError
         )
 
-        return
+        setFilesError(
+          'Unable to connect to the server while loading uploaded materials.'
+        )
+      } finally {
+        const elapsedTime =
+          Date.now() - actionStartedAt
+
+        const remainingFeedbackTime = Math.max(
+          0,
+          minimumFeedbackMs - elapsedTime
+        )
+
+        if (remainingFeedbackTime > 0) {
+          await new Promise((resolve) => {
+            window.setTimeout(
+              resolve,
+              remainingFeedbackTime
+            )
+          })
+        }
+
+        setIsLoadingFiles(false)
       }
-
-      setUploadedFiles(response.data?.files || [])
-    } catch (loadError) {
-      console.error(
-        'Uploaded materials load error:',
-        loadError
-      )
-
-      setFilesError(
-        'Unable to connect to the server while loading uploaded materials.'
-      )
-    } finally {
-      setIsLoadingFiles(false)
-    }
-  }, [])
+    }, [])
 
   useEffect(() => {
     loadUploadedFiles()
@@ -153,6 +172,8 @@ function Upload() {
       return
     }
 
+    const actionStartedAt = Date.now()
+
     setError('')
     setStatus('')
     setIsUploading(true)
@@ -223,15 +244,10 @@ function Upload() {
 
       const textLength = response.data?.text_length
 
-      if (typeof textLength === 'number') {
-        setStatus(
-          `${uploadedFileName} uploaded successfully. ${textLength.toLocaleString()} characters of readable text were extracted.`
-        )
-      } else {
-        setStatus(
-          `${uploadedFileName} uploaded successfully.`
-        )
-      }
+      const successMessage =
+        typeof textLength === 'number'
+          ? `${uploadedFileName} uploaded successfully. ${textLength.toLocaleString()} characters of readable text were extracted.`
+          : `${uploadedFileName} uploaded successfully.`
 
       setSelectedFile(null)
 
@@ -243,6 +259,27 @@ function Upload() {
       }
 
       await loadUploadedFiles()
+
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+
+      setIsUploading(false)
+      setStatus(successMessage)
+
     } catch (uploadError) {
       console.error('Upload error:', uploadError)
 
@@ -250,6 +287,23 @@ function Upload() {
         'Unable to connect to the server. Please check that the backend is running and try again.'
       )
     } finally {
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+
       setIsUploading(false)
     }
   }
@@ -262,6 +316,8 @@ function Upload() {
     if (!confirmed) {
       return
     }
+
+    const actionStartedAt = Date.now()
 
     setFilesError('')
     setFilesStatus('')
@@ -297,6 +353,18 @@ function Upload() {
           'Unable to delete the uploaded file.'
         )
         return
+      }
+
+      const elapsedTime = Date.now() - actionStartedAt
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, remainingFeedbackTime)
+        })
       }
 
       setUploadedFiles((currentFiles) =>
@@ -717,13 +785,16 @@ function Upload() {
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
-                loadUploadedFiles()
+
+                loadUploadedFiles({
+                  minimumFeedbackMs: 2000,
+                })
               }}
               onKeyDown={(event) =>
                 event.stopPropagation()
               }
               disabled={isLoadingFiles}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#19103a] px-4 py-2 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-w-[118px] items-center justify-center gap-2 rounded-lg border border-[#3a2860] bg-[#19103a] px-4 py-2 text-sm font-medium text-[#c9b4ff] transition-all duration-300 hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
             >
               <svg
                 aria-hidden="true"
@@ -733,8 +804,8 @@ function Upload() {
                 stroke="currentColor"
                 strokeWidth="1.8"
                 className={`h-4 w-4 ${isLoadingFiles
-                    ? 'animate-spin'
-                    : ''
+                  ? 'animate-spin'
+                  : ''
                   }`}
               >
                 <path
@@ -744,7 +815,9 @@ function Upload() {
                 />
               </svg>
 
-              Refresh
+              {isLoadingFiles
+                ? 'Refreshing...'
+                : 'Refresh'}
             </button>
 
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#a97cff]">
@@ -753,8 +826,8 @@ function Upload() {
                 fill="none"
                 aria-hidden="true"
                 className={`h-4 w-4 transition-transform duration-300 ${uploadedMaterialsOpen
-                    ? 'rotate-180'
-                    : ''
+                  ? 'rotate-180'
+                  : ''
                   }`}
               >
                 <path
@@ -897,8 +970,15 @@ function Upload() {
                       disabled={
                         deletingFileId === file.file_id
                       }
-                      className="self-start rounded-lg border border-red-400/25 bg-red-500/[0.05] px-4 py-2 text-sm font-medium text-red-300 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+                      className="inline-flex min-w-[104px] items-center justify-center gap-2 self-start rounded-lg border border-red-400/25 bg-red-500/[0.05] px-4 py-2 text-sm font-medium text-red-300 transition-all duration-300 hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none sm:self-auto"
                     >
+                      {deletingFileId === file.file_id && (
+                        <span
+                          aria-hidden="true"
+                          className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]"
+                        />
+                      )}
+
                       {deletingFileId === file.file_id
                         ? 'Deleting...'
                         : 'Delete'}
