@@ -89,6 +89,57 @@ export const resendLoginCode = async (
   )
 }
 
+export const requestPasswordReset = async (
+  email
+) => {
+  return apiRequest(
+    '/api/users/forgot-password',
+    {
+      method: 'POST',
+      requiresAuth: false,
+      body: {
+        email,
+      },
+    }
+  )
+}
+
+
+export const verifyPasswordResetCode = async (
+  email,
+  code
+) => {
+  return apiRequest(
+    '/api/users/verify-reset-code',
+    {
+      method: 'POST',
+      requiresAuth: false,
+      body: {
+        email,
+        code,
+      },
+    }
+  )
+}
+
+
+export const resetUserPassword = async (
+  resetToken,
+  newPassword
+) => {
+  return apiRequest(
+    '/api/users/reset-password',
+    {
+      method: 'POST',
+      requiresAuth: false,
+      body: {
+        reset_token: resetToken,
+        new_password: newPassword,
+      },
+    }
+  )
+}
+
 export const logoutUser = () => {
   removeAuthToken()
 }
