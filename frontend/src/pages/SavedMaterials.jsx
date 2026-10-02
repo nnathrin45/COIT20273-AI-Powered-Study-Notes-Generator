@@ -4,6 +4,7 @@ import {
   deleteAIOutput,
   getAIOutputs,
 } from '../services/aiService'
+import AnimatedSelect from '../components/AnimatedSelect'
 
 function SavedMaterials() {
   const [filter, setFilter] = useState('all')
@@ -180,6 +181,27 @@ function SavedMaterials() {
       return
     }
 
+    const actionStartedAt = Date.now()
+
+    const waitForMinimumFeedback = async () => {
+      const elapsedTime =
+        Date.now() - actionStartedAt
+
+      const remainingFeedbackTime = Math.max(
+        0,
+        2000 - elapsedTime
+      )
+
+      if (remainingFeedbackTime > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(
+            resolve,
+            remainingFeedbackTime
+          )
+        })
+      }
+    }
+
     setDeletingMaterialId(material.outputId)
     setActionError('')
     setActionSuccess('')
@@ -201,6 +223,8 @@ function SavedMaterials() {
           response.status === 404 ||
           response.data?.code === 'OUTPUT_NOT_FOUND'
         ) {
+          await waitForMinimumFeedback()
+          setDeletingMaterialId(null)
           setMaterials((currentMaterials) =>
             currentMaterials.filter(
               (currentMaterial) =>
@@ -231,6 +255,8 @@ function SavedMaterials() {
         return
       }
 
+      await waitForMinimumFeedback()
+      setDeletingMaterialId(null)
       setMaterials((currentMaterials) =>
         currentMaterials.filter(
           (currentMaterial) =>
@@ -259,6 +285,7 @@ function SavedMaterials() {
         'Unable to connect to the server. Please try again.'
       )
     } finally {
+      await waitForMinimumFeedback()
       setDeletingMaterialId(null)
     }
   }
@@ -530,7 +557,7 @@ function SavedMaterials() {
                   setSearch(event.target.value)
                 }
                 placeholder="Search by title or source document..."
-                className="w-full rounded-lg border border-[#3a2860] bg-[#120928] py-3 pl-11 pr-4 text-[#d9d4eb] outline-none transition placeholder:text-[#5f5b78] focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
+                className="w-full rounded-lg border border-[#3a2860] bg-[#120928] py-3 pl-11 pr-4 text-[#d9d4eb] outline-none transition-all duration-300 placeholder:text-[#5f5b78]"
               />
 
             </div>
@@ -546,34 +573,35 @@ function SavedMaterials() {
               Material Type
             </label>
 
-            <select
+            <AnimatedSelect
               id="saved-filter"
               value={filter}
-              onChange={(event) =>
-                setFilter(event.target.value)
-              }
-              className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
-            >
-              <option value="all">
-                All Materials
-              </option>
-
-              <option value="summary">
-                Summaries
-              </option>
-
-              <option value="flashcards">
-                Flashcards
-              </option>
-
-              <option value="quiz">
-                Quizzes
-              </option>
-
-              <option value="explanation">
-                Explanations
-              </option>
-            </select>
+              options={[
+                {
+                  value: 'all',
+                  label: 'All Materials',
+                },
+                {
+                  value: 'summary',
+                  label: 'Summaries',
+                },
+                {
+                  value: 'flashcards',
+                  label: 'Flashcards',
+                },
+                {
+                  value: 'quiz',
+                  label: 'Quizzes',
+                },
+                {
+                  value: 'explanation',
+                  label: 'Explanations',
+                },
+              ]}
+              onChange={(newValue) => {
+                setFilter(newValue)
+              }}
+            />
 
           </div>
 
@@ -720,11 +748,10 @@ function SavedMaterials() {
                     viewBox="0 0 20 20"
                     fill="none"
                     aria-hidden="true"
-                    className={`h-4 w-4 transition-transform duration-300 ${
-                      savedMaterialsOpen
-                        ? 'rotate-180'
-                        : ''
-                    }`}
+                    className={`h-4 w-4 transition-transform duration-300 ${savedMaterialsOpen
+                      ? 'rotate-180'
+                      : ''
+                      }`}
                   >
                     <path
                       d="M5 7.5L10 12.5L15 7.5"
@@ -743,11 +770,10 @@ function SavedMaterials() {
             <div
               id="saved-materials-list-content"
               aria-hidden={!savedMaterialsOpen}
-              className={`grid transition-all duration-300 ease-in-out ${
-                savedMaterialsOpen
-                  ? 'visible grid-rows-[1fr] opacity-100'
-                  : 'invisible grid-rows-[0fr] opacity-0'
-              }`}
+              className={`grid transition-all duration-300 ease-in-out ${savedMaterialsOpen
+                ? 'visible grid-rows-[1fr] opacity-100'
+                : 'invisible grid-rows-[0fr] opacity-0'
+                }`}
             >
               <div className="min-h-0 overflow-hidden">
                 <div className="border-t border-[#2a1b4d] p-5">
@@ -854,7 +880,7 @@ function SavedMaterials() {
                                         fill="none"
                                         stroke="currentColor"
                                         strokeWidth="2"
-                                        className={`h-4 w-4 transition-transform ${isExpanded
+                                        className={`h-4 w-4 transition-transform duration-300 ${isExpanded
                                           ? 'rotate-180'
                                           : ''
                                           }`}
@@ -876,11 +902,11 @@ function SavedMaterials() {
                                           material
                                         )
                                       }
-                                      className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                      className="inline-flex min-w-[104px] items-center justify-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-300 transition-all duration-300 hover:border-red-400/50 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
                                     >
 
                                       {isDeleting ? (
-                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-300/30 border-t-red-300" />
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]" />
                                       ) : (
                                         <svg
                                           aria-hidden="true"
@@ -912,86 +938,92 @@ function SavedMaterials() {
                               </div>
 
                               {/* Inline Expanded Material */}
-                              {isExpanded && (
-                                <div
-                                  id={contentId}
-                                  className="border-t border-[#2a1b4d] bg-[#120928]/20 p-5 sm:p-6"
-                                >
+                              <div
+                                id={contentId}
+                                aria-hidden={!isExpanded}
+                                className={`grid transition-all duration-300 ease-in-out ${isExpanded
+                                  ? 'visible grid-rows-[1fr] opacity-100'
+                                  : 'invisible grid-rows-[0fr] opacity-0'
+                                  }`}
+                              >
+                                <div className="min-h-0 overflow-hidden">
+                                  <div className="border-t border-[#2a1b4d] bg-[#120928]/20 p-5 sm:p-6">
 
-                                  <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
-                                    <div>
+                                      <div>
 
-                                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#a97cff]">
-                                        Saved Content
-                                      </p>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#a97cff]">
+                                          Saved Content
+                                        </p>
 
-                                      <h3 className="mt-1 text-lg font-semibold text-[#f3f0ff]">
-                                        {material.type}
-                                      </h3>
+                                        <h3 className="mt-1 text-lg font-semibold text-[#f3f0ff]">
+                                          {material.type}
+                                        </h3>
+
+                                      </div>
+
+                                      <span className="w-fit rounded-full border border-[#2a1b4d] bg-[#160b32] px-3 py-1 text-xs text-[#898cc0]">
+                                        {formatDate(
+                                          material.createdAt
+                                        )}
+                                      </span>
 
                                     </div>
 
-                                    <span className="w-fit rounded-full border border-[#2a1b4d] bg-[#160b32] px-3 py-1 text-xs text-[#898cc0]">
-                                      {formatDate(
-                                        material.createdAt
-                                      )}
-                                    </span>
+                                    {renderMaterialContent(
+                                      material
+                                    )}
 
-                                  </div>
+                                    {material.isAiGenerated && (
+                                      <div className="mt-5 rounded-xl border border-amber-400/20 bg-amber-500/10 p-5">
 
-                                  {renderMaterialContent(
-                                    material
-                                  )}
+                                        <div className="flex items-start gap-3">
 
-                                  {material.isAiGenerated && (
-                                    <div className="mt-5 rounded-xl border border-amber-400/20 bg-amber-500/10 p-5">
+                                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
 
-                                      <div className="flex items-start gap-3">
+                                            <svg
+                                              aria-hidden="true"
+                                              xmlns="http://www.w3.org/2000/svg"
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="1.8"
+                                              className="h-4 w-4"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
+                                              />
+                                            </svg>
 
-                                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
+                                          </div>
 
-                                          <svg
-                                            aria-hidden="true"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="1.8"
-                                            className="h-4 w-4"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
-                                            />
-                                          </svg>
+                                          <div>
 
-                                        </div>
+                                            <h4 className="font-semibold text-amber-200">
+                                              AI-Generated Content
+                                            </h4>
 
-                                        <div>
+                                            <p className="mt-1 text-sm leading-6 text-amber-200/80">
+                                              This content was generated
+                                              by AI and may contain errors
+                                              or omissions. Please check
+                                              it against your original
+                                              study material.
+                                            </p>
 
-                                          <h4 className="font-semibold text-amber-200">
-                                            AI-Generated Content
-                                          </h4>
-
-                                          <p className="mt-1 text-sm leading-6 text-amber-200/80">
-                                            This content was generated
-                                            by AI and may contain errors
-                                            or omissions. Please check
-                                            it against your original
-                                            study material.
-                                          </p>
+                                          </div>
 
                                         </div>
 
                                       </div>
+                                    )}
 
-                                    </div>
-                                  )}
-
+                                  </div>
                                 </div>
-                              )}
+                              </div>
 
                             </article>
                           )

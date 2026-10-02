@@ -119,3 +119,25 @@ input:autofill {
     animation: none;
   }
 }
+
+/* Consistent StudyA form-field interaction */
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
+textarea {
+  transition:
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not(:disabled):hover,
+textarea:not(:disabled):hover {
+  border-color: #5a3a88;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):focus,
+textarea:focus {
+  outline: none;
+  border-color: #7a44ff;
+  box-shadow:
+    0 0 0 2px rgba(122, 68, 255, 0.25),
+    0 0 20px rgba(122, 68, 255, 0.10);
+}

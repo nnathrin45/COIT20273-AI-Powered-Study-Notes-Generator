@@ -10,6 +10,8 @@ import {
   getProfilePicture,
   getUserProfile,
 } from '../services/profileService'
+import FirstLoginConsentModal from './FirstLoginConsentModal'
+import { getConsentStatus } from '../services/consentService'
 import studyaLogo from '../assets/studya-logo.png'
 
 const menuItems = [
@@ -161,17 +163,19 @@ function SidebarContent({
               to={item.path}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive
-                  ? 'bg-[#7a44ff]/15 text-[#a97cff]'
-                  : 'text-[#898cc0] hover:bg-white/[0.04] hover:text-[#c2c4e4]'
+                `group relative flex items-center gap-3 overflow-hidden rounded-lg px-4 py-3 text-sm font-medium transition-all duration-300 ${isActive
+                  ? 'bg-[#7a44ff]/15 text-[#b995ff] shadow-[inset_0_0_20px_rgba(122,68,255,0.05)] before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full before:bg-[#a97cff] before:shadow-[0_0_12px_rgba(169,124,255,0.65)]'
+                  : 'text-[#898cc0] hover:bg-white/[0.05] hover:text-[#d1cbea]'
                 }`
               }
             >
-              <MenuIcon>
-                {item.icon}
-              </MenuIcon>
+              <span className="flex shrink-0 transition-transform duration-300 group-hover:scale-110">
+                <MenuIcon>
+                  {item.icon}
+                </MenuIcon>
+              </span>
 
-              <span>
+              <span className="transition-transform duration-300 group-hover:translate-x-0.5">
                 {item.name}
               </span>
             </NavLink>
@@ -191,11 +195,62 @@ function AppLayout() {
   const [profileMenuOpen, setProfileMenuOpen] =
     useState(false)
 
+  const [
+    firstLoginConsentOpen,
+    setFirstLoginConsentOpen,
+  ] = useState(false)
+
   const profileMenuRef = useRef(null)
 
   const navigate = useNavigate()
 
   const location = useLocation()
+
+  useEffect(() => {
+    let active = true
+
+    const checkFirstLoginConsent = async () => {
+      try {
+        const response = await getConsentStatus()
+
+        if (!active || !response.ok) {
+          return
+        }
+
+        const currentConsent =
+          response.data?.consent ?? null
+
+        setFirstLoginConsentOpen(
+          currentConsent === null
+        )
+      } catch (consentError) {
+        console.error(
+          'First-login consent check error:',
+          consentError
+        )
+      }
+    }
+
+    checkFirstLoginConsent()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handleFirstLoginConsentResolved = (
+    status
+  ) => {
+    setFirstLoginConsentOpen(false)
+
+    window.dispatchEvent(
+      new CustomEvent('consent-updated', {
+        detail: {
+          status,
+        },
+      })
+    )
+  }
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -477,7 +532,10 @@ function AppLayout() {
                 onClick={() =>
                   setProfileMenuOpen((current) => !current)
                 }
-                className="group flex items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-[#7a44ff]/40"
+                className={`group flex items-center gap-3 rounded-xl border px-3 py-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#7a44ff]/40 ${profileMenuOpen
+                  ? 'border-[#7a44ff]/30 bg-[#7a44ff]/10 shadow-[0_0_20px_rgba(122,68,255,0.10)]'
+                  : 'border-transparent hover:border-[#7a44ff]/15 hover:bg-white/[0.04]'
+                  }`}
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
               >
@@ -498,7 +556,12 @@ function AppLayout() {
 
                 <div className="relative">
 
-                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-sm font-bold text-white shadow-[0_0_18px_rgba(122,68,255,0.3)]">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] text-sm font-bold text-white ring-2 transition-all duration-300 ${profileMenuOpen
+                      ? 'ring-[#a97cff]/50 shadow-[0_0_24px_rgba(122,68,255,0.45)]'
+                      : 'ring-transparent shadow-[0_0_18px_rgba(122,68,255,0.3)] group-hover:ring-[#a97cff]/30'
+                      }`}
+                  >
 
                     {headerProfilePicture ? (
                       <img
@@ -525,9 +588,9 @@ function AppLayout() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className={`hidden h-4 w-4 text-[#898cc0] transition-transform duration-200 sm:block ${profileMenuOpen
-                      ? 'rotate-180'
-                      : ''
+                  className={`hidden h-4 w-4 transition-all duration-300 sm:block ${profileMenuOpen
+                    ? 'rotate-180 text-[#a97cff]'
+                    : 'text-[#898cc0] group-hover:text-[#c2c4e4]'
                     }`}
                 >
                   <path
@@ -539,146 +602,149 @@ function AppLayout() {
               </button>
 
               {/* Dropdown */}
-              {profileMenuOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-xl border border-[#39245f] bg-[#160b32] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
-                >
+              <div
+                role="menu"
+                aria-hidden={!profileMenuOpen}
+                className={`absolute right-0 top-[calc(100%+10px)] z-50 w-64 origin-top-right overflow-hidden rounded-xl border border-[#39245f] bg-[#160b32] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition-all duration-300 ease-out ${profileMenuOpen
+                  ? 'visible translate-y-0 scale-100 opacity-100'
+                  : 'invisible pointer-events-none -translate-y-2 scale-95 opacity-0'
+                  }`}
+              >
 
-                  {/* User information */}
-                  <div className="border-b border-[#2a1b4d] px-3 py-3">
+                {/* User information */}
+                <div className="border-b border-[#2a1b4d] px-3 py-3">
 
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
 
-                      <div className="relative">
+                    <div className="relative">
 
-                        <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] font-bold text-white">
+                      <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7a44ff] to-[#d83dff] font-bold text-white">
 
-                          {headerProfilePicture ? (
-                            <img
-                              src={headerProfilePicture}
-                              alt={`${profileDisplayName} profile`}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            profileInitial
-                          )}
-
-                        </div>
-
-                        <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#160b32] bg-emerald-400" />
-
-                      </div>
-
-                      <div className="min-w-0">
-
-                        <p
-                          className="truncate text-sm font-semibold text-white"
-                          title={profileDisplayName}
-                        >
-                          {profileDisplayName}
-                        </p>
-
-                        <p className="text-xs text-[#898cc0]">
-                          Learning workspace
-                        </p>
+                        {headerProfilePicture ? (
+                          <img
+                            src={headerProfilePicture}
+                            alt={`${profileDisplayName} profile`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          profileInitial
+                        )}
 
                       </div>
+
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#160b32] bg-emerald-400" />
+
+                    </div>
+
+                    <div className="min-w-0">
+
+                      <p
+                        className="truncate text-sm font-semibold text-white"
+                        title={profileDisplayName}
+                      >
+                        {profileDisplayName}
+                      </p>
+
+                      <p className="text-xs text-[#898cc0]">
+                        Learning workspace
+                      </p>
 
                     </div>
 
                   </div>
 
-                  <div className="py-2">
+                </div>
 
-                    {/* Profile Settings */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileMenuOpen(false)
-                        navigate('/profile')
-                      }}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
+                <div className="py-2">
+
+                  {/* Profile Settings */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen(false)
+                      navigate('/profile')
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-5 w-5"
                     >
-                      <svg
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Zm7-3.5a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.5 1a8 8 0 0 0-2-1.2L14 3h-4l-.4 2.6a8 8 0 0 0-2 1.2l-2.5-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.5-1a8 8 0 0 0 2 1.2L10 21h4l.4-2.6a8 8 0 0 0 2-1.2l2.5 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z"
-                        />
-                      </svg>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Zm7-3.5a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.5 1a8 8 0 0 0-2-1.2L14 3h-4l-.4 2.6a8 8 0 0 0-2 1.2l-2.5-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.5-1a8 8 0 0 0 2 1.2L10 21h4l.4-2.6a8 8 0 0 0 2-1.2l2.5 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z"
+                      />
+                    </svg>
 
-                      Profile Settings
-                    </button>
+                    Profile Settings
+                  </button>
 
-                    {/* Privacy */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileMenuOpen(false)
-                        navigate('/privacy')
-                      }}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
+                  {/* Privacy */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen(false)
+                      navigate('/privacy')
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-[#7a44ff]/10 hover:text-[#a97cff]"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-5 w-5"
                     >
-                      <svg
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 3 5 6v5c0 4.5 2.8 8.3 7 10 4.2-1.7 7-5.5 7-10V6l-7-3Zm0 5v4m0 4h.01"
-                        />
-                      </svg>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 3 5 6v5c0 4.5 2.8 8.3 7 10 4.2-1.7 7-5.5 7-10V6l-7-3Zm0 5v4m0 4h.01"
+                      />
+                    </svg>
 
-                      Privacy & Consent
-                    </button>
-
-                  </div>
-
-                  <div className="border-t border-[#2a1b4d] pt-2">
-
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-red-500/10 hover:text-red-400"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"
-                        />
-                      </svg>
-
-                      Sign Out
-                    </button>
-
-                  </div>
+                    Privacy & Consent
+                  </button>
 
                 </div>
-              )}
+
+                <div className="border-t border-[#2a1b4d] pt-2">
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#c2c4e4] transition hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-5 w-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M10 5H5v14h5m4-4 4-3-4-3m4 3H9"
+                      />
+                    </svg>
+
+                    Sign Out
+                  </button>
+
+                </div>
+
+              </div>
+
             </div>
 
           </div>
@@ -700,6 +766,14 @@ function AppLayout() {
         </main>
 
       </div>
+
+      {firstLoginConsentOpen && (
+        <FirstLoginConsentModal
+          onResolved={
+            handleFirstLoginConsentResolved
+          }
+        />
+      )}
 
     </div>
   )

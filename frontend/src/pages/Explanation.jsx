@@ -3,6 +3,8 @@ import { Link } from 'react-router'
 import { getConsentStatus } from '../services/consentService'
 import { getUploadedFiles } from '../services/uploadedService'
 import { generateAIContent } from '../services/aiService'
+import AnimatedSelect from '../components/AnimatedSelect'
+import AIConsentRequired from '../components/AIConsentRequired'
 
 function Explanation() {
   const [documents, setDocuments] = useState([])
@@ -420,30 +422,21 @@ function Explanation() {
 
               </div>
             ) : (
-              <select
+              <AnimatedSelect
                 id="explanation-document"
                 value={selectedDocument}
-                onChange={(event) => {
-                  setSelectedDocument(event.target.value)
+                placeholder="Select a document"
+                options={documents.map((document) => ({
+                  value: document.file_id,
+                  label: document.file_name,
+                }))}
+                onChange={(newValue) => {
+                  setSelectedDocument(newValue)
                   clearGeneratedExplanation()
                   setError('')
                   setRetryableError(false)
                 }}
-                className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
-              >
-                <option value="">
-                  Select a document
-                </option>
-
-                {documents.map((document) => (
-                  <option
-                    key={document.file_id}
-                    value={document.file_id}
-                  >
-                    {document.file_name}
-                  </option>
-                ))}
-              </select>
+              />
             )}
 
           </div>
@@ -458,29 +451,30 @@ function Explanation() {
               Explanation Level
             </label>
 
-            <select
+            <AnimatedSelect
               id="explanation-level"
               value={explanationLevel}
-              onChange={(event) => {
-                setExplanationLevel(event.target.value)
+              options={[
+                {
+                  value: 'beginner',
+                  label: 'Beginner',
+                },
+                {
+                  value: 'intermediate',
+                  label: 'Intermediate',
+                },
+                {
+                  value: 'advanced',
+                  label: 'Advanced',
+                },
+              ]}
+              onChange={(newValue) => {
+                setExplanationLevel(newValue)
                 clearGeneratedExplanation()
                 setError('')
                 setRetryableError(false)
               }}
-              className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
-            >
-              <option value="beginner">
-                Beginner
-              </option>
-
-              <option value="intermediate">
-                Intermediate
-              </option>
-
-              <option value="advanced">
-                Advanced
-              </option>
-            </select>
+            />
 
             <p className="mt-2 text-xs leading-5 text-[#727494]">
               Choose how detailed and technical the explanation
@@ -551,69 +545,9 @@ function Explanation() {
 
             </div>
           ) : consentStatus !== 'granted' ? (
-            <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
-
-              <div className="flex items-start gap-3">
-
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
-
-                  <svg
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3 4 7v5c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V7l-8-4Z"
-                    />
-                  </svg>
-
-                </div>
-
-                <div>
-
-                  <p className="font-medium text-amber-200">
-                    AI processing consent required
-                  </p>
-
-                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
-                    Grant AI processing consent before generating AI study content.
-                  </p>
-
-                  <Link
-                    to="/privacy"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
-                  >
-                    Manage AI Consent
-
-                    <svg
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="h-4 w-4"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m9 18 6-6-6-6"
-                      />
-                    </svg>
-
-                  </Link>
-
-                </div>
-
-              </div>
-
-            </div>
+            <AIConsentRequired
+              featureName="AI-generated concept explanations"
+            />
           ) : null}
 
         </div>
@@ -670,8 +604,12 @@ function Explanation() {
                     type="button"
                     onClick={handleGenerateExplanation}
                     disabled={generationLoading}
-                    className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition duration-300 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d]"
                   >
+                    {generationLoading && (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]" />
+                    )}
+
                     {generationLoading
                       ? 'Retrying...'
                       : 'Retry'}
