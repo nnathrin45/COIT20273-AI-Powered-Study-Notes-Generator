@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 :root {
   font-family:
     Inter,
@@ -30,17 +31,56 @@
   --study-border-secondary: #595564;
 }
 
+
+/* =========================================================
+   LIGHT THEME
+   Dark theme above remains the original/default theme.
+   ========================================================= */
+
+:root[data-theme-mode='light'] {
+  color: #171717;
+  background: #eff1f5;
+
+  --study-primary: #7a44ff;
+  --study-primary-dark: #6634e8;
+  --study-secondary: #d83dff;
+
+  --study-heading: #171717;
+  --study-body: #65676b;
+  --study-muted: #6c757d;
+
+  --study-page: #eff1f5;
+  --study-surface: #ffffff;
+  --study-surface-secondary: #f7f7fb;
+  --study-message-surface: #f1edf9;
+
+  --study-border: #dfdfdf;
+  --study-border-secondary: #c9c9d3;
+}
+
+
 html {
   background: var(--study-page);
+
+  transition:
+    background-color 500ms ease,
+    color 100ms ease;
 }
+
 
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+
   background: var(--study-page);
   color: var(--study-heading);
+
+  transition:
+    background-color 500ms ease,
+    color 100ms ease;
 }
+
 
 button,
 a,
@@ -50,38 +90,84 @@ textarea {
   font: inherit;
 }
 
+
 ::selection {
   background: rgba(122, 68, 255, 0.35);
   color: #ffffff;
 }
+
 
 :focus-visible {
   outline: 3px solid rgba(122, 68, 255, 0.65);
   outline-offset: 2px;
 }
 
-/* Keep browser autofill consistent with the dark theme */
+
+/* =========================================================
+   BROWSER AUTOFILL - DARK THEME
+   ========================================================= */
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff !important;
-  -webkit-box-shadow: 0 0 0 1000px #120928 inset !important;
-  box-shadow: 0 0 0 1000px #120928 inset !important;
+
+  -webkit-box-shadow:
+    0 0 0 1000px #120928 inset !important;
+
+  box-shadow:
+    0 0 0 1000px #120928 inset !important;
+
   caret-color: #ffffff;
-  border-color: #2A1B4D;
+
+  border-color: #2a1b4d;
 }
 
-/* Standard autofill support */
+
 input:autofill {
   color: #ffffff;
   background-color: #120928;
 }
 
-/* Protected application page transition */
-.app-page-transition {
-  animation: app-page-enter 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+/* =========================================================
+   BROWSER AUTOFILL - LIGHT THEME
+   ========================================================= */
+
+[data-theme-mode='light'] input:-webkit-autofill,
+[data-theme-mode='light'] input:-webkit-autofill:hover,
+[data-theme-mode='light'] input:-webkit-autofill:focus,
+[data-theme-mode='light'] input:-webkit-autofill:active {
+  -webkit-text-fill-color: #171717 !important;
+
+  -webkit-box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  caret-color: #171717;
+
+  border-color: #dfdfdf;
 }
+
+
+[data-theme-mode='light'] input:autofill {
+  color: #171717;
+  background-color: #ffffff;
+}
+
+
+/* =========================================================
+   PROTECTED APPLICATION PAGE TRANSITION
+   ========================================================= */
+
+.app-page-transition {
+  animation:
+    app-page-enter 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 
 @keyframes app-page-enter {
   from {
@@ -95,22 +181,33 @@ input:autofill {
   }
 }
 
-/* Login / Register page transition */
+
+/* =========================================================
+   LOGIN / REGISTER PAGE TRANSITION
+   ========================================================= */
+
 .auth-page-transition {
-  animation: auth-page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation:
+    auth-page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
 
 @keyframes auth-page-enter {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.985);
+
+    transform:
+      translateY(20px) scale(0.985);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+
+    transform:
+      translateY(0) scale(1);
   }
 }
+
 
 @media (prefers-reduced-motion: reduce) {
 
@@ -120,24 +217,54 @@ input:autofill {
   }
 }
 
-/* Consistent StudyA form-field interaction */
+
+/* =========================================================
+   CONSISTENT STUDYA FORM-FIELD INTERACTION
+   ========================================================= */
+
 input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
 textarea {
   transition:
+    color 100ms ease,
+    background-color 500ms ease,
     border-color 300ms ease,
     box-shadow 300ms ease;
 }
+
 
 input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not(:disabled):hover,
 textarea:not(:disabled):hover {
   border-color: #5a3a88;
 }
 
+
 input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):focus,
 textarea:focus {
   outline: none;
+
   border-color: #7a44ff;
+
   box-shadow:
     0 0 0 2px rgba(122, 68, 255, 0.25),
     0 0 20px rgba(122, 68, 255, 0.10);
+}
+
+
+/* =========================================================
+   LIGHT THEME FORM INTERACTION
+   ========================================================= */
+
+[data-theme-mode='light'] input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not(:disabled):hover,
+[data-theme-mode='light'] textarea:not(:disabled):hover {
+  border-color: rgba(122, 68, 255, 0.55);
+}
+
+
+[data-theme-mode='light'] input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):focus,
+[data-theme-mode='light'] textarea:focus {
+  border-color: #7a44ff;
+
+  box-shadow:
+    0 0 0 2px rgba(122, 68, 255, 0.18),
+    0 0 20px rgba(122, 68, 255, 0.08);
 }

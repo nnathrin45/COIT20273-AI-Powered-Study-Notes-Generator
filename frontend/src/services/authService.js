@@ -4,6 +4,16 @@ import {
   setAuthToken,
 } from './api'
 
+
+const getCurrentTheme = () => {
+  return localStorage.getItem(
+    'studya-theme'
+  ) === 'light'
+    ? 'light'
+    : 'dark'
+}
+
+
 export const registerUser = async (
   fullName,
   email,
@@ -16,9 +26,11 @@ export const registerUser = async (
       full_name: fullName,
       email,
       password,
+      theme: getCurrentTheme(),
     },
   })
 }
+
 
 export const loginUser = async (
   email,
@@ -32,6 +44,7 @@ export const loginUser = async (
       body: {
         email,
         password,
+        theme: getCurrentTheme(),
       },
     }
   )
@@ -46,6 +59,7 @@ export const loginUser = async (
 
   return response
 }
+
 
 export const verifyLoginCode = async (
   challengeToken,
@@ -74,6 +88,7 @@ export const verifyLoginCode = async (
   return response
 }
 
+
 export const resendLoginCode = async (
   challengeToken
 ) => {
@@ -84,10 +99,12 @@ export const resendLoginCode = async (
       requiresAuth: false,
       body: {
         challenge_token: challengeToken,
+        theme: getCurrentTheme(),
       },
     }
   )
 }
+
 
 export const requestPasswordReset = async (
   email
@@ -140,25 +157,40 @@ export const resetUserPassword = async (
   )
 }
 
+
 export const logoutUser = () => {
   removeAuthToken()
 }
 
-export const verifyEmail = async (email, code) => {
-  return apiRequest('/api/users/verify-email', {
-    method: 'POST',
-    body: {
-      email,
-      code,
-    },
-  })
+
+export const verifyEmail = async (
+  email,
+  code
+) => {
+  return apiRequest(
+    '/api/users/verify-email',
+    {
+      method: 'POST',
+      body: {
+        email,
+        code,
+      },
+    }
+  )
 }
 
-export const resendVerificationCode = async (email) => {
-  return apiRequest('/api/users/resend-verification', {
-    method: 'POST',
-    body: {
-      email,
-    },
-  })
+
+export const resendVerificationCode = async (
+  email
+) => {
+  return apiRequest(
+    '/api/users/resend-verification',
+    {
+      method: 'POST',
+      body: {
+        email,
+        theme: getCurrentTheme(),
+      },
+    }
+  )
 }

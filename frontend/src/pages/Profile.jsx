@@ -75,6 +75,7 @@ function Profile() {
     setPasswordSuccess,
   ] = useState('')
 
+
   useEffect(() => {
     const loadProfile = async () => {
       setInitialLoading(true)
@@ -89,6 +90,7 @@ function Profile() {
             response.data?.message ||
             'Unable to retrieve your profile.'
           )
+
           return
         }
 
@@ -160,6 +162,7 @@ function Profile() {
       setError(
         'Full name is required.'
       )
+
       return
     }
 
@@ -167,6 +170,7 @@ function Profile() {
       setError(
         'Full name must not exceed 255 characters.'
       )
+
       return
     }
 
@@ -185,24 +189,30 @@ function Profile() {
           response.data?.message ||
           'Unable to update your profile.'
         )
+
         return
       }
 
       const elapsedTime =
         Date.now() - actionStartedAt
 
-      const remainingFeedbackTime = Math.max(
-        0,
-        2000 - elapsedTime
-      )
+      const remainingFeedbackTime =
+        Math.max(
+          0,
+          2000 - elapsedTime
+        )
 
-      if (remainingFeedbackTime > 0) {
-        await new Promise((resolve) => {
-          window.setTimeout(
-            resolve,
-            remainingFeedbackTime
-          )
-        })
+      if (
+        remainingFeedbackTime > 0
+      ) {
+        await new Promise(
+          (resolve) => {
+            window.setTimeout(
+              resolve,
+              remainingFeedbackTime
+            )
+          }
+        )
       }
 
       setSaving(false)
@@ -212,19 +222,21 @@ function Profile() {
 
       if (updatedUser) {
         setProfile(updatedUser)
+
         setFullName(
           updatedUser.full_name ?? ''
         )
       }
 
       window.dispatchEvent(
-        new Event('profile-updated')
+        new Event(
+          'profile-updated'
+        )
       )
 
       setProfileSuccess(
         'Profile updated successfully.'
       )
-
     } catch (updateError) {
       console.error(
         'Profile update error:',
@@ -238,18 +250,23 @@ function Profile() {
       const elapsedTime =
         Date.now() - actionStartedAt
 
-      const remainingFeedbackTime = Math.max(
-        0,
-        2000 - elapsedTime
-      )
+      const remainingFeedbackTime =
+        Math.max(
+          0,
+          2000 - elapsedTime
+        )
 
-      if (remainingFeedbackTime > 0) {
-        await new Promise((resolve) => {
-          window.setTimeout(
-            resolve,
-            remainingFeedbackTime
-          )
-        })
+      if (
+        remainingFeedbackTime > 0
+      ) {
+        await new Promise(
+          (resolve) => {
+            window.setTimeout(
+              resolve,
+              remainingFeedbackTime
+            )
+          }
+        )
       }
 
       setSaving(false)
@@ -284,6 +301,7 @@ function Profile() {
       )
 
       event.target.value = ''
+
       return
     }
 
@@ -296,10 +314,12 @@ function Profile() {
       )
 
       event.target.value = ''
+
       return
     }
 
-    const actionStartedAt = Date.now()
+    const actionStartedAt =
+      Date.now()
 
     setPhotoLoading(true)
 
@@ -309,13 +329,17 @@ function Profile() {
 
     try {
       uploadResponse =
-        await uploadProfilePicture(file)
+        await uploadProfilePicture(
+          file
+        )
 
       if (!uploadResponse.ok) {
         setError(
-          uploadResponse.data?.message ||
+          uploadResponse.data
+            ?.message ||
           'Unable to upload your profile picture.'
         )
+
         return
       }
 
@@ -334,26 +358,37 @@ function Profile() {
       )
     } finally {
       const elapsedTime =
-        Date.now() - actionStartedAt
+        Date.now() -
+        actionStartedAt
 
-      const remainingFeedbackTime = Math.max(
-        0,
-        2000 - elapsedTime
-      )
+      const remainingFeedbackTime =
+        Math.max(
+          0,
+          2000 -
+            elapsedTime
+        )
 
-      if (remainingFeedbackTime > 0) {
-        await new Promise((resolve) => {
-          window.setTimeout(
-            resolve,
-            remainingFeedbackTime
-          )
-        })
+      if (
+        remainingFeedbackTime >
+        0
+      ) {
+        await new Promise(
+          (resolve) => {
+            window.setTimeout(
+              resolve,
+              remainingFeedbackTime
+            )
+          }
+        )
       }
 
       setPhotoLoading(false)
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+      if (
+        fileInputRef.current
+      ) {
+        fileInputRef.current.value =
+          ''
       }
     }
 
@@ -365,11 +400,17 @@ function Profile() {
       Give the browser time to visibly render
       the button back to its normal state first.
     */
-    await new Promise((resolve) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(resolve)
-      })
-    })
+    await new Promise(
+      (resolve) => {
+        window.requestAnimationFrame(
+          () => {
+            window.requestAnimationFrame(
+              resolve
+            )
+          }
+        )
+      }
+    )
 
     if (
       pictureResponse?.ok &&
@@ -382,15 +423,21 @@ function Profile() {
       )
     }
 
-    setProfile((current) => ({
-      ...current,
-      profile_picture:
-        uploadResponse.data
-          ?.profile_picture ?? null,
-    }))
+    setProfile(
+      (current) => ({
+        ...current,
+
+        profile_picture:
+          uploadResponse.data
+            ?.profile_picture ??
+          null,
+      })
+    )
 
     window.dispatchEvent(
-      new Event('profile-updated')
+      new Event(
+        'profile-updated'
+      )
     )
 
     setSuccess(
@@ -399,214 +446,271 @@ function Profile() {
   }
 
 
-  const handleRemovePhoto = async () => {
-    const actionStartedAt = Date.now()
+  const handleRemovePhoto =
+    async () => {
+      const actionStartedAt =
+        Date.now()
 
-    setError('')
-    setSuccess('')
-    setRemovingPhoto(true)
+      setError('')
+      setSuccess('')
+      setRemovingPhoto(true)
 
-    let removeSucceeded = false
-    let removeErrorMessage = ''
+      let removeSucceeded = false
 
-    try {
-      const response =
-        await deleteProfilePicture()
+      let removeErrorMessage = ''
 
-      if (!response.ok) {
+      try {
+        const response =
+          await deleteProfilePicture()
+
+        if (!response.ok) {
+          removeErrorMessage =
+            response.data?.message ||
+            'Unable to remove your profile picture.'
+        } else {
+          removeSucceeded = true
+        }
+      } catch (deleteError) {
+        console.error(
+          'Profile picture delete error:',
+          deleteError
+        )
+
         removeErrorMessage =
-          response.data?.message ||
-          'Unable to remove your profile picture.'
-      } else {
-        removeSucceeded = true
-      }
-    } catch (deleteError) {
-      console.error(
-        'Profile picture delete error:',
-        deleteError
-      )
+          'Unable to connect to the server to remove your profile picture.'
+      } finally {
+        const elapsedTime =
+          Date.now() -
+          actionStartedAt
 
-      removeErrorMessage =
-        'Unable to connect to the server to remove your profile picture.'
-    } finally {
-      const elapsedTime =
-        Date.now() - actionStartedAt
-
-      const remainingFeedbackTime = Math.max(
-        0,
-        2000 - elapsedTime
-      )
-
-      if (remainingFeedbackTime > 0) {
-        await new Promise((resolve) => {
-          window.setTimeout(
-            resolve,
-            remainingFeedbackTime
+        const remainingFeedbackTime =
+          Math.max(
+            0,
+            2000 -
+              elapsedTime
           )
+
+        if (
+          remainingFeedbackTime >
+          0
+        ) {
+          await new Promise(
+            (resolve) => {
+              window.setTimeout(
+                resolve,
+                remainingFeedbackTime
+              )
+            }
+          )
+        }
+
+        setRemovingPhoto(false)
+      }
+
+      /*
+        Allow the normal button state to render
+        before showing the result.
+      */
+      await new Promise(
+        (resolve) => {
+          window.requestAnimationFrame(
+            () => {
+              window.requestAnimationFrame(
+                resolve
+              )
+            }
+          )
+        }
+      )
+
+      if (!removeSucceeded) {
+        if (
+          removeErrorMessage
+        ) {
+          setError(
+            removeErrorMessage
+          )
+        }
+
+        return
+      }
+
+      setPictureUrl(null)
+
+      setProfile(
+        (current) => ({
+          ...current,
+          profile_picture: null,
         })
-      }
-
-      setRemovingPhoto(false)
-    }
-
-    /*
-      Allow the normal button state to render
-      before showing the result.
-    */
-    await new Promise((resolve) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(resolve)
-      })
-    })
-
-    if (!removeSucceeded) {
-      if (removeErrorMessage) {
-        setError(removeErrorMessage)
-      }
-
-      return
-    }
-
-    setPictureUrl(null)
-
-    setProfile((current) => ({
-      ...current,
-      profile_picture: null,
-    }))
-
-    window.dispatchEvent(
-      new Event('profile-updated')
-    )
-
-    setSuccess(
-      'Profile picture removed successfully.'
-    )
-  }
-
-  const handlePasswordChange = async (
-    event
-  ) => {
-    event.preventDefault()
-
-    setPasswordError('')
-    setPasswordSuccess('')
-
-    if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmNewPassword
-    ) {
-      setPasswordError(
-        'Please complete all password fields.'
       )
-      return
-    }
 
-    if (newPassword.length < 8) {
-      setPasswordError(
-        'New password must be at least 8 characters long.'
-      )
-      return
-    }
-
-    if (
-      newPassword !==
-      confirmNewPassword
-    ) {
-      setPasswordError(
-        'New password and confirmation do not match.'
-      )
-      return
-    }
-
-    if (
-      currentPassword ===
-      newPassword
-    ) {
-      setPasswordError(
-        'New password must be different from your current password.'
-      )
-      return
-    }
-
-    const actionStartedAt = Date.now()
-
-    setPasswordLoading(true)
-
-    let passwordChangeSucceeded = false
-    let passwordChangeErrorMessage = ''
-
-    try {
-      const response =
-        await changeUserPassword(
-          currentPassword,
-          newPassword
+      window.dispatchEvent(
+        new Event(
+          'profile-updated'
         )
-
-      if (!response.ok) {
-        passwordChangeErrorMessage =
-          response.data?.message ||
-          'Unable to change your password.'
-      } else {
-        passwordChangeSucceeded = true
-      }
-    } catch (error) {
-      console.error(
-        'Password change error:',
-        error
       )
 
-      passwordChangeErrorMessage =
-        'Unable to connect to the server to change your password.'
-    } finally {
-      const elapsedTime =
-        Date.now() - actionStartedAt
-
-      const remainingFeedbackTime = Math.max(
-        0,
-        2000 - elapsedTime
+      setSuccess(
+        'Profile picture removed successfully.'
       )
-
-      if (remainingFeedbackTime > 0) {
-        await new Promise((resolve) => {
-          window.setTimeout(
-            resolve,
-            remainingFeedbackTime
-          )
-        })
-      }
-
-      setPasswordLoading(false)
     }
 
-    /*
-      Let the normal button state render
-      before showing the result.
-    */
-    await new Promise((resolve) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(resolve)
-      })
-    })
 
-    if (!passwordChangeSucceeded) {
-      if (passwordChangeErrorMessage) {
+  const handlePasswordChange =
+    async (event) => {
+      event.preventDefault()
+
+      setPasswordError('')
+      setPasswordSuccess('')
+
+      if (
+        !currentPassword ||
+        !newPassword ||
+        !confirmNewPassword
+      ) {
         setPasswordError(
-          passwordChangeErrorMessage
+          'Please complete all password fields.'
+        )
+
+        return
+      }
+
+      if (
+        newPassword.length < 8
+      ) {
+        setPasswordError(
+          'New password must be at least 8 characters long.'
+        )
+
+        return
+      }
+
+      if (
+        newPassword !==
+        confirmNewPassword
+      ) {
+        setPasswordError(
+          'New password and confirmation do not match.'
+        )
+
+        return
+      }
+
+      if (
+        currentPassword ===
+        newPassword
+      ) {
+        setPasswordError(
+          'New password must be different from your current password.'
+        )
+
+        return
+      }
+
+      const actionStartedAt =
+        Date.now()
+
+      setPasswordLoading(true)
+
+      let passwordChangeSucceeded =
+        false
+
+      let passwordChangeErrorMessage =
+        ''
+
+      try {
+        const response =
+          await changeUserPassword(
+            currentPassword,
+            newPassword
+          )
+
+        if (!response.ok) {
+          passwordChangeErrorMessage =
+            response.data?.message ||
+            'Unable to change your password.'
+        } else {
+          passwordChangeSucceeded =
+            true
+        }
+      } catch (error) {
+        console.error(
+          'Password change error:',
+          error
+        )
+
+        passwordChangeErrorMessage =
+          'Unable to connect to the server to change your password.'
+      } finally {
+        const elapsedTime =
+          Date.now() -
+          actionStartedAt
+
+        const remainingFeedbackTime =
+          Math.max(
+            0,
+            2000 -
+              elapsedTime
+          )
+
+        if (
+          remainingFeedbackTime >
+          0
+        ) {
+          await new Promise(
+            (resolve) => {
+              window.setTimeout(
+                resolve,
+                remainingFeedbackTime
+              )
+            }
+          )
+        }
+
+        setPasswordLoading(
+          false
         )
       }
 
-      return
+      /*
+        Let the normal button state render
+        before showing the result.
+      */
+      await new Promise(
+        (resolve) => {
+          window.requestAnimationFrame(
+            () => {
+              window.requestAnimationFrame(
+                resolve
+              )
+            }
+          )
+        }
+      )
+
+      if (
+        !passwordChangeSucceeded
+      ) {
+        if (
+          passwordChangeErrorMessage
+        ) {
+          setPasswordError(
+            passwordChangeErrorMessage
+          )
+        }
+
+        return
+      }
+
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmNewPassword('')
+
+      setPasswordSuccess(
+        'Password changed successfully.'
+      )
     }
 
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmNewPassword('')
-
-    setPasswordSuccess(
-      'Password changed successfully.'
-    )
-  }
 
   const profileInitial =
     profile?.full_name
@@ -615,9 +719,263 @@ function Profile() {
       ?.toUpperCase() || 'S'
 
 
+  const profileThemeStyles = `
+    .profile-theme h1,
+    .profile-theme h2,
+    .profile-theme p,
+    .profile-theme label,
+    .profile-theme span {
+      transition:
+        color 100ms ease;
+    }
+
+    .profile-theme
+    [class~="bg-[#160b32]"],
+    .profile-theme
+    [class~="bg-[#120928]"],
+    .profile-theme
+    [class~="bg-[#191426]"] {
+      transition:
+        background-color 500ms ease,
+        border-color 500ms ease,
+        box-shadow 300ms ease;
+    }
+
+    .profile-theme input {
+      transition:
+        color 100ms ease,
+        background-color 500ms ease,
+        border-color 300ms ease,
+        box-shadow 300ms ease;
+    }
+
+
+    /*
+     * Main surfaces
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="bg-[#160b32]"] {
+      background-color:
+        #ffffff !important;
+    }
+
+
+    /*
+     * Editable inputs
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="bg-[#120928]"] {
+      background-color:
+        #ffffff !important;
+    }
+
+
+    /*
+     * Read-only information
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="bg-[#191426]"] {
+      background-color:
+        #f7f7fb !important;
+    }
+
+
+    /*
+     * Borders
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="border-[#2a1b4d]"] {
+      border-color:
+        #dfdfdf !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="border-[#160b32]"] {
+      border-color:
+        #ffffff !important;
+    }
+
+
+    /*
+     * Typography
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-[#f3f0ff]"] {
+      color:
+        #171717 !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-[#898cc0]"] {
+      color:
+        #65676b !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-[#727494]"] {
+      color:
+        #7a7575 !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-[#c9b4ff]"] {
+      color:
+        #6f42c1 !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-[#a97cff]"] {
+      color:
+        #7a44ff !important;
+    }
+
+
+    /*
+     * Feedback messages
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-red-300"] {
+      color:
+        #b91c1c !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    [class~="text-emerald-300"] {
+      color:
+        #047857 !important;
+    }
+
+
+    /*
+     * Active form fields
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    input:not(
+      [type='file']
+    ):not(
+      [readonly]
+    ) {
+      background-color:
+        #ffffff !important;
+
+      border-color:
+        #d7d3df !important;
+
+      color:
+        #2b2b33 !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    input:not(
+      [type='file']
+    ):not(
+      [readonly]
+    )::placeholder {
+      color:
+        #8a8793 !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    input:not(
+      [type='file']
+    ):not(
+      [readonly]
+    ):hover {
+      border-color:
+        rgba(
+          122,
+          68,
+          255,
+          0.55
+        ) !important;
+    }
+
+    [data-theme-mode='light']
+    .profile-theme
+    input:not(
+      [type='file']
+    ):not(
+      [readonly]
+    ):focus {
+      border-color:
+        #7a44ff !important;
+
+      box-shadow:
+        0 0 0 2px
+        rgba(
+          122,
+          68,
+          255,
+          0.18
+        ) !important;
+    }
+
+
+    /*
+     * Read-only email
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    input[readonly] {
+      background-color:
+        #f7f7fb !important;
+
+      border-color:
+        #dfdfdf !important;
+
+      color:
+        #65676b !important;
+    }
+
+
+    /*
+     * Disabled button states
+     */
+    [data-theme-mode='light']
+    .profile-theme
+    button:disabled {
+      background-image:
+        none !important;
+
+      background-color:
+        #e6e3eb !important;
+
+      border-color:
+        #dfdfdf !important;
+
+      color:
+        #9a96a6 !important;
+
+      box-shadow:
+        none !important;
+
+      transform:
+        none !important;
+    }
+  `
+
+
   if (initialLoading) {
     return (
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="profile-theme mx-auto w-full max-w-4xl">
+        <style>
+          {profileThemeStyles}
+        </style>
 
         <div
           className="flex items-center gap-3 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6"
@@ -629,18 +987,20 @@ function Profile() {
             Loading your profile...
           </p>
         </div>
-
       </div>
     )
   }
 
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="profile-theme mx-auto w-full max-w-4xl">
+      <style>
+        {profileThemeStyles}
+      </style>
+
 
       {/* Page Header */}
       <div className="mb-8">
-
         <p className="mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
           Account
         </p>
@@ -653,7 +1013,6 @@ function Profile() {
           Manage your personal information and
           profile picture.
         </p>
-
       </div>
 
 
@@ -669,6 +1028,7 @@ function Profile() {
         </div>
       )}
 
+
       {success && (
         <div
           className="mb-5 rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4"
@@ -683,9 +1043,7 @@ function Profile() {
 
       {/* Profile Photo */}
       <section className="mb-6 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6">
-
         <div className="mb-6">
-
           <h2 className="text-lg font-semibold text-[#f3f0ff]">
             Profile Photo
           </h2>
@@ -694,16 +1052,13 @@ function Profile() {
             Choose a photo that will appear
             with your account.
           </p>
-
         </div>
 
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
 
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           {/* Avatar */}
           <div className="relative">
-
             <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-2 border-[#7a44ff]/40 bg-gradient-to-br from-[#7a44ff] to-[#d83dff] shadow-[0_10px_30px_rgba(122,68,255,0.2)]">
-
               {pictureUrl ? (
                 <img
                   src={pictureUrl}
@@ -715,19 +1070,15 @@ function Profile() {
                   {profileInitial}
                 </span>
               )}
-
             </div>
 
             <div className="absolute bottom-1 right-1 h-5 w-5 rounded-full border-4 border-[#160b32] bg-emerald-400" />
-
           </div>
 
 
           {/* Photo Actions */}
           <div>
-
             <div className="flex flex-wrap gap-3">
-
               <input
                 ref={fileInputRef}
                 type="file"
@@ -738,9 +1089,12 @@ function Profile() {
                 className="hidden"
               />
 
+
               <button
                 type="button"
-                disabled={photoLoading}
+                disabled={
+                  photoLoading
+                }
                 onClick={() =>
                   fileInputRef.current?.click()
                 }
@@ -762,13 +1116,17 @@ function Profile() {
                     : 'Upload Photo'}
               </button>
 
+
               {pictureUrl && (
                 <button
                   type="button"
                   disabled={
-                    photoLoading || removingPhoto
+                    photoLoading ||
+                    removingPhoto
                   }
-                  onClick={handleRemovePhoto}
+                  onClick={
+                    handleRemovePhoto
+                  }
                   className="inline-flex min-w-[130px] items-center justify-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 transition-all duration-300 hover:border-red-400/50 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
                 >
                   {removingPhoto && (
@@ -783,26 +1141,21 @@ function Profile() {
                     : 'Remove Photo'}
                 </button>
               )}
-
             </div>
+
 
             <p className="mt-3 text-xs leading-5 text-[#727494]">
               JPG, PNG or WebP. Maximum file
               size 2 MB.
             </p>
-
           </div>
-
         </div>
-
       </section>
 
 
       {/* Account Information */}
       <section className="mb-6 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6">
-
         <div className="mb-6">
-
           <h2 className="text-lg font-semibold text-[#f3f0ff]">
             Account Information
           </h2>
@@ -811,6 +1164,7 @@ function Profile() {
             Update the name associated with
             your account.
           </p>
+
 
           {profileSuccess && (
             <div
@@ -822,17 +1176,17 @@ function Profile() {
               </p>
             </div>
           )}
-
         </div>
 
+
         <form
-          onSubmit={handleSaveProfile}
+          onSubmit={
+            handleSaveProfile
+          }
           className="space-y-5"
         >
-
           {/* Full Name */}
           <div>
-
             <label
               htmlFor="profile-full-name"
               className="mb-2 block text-sm font-medium text-[#c9b4ff]"
@@ -853,13 +1207,11 @@ function Profile() {
               className="w-full rounded-lg border border-[#2a1b4d] bg-[#120928] px-4 py-3 text-sm text-white outline-none transition placeholder:text-[#5f6285] focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/20"
               placeholder="Enter your full name"
             />
-
           </div>
 
 
           {/* Email */}
           <div>
-
             <label
               htmlFor="profile-email"
               className="mb-2 block text-sm font-medium text-[#c9b4ff]"
@@ -881,14 +1233,12 @@ function Profile() {
               Your email address cannot be
               changed from Profile Settings.
             </p>
-
           </div>
 
 
           {/* Member Since */}
           {profile?.created_at && (
             <div>
-
               <p className="mb-2 text-sm font-medium text-[#c9b4ff]">
                 Member Since
               </p>
@@ -905,14 +1255,12 @@ function Profile() {
                   }
                 )}
               </div>
-
             </div>
           )}
 
 
           {/* Save */}
           <div className="flex justify-end pt-2">
-
             <button
               type="submit"
               disabled={saving}
@@ -929,19 +1277,14 @@ function Profile() {
                 ? 'Saving...'
                 : 'Save Changes'}
             </button>
-
           </div>
-
         </form>
-
       </section>
 
 
       {/* Account Security */}
       <section className="rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6">
-
         <div className="mb-6">
-
           <h2 className="text-lg font-semibold text-[#f3f0ff]">
             Account Security
           </h2>
@@ -949,8 +1292,8 @@ function Profile() {
           <p className="mt-1 text-sm text-[#898cc0]">
             Change your account password securely.
           </p>
-
         </div>
+
 
         {passwordError && (
           <div
@@ -963,6 +1306,7 @@ function Profile() {
           </div>
         )}
 
+
         {passwordSuccess && (
           <div
             className="mb-5 rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-4"
@@ -974,11 +1318,13 @@ function Profile() {
           </div>
         )}
 
+
         <form
-          onSubmit={handlePasswordChange}
+          onSubmit={
+            handlePasswordChange
+          }
           className="space-y-5"
         >
-
           <div>
             <label
               htmlFor="current-password"
@@ -990,7 +1336,9 @@ function Profile() {
             <input
               id="current-password"
               type="password"
-              value={currentPassword}
+              value={
+                currentPassword
+              }
               onChange={(event) =>
                 setCurrentPassword(
                   event.target.value
@@ -1001,6 +1349,7 @@ function Profile() {
               placeholder="Enter your current password"
             />
           </div>
+
 
           <div>
             <label
@@ -1013,7 +1362,9 @@ function Profile() {
             <input
               id="new-password"
               type="password"
-              value={newPassword}
+              value={
+                newPassword
+              }
               onChange={(event) =>
                 setNewPassword(
                   event.target.value
@@ -1029,6 +1380,7 @@ function Profile() {
             </p>
           </div>
 
+
           <div>
             <label
               htmlFor="confirm-new-password"
@@ -1040,7 +1392,9 @@ function Profile() {
             <input
               id="confirm-new-password"
               type="password"
-              value={confirmNewPassword}
+              value={
+                confirmNewPassword
+              }
               onChange={(event) =>
                 setConfirmNewPassword(
                   event.target.value
@@ -1052,11 +1406,13 @@ function Profile() {
             />
           </div>
 
-          <div className="flex justify-end pt-2">
 
+          <div className="flex justify-end pt-2">
             <button
               type="submit"
-              disabled={passwordLoading}
+              disabled={
+                passwordLoading
+              }
               className="inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#d83dff] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
             >
               {passwordLoading && (
@@ -1070,15 +1426,12 @@ function Profile() {
                 ? 'Changing...'
                 : 'Change Password'}
             </button>
-
           </div>
-
         </form>
-
       </section>
-
     </div>
   )
 }
+
 
 export default Profile

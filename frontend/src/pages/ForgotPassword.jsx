@@ -8,7 +8,8 @@ import {
   useNavigate,
 } from 'react-router'
 
-import studyaLogo from '../assets/studya-logo.png'
+import StudyALogo from '../components/StudyALogo'
+import ThemeToggle from '../components/ThemeToggle'
 
 import {
   requestPasswordReset,
@@ -200,7 +201,7 @@ function ForgotPassword() {
     if (
       !response?.ok ||
       response.data?.status !==
-        'success'
+      'success'
     ) {
       if (
         response?.data?.code ===
@@ -209,14 +210,14 @@ function ForgotPassword() {
         setResendSeconds(
           Number(
             response.data?.retry_after ||
-              60
+            60
           )
         )
       }
 
       setError(
         response?.data?.message ||
-          'Unable to request a password reset code.'
+        'Unable to request a password reset code.'
       )
 
       return
@@ -292,20 +293,20 @@ function ForgotPassword() {
     if (
       !response?.ok ||
       response.data?.status !==
-        'success'
+      'success'
     ) {
       if (
         response?.data?.code ===
-          'PASSWORD_RESET_CODE_EXPIRED' ||
+        'PASSWORD_RESET_CODE_EXPIRED' ||
         response?.data?.code ===
-          'PASSWORD_RESET_ATTEMPTS_EXCEEDED'
+        'PASSWORD_RESET_ATTEMPTS_EXCEEDED'
       ) {
         setResendSeconds(0)
       }
 
       setError(
         response?.data?.message ||
-          'Unable to verify the reset code.'
+        'Unable to verify the reset code.'
       )
 
       return
@@ -379,7 +380,7 @@ function ForgotPassword() {
     if (
       !response?.ok ||
       response.data?.status !==
-        'success'
+      'success'
     ) {
       if (
         response?.data?.code ===
@@ -388,14 +389,14 @@ function ForgotPassword() {
         setResendSeconds(
           Number(
             response.data?.retry_after ||
-              60
+            60
           )
         )
       }
 
       setError(
         response?.data?.message ||
-          'Unable to send another reset code.'
+        'Unable to send another reset code.'
       )
 
       return
@@ -490,11 +491,11 @@ function ForgotPassword() {
     if (
       !response?.ok ||
       response.data?.status !==
-        'success'
+      'success'
     ) {
       setError(
         response?.data?.message ||
-          'Unable to reset your password.'
+        'Unable to reset your password.'
       )
 
       return
@@ -535,32 +536,439 @@ function ForgotPassword() {
 
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#120928] px-4 py-10">
+    <main className="forgot-password-theme forgot-password-page relative flex min-h-screen items-center justify-center overflow-hidden bg-[#120928] px-4 py-10">
+      <style>
+        {`
+          /*
+           * Forgot Password theme timing
+           *
+           * Text       = 100ms
+           * Surfaces   = 500ms
+           * Hover      = 300ms
+           */
+
+          .forgot-password-page {
+            transition:
+              background-color 500ms ease;
+          }
+
+          .forgot-password-theme h1,
+          .forgot-password-theme p,
+          .forgot-password-theme label,
+          .forgot-password-theme span,
+          .forgot-password-theme a {
+            transition:
+              color 100ms ease;
+          }
+
+          .forgot-password-card,
+          .forgot-password-panel {
+            transition:
+              background-color 500ms ease,
+              border-color 500ms ease,
+              box-shadow 500ms ease;
+          }
+
+          .forgot-password-input {
+            transition:
+              color 100ms ease,
+              background-color 500ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease,
+              opacity 300ms ease;
+          }
+
+          .forgot-password-interactive {
+            transition:
+              color 100ms ease,
+              background-color 300ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease,
+              transform 300ms ease,
+              opacity 300ms ease;
+          }
+
+
+          /*
+           * Page
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-page {
+            background-color:
+              #eff1f5 !important;
+          }
+
+
+          /*
+           * Background glows
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-glow-primary {
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.10
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-glow-secondary {
+            background-color:
+              rgba(
+                216,
+                61,
+                255,
+                0.07
+              ) !important;
+          }
+
+
+          /*
+           * Typography
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-heading {
+            color:
+              #171717 !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-body {
+            color:
+              #65676b !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-muted {
+            color:
+              #7a7575 !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-label {
+            color:
+              #45424d !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-accent {
+            color:
+              #7a44ff !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-link {
+            color:
+              #7a44ff !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-link:hover {
+            color:
+              #6634e8 !important;
+          }
+
+
+          /*
+           * Main card
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-card {
+            background-color:
+              rgba(
+                255,
+                255,
+                255,
+                0.97
+              ) !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            box-shadow:
+              0 24px 70px
+              rgba(
+                50,
+                39,
+                75,
+                0.10
+              ) !important;
+          }
+
+
+          /*
+           * Email information panel
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-email-panel {
+            background-color:
+              #f7f7fb !important;
+
+            border-color:
+              #dfdfdf !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-email {
+            color:
+              #45424d !important;
+          }
+
+
+          /*
+           * Inputs
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-input {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #d7d3df !important;
+
+            color:
+              #2b2b33 !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-input::placeholder {
+            color:
+              #8a8793 !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-input:hover:not(:disabled) {
+            border-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.55
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-input:focus {
+            border-color:
+              #7a44ff !important;
+
+            box-shadow:
+              0 0 0 2px
+              rgba(
+                122,
+                68,
+                255,
+                0.18
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-input:disabled {
+            background-color:
+              #f1eff4 !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            color:
+              #9a96a6 !important;
+
+            opacity:
+              1 !important;
+          }
+
+
+          /*
+           * Errors
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-error {
+            background-color:
+              #fff7f7 !important;
+
+            border-color:
+              #fecaca !important;
+
+            color:
+              #b91c1c !important;
+          }
+
+
+          /*
+           * Success / resend states
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-success {
+            background-color:
+              #dcfce7 !important;
+
+            border-color:
+              #86efac !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-success-text {
+            color:
+              #166534 !important;
+          }
+
+
+          /*
+           * Primary disabled buttons
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-primary:disabled {
+            background-image:
+              none !important;
+
+            background-color:
+              #e6e3eb !important;
+
+            color:
+              #9a96a6 !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            box-shadow:
+              none !important;
+
+            transform:
+              none !important;
+          }
+
+
+          /*
+           * Resend button
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-resend {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #d7d3df !important;
+
+            color:
+              #6f42c1 !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-resend:hover:not(:disabled) {
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.07
+              ) !important;
+
+            border-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.55
+              ) !important;
+
+            color:
+              #7a44ff !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-resend:disabled {
+            background-color:
+              #f1eff4 !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            color:
+              #9a96a6 !important;
+          }
+
+
+          /*
+           * Start Over
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-start-over {
+            color:
+              #65676b !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-start-over:hover:not(:disabled) {
+            color:
+              #171717 !important;
+          }
+
+          [data-theme-mode='light']
+          .forgot-password-start-over:disabled {
+            color:
+              #aaa6b1 !important;
+
+            opacity:
+              1 !important;
+          }
+
+
+          /*
+           * Divider
+           */
+
+          [data-theme-mode='light']
+          .forgot-password-divider {
+            border-color:
+              #dfdfdf !important;
+          }
+        `}
+      </style>
+
+
+      <ThemeToggle />
+
+
+      {/* Background glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#7A44FF]/20 blur-[120px]"
+        className="forgot-password-glow-primary pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#7A44FF]/20 blur-[120px]"
       />
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#D83DFF]/15 blur-[120px]"
+        className="forgot-password-glow-secondary pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#D83DFF]/15 blur-[120px]"
       />
+
 
       <div className="relative z-10 w-full max-w-md auth-page-transition">
+        {/* Branding */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex justify-center">
-            <img
-              src={studyaLogo}
+            <StudyALogo
               alt="Studya AI-Powered Study Notes"
               className="h-auto w-full max-w-[600px] object-contain"
             />
           </div>
 
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#A784FF]">
+          <p className="forgot-password-accent mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#A784FF]">
             Password Recovery
           </p>
 
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="forgot-password-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">
             {step === 'email' &&
               'Forgot your password?'}
 
@@ -574,7 +982,7 @@ function ForgotPassword() {
               'Password reset'}
           </h1>
 
-          <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#898CC0]">
+          <p className="forgot-password-body mx-auto mt-3 max-w-sm text-sm leading-6 text-[#898CC0]">
             {step === 'email' &&
               'Enter your account email and we will send you a 6-digit password reset code.'}
 
@@ -589,41 +997,50 @@ function ForgotPassword() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#2A1B4D] bg-[#160B32]/95 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur sm:p-8">
+
+        {/* Main Card */}
+        <div className="forgot-password-card rounded-2xl border border-[#2A1B4D] bg-[#160B32]/95 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur sm:p-8">
+          {/* Current Reset Email */}
           {step !== 'email' &&
             step !== 'success' &&
             email && (
-              <div className="mb-5 rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3">
-                <p className="text-xs uppercase tracking-wider text-[#727494]">
+              <div className="forgot-password-panel forgot-password-email-panel mb-5 rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3">
+                <p className="forgot-password-muted text-xs uppercase tracking-wider text-[#727494]">
                   Password reset for
                 </p>
 
-                <p className="mt-1 break-all text-sm font-medium text-[#C2C4E4]">
+                <p className="forgot-password-email mt-1 break-all text-sm font-medium text-[#C2C4E4]">
                   {email}
                 </p>
               </div>
             )}
 
+
+          {/* Error */}
           {error && (
             <div
-              className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+              className="forgot-password-panel forgot-password-error mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
               role="alert"
             >
               {error}
             </div>
           )}
 
+
+          {/* Resend Success */}
           {resendMessage && (
             <div
-              className="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
+              className="forgot-password-panel forgot-password-success mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
               role="status"
             >
-              <p className="text-sm text-emerald-300">
+              <p className="forgot-password-success-text text-sm text-emerald-300">
                 {resendMessage}
               </p>
             </div>
           )}
 
+
+          {/* Step 1 — Email */}
           {step === 'email' && (
             <form
               onSubmit={
@@ -634,7 +1051,7 @@ function ForgotPassword() {
               <div>
                 <label
                   htmlFor="reset-email"
-                  className="mb-2 block text-sm font-medium text-[#C2C4E4]"
+                  className="forgot-password-label mb-2 block text-sm font-medium text-[#C2C4E4]"
                 >
                   Email Address
                 </label>
@@ -647,19 +1064,20 @@ function ForgotPassword() {
                     setEmail(
                       event.target.value
                     )
+
                     setError('')
                   }}
                   autoComplete="email"
                   placeholder="Enter your email address"
                   disabled={loading}
-                  className="w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-white outline-none transition placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="forgot-password-input w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-white outline-none placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white shadow-[0_10px_30px_rgba(122,68,255,0.22)] transition duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none disabled:hover:translate-y-0"
+                className="forgot-password-interactive forgot-password-primary inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white shadow-[0_10px_30px_rgba(122,68,255,0.22)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none disabled:hover:translate-y-0"
               >
                 {loading && (
                   <span
@@ -675,6 +1093,8 @@ function ForgotPassword() {
             </form>
           )}
 
+
+          {/* Step 2 — Code */}
           {step === 'code' && (
             <form
               onSubmit={
@@ -685,7 +1105,7 @@ function ForgotPassword() {
               <div>
                 <label
                   htmlFor="reset-code"
-                  className="mb-2 block text-sm font-medium text-[#C2C4E4]"
+                  className="forgot-password-label mb-2 block text-sm font-medium text-[#C2C4E4]"
                 >
                   Reset Code
                 </label>
@@ -702,10 +1122,10 @@ function ForgotPassword() {
                   maxLength={6}
                   placeholder="Enter 6-digit code"
                   disabled={loading}
-                  className="w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-center text-xl font-semibold tracking-[0.35em] text-white outline-none transition placeholder:text-sm placeholder:font-normal placeholder:tracking-normal placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="forgot-password-input w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-center text-xl font-semibold tracking-[0.35em] text-white outline-none placeholder:text-sm placeholder:font-normal placeholder:tracking-normal placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
-                <p className="mt-2 text-xs text-[#727494]">
+                <p className="forgot-password-muted mt-2 text-xs text-[#727494]">
                   The reset code expires
                   after 10 minutes.
                 </p>
@@ -717,7 +1137,7 @@ function ForgotPassword() {
                   loading ||
                   resendLoading
                 }
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none disabled:hover:translate-y-0"
+                className="forgot-password-interactive forgot-password-primary inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none disabled:hover:translate-y-0"
               >
                 {loading && (
                   <span
@@ -741,7 +1161,7 @@ function ForgotPassword() {
                   resendSeconds > 0 ||
                   loading
                 }
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#493475] bg-[#120928] px-4 py-3 text-sm font-semibold text-[#C9B8FF] transition hover:border-[#7A44FF] hover:text-white disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d]"
+                className="forgot-password-interactive forgot-password-resend inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#493475] bg-[#120928] px-4 py-3 text-sm font-semibold text-[#C9B8FF] hover:border-[#7A44FF] hover:text-white disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d]"
               >
                 {resendLoading && (
                   <span
@@ -759,6 +1179,8 @@ function ForgotPassword() {
             </form>
           )}
 
+
+          {/* Step 3 — New Password */}
           {step === 'password' && (
             <form
               onSubmit={
@@ -769,7 +1191,7 @@ function ForgotPassword() {
               <div>
                 <label
                   htmlFor="new-reset-password"
-                  className="mb-2 block text-sm font-medium text-[#C2C4E4]"
+                  className="forgot-password-label mb-2 block text-sm font-medium text-[#C2C4E4]"
                 >
                   New Password
                 </label>
@@ -782,15 +1204,16 @@ function ForgotPassword() {
                     setNewPassword(
                       event.target.value
                     )
+
                     setError('')
                   }}
                   autoComplete="new-password"
                   placeholder="Enter a new password"
                   disabled={loading}
-                  className="w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-white outline-none transition placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="forgot-password-input w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-white outline-none placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
-                <p className="mt-2 text-xs text-[#727494]">
+                <p className="forgot-password-muted mt-2 text-xs text-[#727494]">
                   Password must be at least
                   8 characters long.
                 </p>
@@ -799,7 +1222,7 @@ function ForgotPassword() {
               <div>
                 <label
                   htmlFor="confirm-reset-password"
-                  className="mb-2 block text-sm font-medium text-[#C2C4E4]"
+                  className="forgot-password-label mb-2 block text-sm font-medium text-[#C2C4E4]"
                 >
                   Confirm New Password
                 </label>
@@ -814,19 +1237,20 @@ function ForgotPassword() {
                     setConfirmPassword(
                       event.target.value
                     )
+
                     setError('')
                   }}
                   autoComplete="new-password"
                   placeholder="Confirm your new password"
                   disabled={loading}
-                  className="w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-white outline-none transition placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="forgot-password-input w-full rounded-xl border border-[#2A1B4D] bg-[#120928] px-4 py-3 text-white outline-none placeholder:text-[#727494] hover:border-[#493475] focus:border-[#7A44FF] focus:ring-2 focus:ring-[#7A44FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none disabled:hover:translate-y-0"
+                className="forgot-password-interactive forgot-password-primary inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none disabled:hover:translate-y-0"
               >
                 {loading && (
                   <span
@@ -842,13 +1266,15 @@ function ForgotPassword() {
             </form>
           )}
 
+
+          {/* Step 4 — Success */}
           {step === 'success' && (
             <div className="space-y-5">
               <div
-                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-4"
+                className="forgot-password-panel forgot-password-success rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-4"
                 role="status"
               >
-                <p className="text-sm text-emerald-300">
+                <p className="forgot-password-success-text text-sm text-emerald-300">
                   {success}
                 </p>
               </div>
@@ -858,21 +1284,24 @@ function ForgotPassword() {
                 onClick={() =>
                   navigate('/login', {
                     replace: true,
+
                     state: {
                       successMessage:
                         'Password reset successfully. You can now sign in with your new password.',
                     },
                   })
                 }
-                className="w-full rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5"
+                className="forgot-password-interactive w-full rounded-xl bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] px-4 py-3 font-semibold text-white hover:-translate-y-0.5"
               >
                 Return to Sign In
               </button>
             </div>
           )}
 
+
+          {/* Navigation */}
           {step !== 'success' && (
-            <div className="mt-6 border-t border-[#2A1B4D] pt-5 text-center">
+            <div className="forgot-password-divider mt-6 border-t border-[#2A1B4D] pt-5 text-center">
               {step !== 'email' && (
                 <button
                   type="button"
@@ -883,7 +1312,7 @@ function ForgotPassword() {
                     loading ||
                     resendLoading
                   }
-                  className="mb-4 block w-full text-sm font-medium text-[#898CC0] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="forgot-password-interactive forgot-password-start-over mb-4 block w-full text-sm font-medium text-[#898CC0] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Start Over
                 </button>
@@ -891,7 +1320,7 @@ function ForgotPassword() {
 
               <Link
                 to="/login"
-                className="text-sm font-medium text-[#A784FF] transition hover:text-[#D3C3FF]"
+                className="forgot-password-interactive forgot-password-link text-sm font-medium text-[#A784FF] hover:text-[#D3C3FF]"
               >
                 Back to Sign In
               </Link>
@@ -899,12 +1328,14 @@ function ForgotPassword() {
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-[#727494]">
+
+        <p className="forgot-password-muted mt-6 text-center text-xs text-[#727494]">
           AI-Powered Study Notes Generator
         </p>
       </div>
     </main>
   )
 }
+
 
 export default ForgotPassword
