@@ -3,6 +3,9 @@ import { Link } from 'react-router'
 import { getConsentStatus } from '../services/consentService'
 import { getUploadedFiles } from '../services/uploadedService'
 import { generateAIContent } from '../services/aiService'
+import AnimatedSelect from '../components/AnimatedSelect'
+import AIConsentRequired from '../components/AIConsentRequired'
+
 
 function Flashcards() {
   const [documents, setDocuments] = useState([])
@@ -10,23 +13,54 @@ function Flashcards() {
 
   const [documentsLoading, setDocumentsLoading] =
     useState(true)
-  const [documentsError, setDocumentsError] = useState('')
+
+  const [documentsError, setDocumentsError] =
+    useState('')
 
   const [flashcards, setFlashcards] = useState([])
-  const [generatedOutput, setGeneratedOutput] = useState(null)
-  const [disclaimer, setDisclaimer] = useState('')
 
-  const [currentCard, setCurrentCard] = useState(0)
-  const [showAnswer, setShowAnswer] = useState(false)
-  const [generationLoading, setGenerationLoading] =
+  const [
+    generatedOutput,
+    setGeneratedOutput,
+  ] = useState(null)
+
+  const [disclaimer, setDisclaimer] =
+    useState('')
+
+  const [currentCard, setCurrentCard] =
+    useState(0)
+
+  const [showAnswer, setShowAnswer] =
     useState(false)
-  const [error, setError] = useState('')
-  const [retryableError, setRetryableError] = useState(false)
 
-  const [consentStatus, setConsentStatus] = useState(null)
-  const [consentInitialLoading, setConsentInitialLoading] =
-    useState(true)
-  const [consentError, setConsentError] = useState('')
+  const [
+    generationLoading,
+    setGenerationLoading,
+  ] = useState(false)
+
+  const [error, setError] =
+    useState('')
+
+  const [
+    retryableError,
+    setRetryableError,
+  ] = useState(false)
+
+  const [
+    consentStatus,
+    setConsentStatus,
+  ] = useState(null)
+
+  const [
+    consentInitialLoading,
+    setConsentInitialLoading,
+  ] = useState(true)
+
+  const [
+    consentError,
+    setConsentError,
+  ] = useState('')
+
 
   useEffect(() => {
     const loadConsent = async () => {
@@ -34,7 +68,8 @@ function Flashcards() {
       setConsentError('')
 
       try {
-        const response = await getConsentStatus()
+        const response =
+          await getConsentStatus()
 
         if (!response.ok) {
           if (response.status === 401) {
@@ -52,7 +87,8 @@ function Flashcards() {
         }
 
         setConsentStatus(
-          response.data?.consent?.status ?? null
+          response.data?.consent?.status ??
+            null
         )
       } catch (consentFetchError) {
         console.error(
@@ -71,13 +107,15 @@ function Flashcards() {
     loadConsent()
   }, [])
 
+
   useEffect(() => {
     const loadDocuments = async () => {
       setDocumentsLoading(true)
       setDocumentsError('')
 
       try {
-        const response = await getUploadedFiles()
+        const response =
+          await getUploadedFiles()
 
         if (!response.ok) {
           if (response.status === 401) {
@@ -94,7 +132,9 @@ function Flashcards() {
           return
         }
 
-        setDocuments(response.data?.files ?? [])
+        setDocuments(
+          response.data?.files ?? []
+        )
       } catch (documentFetchError) {
         console.error(
           'Uploaded files fetch error:',
@@ -112,6 +152,7 @@ function Flashcards() {
     loadDocuments()
   }, [])
 
+
   const clearGeneratedFlashcards = () => {
     setFlashcards([])
     setGeneratedOutput(null)
@@ -120,20 +161,29 @@ function Flashcards() {
     setShowAnswer(false)
   }
 
+
   const handleGenerate = async () => {
     if (!selectedDocument) {
-      setError('Please select a study material first.')
+      setError(
+        'Please select a study material first.'
+      )
+
       setRetryableError(false)
       clearGeneratedFlashcards()
+
       return
     }
 
-    if (consentStatus !== 'granted') {
+    if (
+      consentStatus !== 'granted'
+    ) {
       setError(
         'Please grant AI processing consent before generating flashcards.'
       )
+
       setRetryableError(false)
       clearGeneratedFlashcards()
+
       return
     }
 
@@ -143,37 +193,55 @@ function Flashcards() {
     clearGeneratedFlashcards()
 
     try {
-      const response = await generateAIContent({
-        fileId: Number(selectedDocument),
-        outputType: 'flashcards',
-      })
+      const response =
+        await generateAIContent({
+          fileId:
+            Number(selectedDocument),
+
+          outputType:
+            'flashcards',
+        })
 
       if (!response.ok) {
         if (
           response.status === 403 &&
-          response.data?.code === 'CONSENT_REQUIRED'
+          response.data?.code ===
+            'CONSENT_REQUIRED'
         ) {
-          setConsentStatus('revoked')
+          setConsentStatus(
+            'revoked'
+          )
+
           setError(
             'AI processing consent is required. Please manage your consent from the Privacy & Consent page.'
           )
+
           setRetryableError(false)
+
           return
         }
 
-        if (response.status === 401) {
+        if (
+          response.status === 401
+        ) {
           setError(
             'Your login session is missing or invalid. Please sign in again.'
           )
+
           setRetryableError(false)
+
           return
         }
 
-        if (response.status === 404) {
+        if (
+          response.status === 404
+        ) {
           setError(
             'The selected study material could not be found. Please select another document.'
           )
+
           setRetryableError(false)
+
           return
         }
 
@@ -181,32 +249,58 @@ function Flashcards() {
           response.data?.message ||
             'Unable to generate flashcards. Please try again.'
         )
-        setRetryableError(response.data?.retryable === true)
+
+        setRetryableError(
+          response.data?.retryable ===
+            true
+        )
+
         return
       }
 
-      const output = response.data?.output
-      const generatedCards = output?.content
+      const output =
+        response.data?.output
 
-      if (!Array.isArray(generatedCards)) {
+      const generatedCards =
+        output?.content
+
+      if (
+        !Array.isArray(
+          generatedCards
+        )
+      ) {
         setError(
           'The server returned flashcards in an unexpected format.'
         )
+
         setRetryableError(false)
+
         return
       }
 
-      if (generatedCards.length === 0) {
+      if (
+        generatedCards.length === 0
+      ) {
         setError(
           'No usable flashcards could be generated from this study material.'
         )
+
         setRetryableError(false)
+
         return
       }
 
       setGeneratedOutput(output)
-      setFlashcards(generatedCards)
-      setDisclaimer(response.data?.disclaimer ?? '')
+
+      setFlashcards(
+        generatedCards
+      )
+
+      setDisclaimer(
+        response.data?.disclaimer ??
+          ''
+      )
+
       setCurrentCard(0)
       setShowAnswer(false)
       setRetryableError(false)
@@ -219,123 +313,447 @@ function Flashcards() {
       setError(
         'Unable to connect to the server. Please try again.'
       )
+
       setRetryableError(true)
     } finally {
       setGenerationLoading(false)
     }
   }
 
+
   const handleNext = () => {
-    if (currentCard < flashcards.length - 1) {
-      setCurrentCard(currentCard + 1)
+    if (
+      currentCard <
+      flashcards.length - 1
+    ) {
+      setCurrentCard(
+        currentCard + 1
+      )
+
       setShowAnswer(false)
     }
   }
 
+
   const handlePrevious = () => {
     if (currentCard > 0) {
-      setCurrentCard(currentCard - 1)
+      setCurrentCard(
+        currentCard - 1
+      )
+
       setShowAnswer(false)
     }
   }
+
 
   const selectedDocumentName =
     documents.find(
       (document) =>
-        String(document.file_id) === selectedDocument
+        String(
+          document.file_id
+        ) === selectedDocument
     )?.file_name || ''
 
+
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="flashcards-theme mx-auto max-w-5xl">
+      <style>
+        {`
+          .flashcards-theme-text {
+            transition:
+              color 100ms ease;
+          }
+
+          .flashcards-theme-surface {
+            transition:
+              background-color 500ms ease,
+              border-color 500ms ease,
+              box-shadow 300ms ease;
+          }
+
+          .flashcards-theme-interactive {
+            transition:
+              color 100ms ease,
+              background-color 300ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease,
+              opacity 300ms ease,
+              filter 300ms ease;
+          }
+
+          .flashcards-theme-border {
+            transition:
+              border-color 500ms ease;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-heading {
+            color: #171717 !important;
+          }
+
+          [data-theme-mode='light']
+          .flashcards-body {
+            color: #65676b !important;
+          }
+
+          [data-theme-mode='light']
+          .flashcards-muted {
+            color: #7a7575 !important;
+          }
+
+          [data-theme-mode='light']
+          .flashcards-accent {
+            color: #7a44ff !important;
+          }
+
+          [data-theme-mode='light']
+          .flashcards-accent-soft {
+            color: #6f42c1 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-surface {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-loading-text {
+            color:
+              #6f42c1 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-error-text {
+            color:
+              #b91c1c !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-warning-heading {
+            color:
+              #92400e !important;
+          }
+
+          [data-theme-mode='light']
+          .flashcards-warning-body {
+            color:
+              #a16207 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-consent-badge {
+            color:
+              #047857 !important;
+
+            background-color:
+              rgba(
+                16,
+                185,
+                129,
+                0.08
+              ) !important;
+
+            border-color:
+              rgba(
+                16,
+                185,
+                129,
+                0.25
+              ) !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-ai-badge {
+            color:
+              #6f42c1 !important;
+
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.08
+              ) !important;
+
+            border-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.22
+              ) !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-link:hover {
+            color:
+              #6634e8 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-generate-button:disabled {
+            background-image:
+              none !important;
+
+            background-color:
+              #e6e3eb !important;
+
+            color:
+              #9a96a6 !important;
+
+            box-shadow:
+              none !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-retry-button:disabled {
+            background-color:
+              #e6e3eb !important;
+
+            border-color:
+              transparent !important;
+
+            color:
+              #9a96a6 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-source {
+            color:
+              #5f5b78 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-counter {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            color:
+              #65676b !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-progress-track {
+            background-color:
+              #e5e1ec !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-card {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            box-shadow:
+              0 18px 50px
+              rgba(
+                50,
+                39,
+                75,
+                0.08
+              ) !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-answer-border {
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-answer-label {
+            color:
+              #047857 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-navigation-button {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #d7d3df !important;
+
+            color:
+              #6f42c1 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-navigation-button:hover:not(:disabled) {
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.08
+              ) !important;
+
+            border-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.55
+              ) !important;
+
+            color:
+              #7a44ff !important;
+          }
+
+
+          [data-theme-mode='light']
+          .flashcards-navigation-button:disabled {
+            background-color:
+              #f1eff4 !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            color:
+              #aaa6b1 !important;
+
+            opacity:
+              1 !important;
+          }
+        `}
+      </style>
+
 
       {/* Page Heading */}
       <div className="mb-8">
-
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+        <p className="flashcards-theme-text flashcards-accent mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
           AI Study Tools
         </p>
 
-        <h1 className="text-3xl font-bold tracking-tight text-[#f3f0ff]">
+        <h1 className="flashcards-theme-text flashcards-heading text-3xl font-bold tracking-tight text-[#f3f0ff]">
           Flashcards
         </h1>
 
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#898cc0]">
-          Generate flashcards from your uploaded study materials
-          and use them for active recall practice.
+        <p className="flashcards-theme-text flashcards-body mt-2 max-w-3xl text-sm leading-6 text-[#898cc0]">
+          Generate flashcards from your uploaded study
+          materials and use them for active recall practice.
         </p>
-
       </div>
 
+
       {/* Flashcard Generator */}
-      <div className="rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
+      <div className="flashcards-theme-surface flashcards-surface rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flashcards-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 5h12a2 2 0 0 1 2 2v10H7a2 2 0 0 1-2-2V5Zm2 12v2h12"
+                />
+              </svg>
+            </div>
 
-        <div className="flex items-start gap-3">
+            <div>
+              <h2 className="flashcards-theme-text flashcards-heading text-xl font-semibold text-[#f3f0ff]">
+                Generate Flashcards
+              </h2>
 
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
-
-            <svg
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="h-5 w-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 5h12a2 2 0 0 1 2 2v10H7a2 2 0 0 1-2-2V5Zm2 12v2h12"
-              />
-            </svg>
-
+              <p className="flashcards-theme-text flashcards-body mt-1 text-sm text-[#898cc0]">
+                Select a document to create an AI-generated
+                flashcard study set.
+              </p>
+            </div>
           </div>
 
-          <div>
 
-            <h2 className="text-xl font-semibold text-[#f3f0ff]">
-              Generate Flashcards
-            </h2>
+          {!consentInitialLoading &&
+            consentStatus ===
+              'granted' && (
+              <Link
+                to="/privacy"
+                title="AI processing consent is granted. Manage consent."
+                className="flashcards-theme-interactive flashcards-consent-badge inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 hover:border-emerald-400/40 hover:bg-emerald-500/15"
+              >
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  className="h-3.5 w-3.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m5 12 4 4L19 6"
+                  />
+                </svg>
 
-            <p className="mt-1 text-sm text-[#898cc0]">
-              Select a document to create an AI-generated
-              flashcard study set.
-            </p>
-
-          </div>
-
+                AI Consent On
+              </Link>
+            )}
         </div>
 
-        <div className="mt-6">
 
+        <div className="mt-6">
           <label
             htmlFor="flashcard-document"
-            className="mb-2 block text-sm font-medium text-[#d9d4eb]"
+            className="flashcards-theme-text flashcards-heading mb-2 block text-sm font-medium text-[#d9d4eb]"
           >
             Study Material
           </label>
 
+
           {documentsLoading ? (
             <div
-              className="flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
+              className="flashcards-theme-surface flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
               role="status"
             >
-
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
 
-              <p className="text-sm text-[#c9b4ff]">
+              <p className="flashcards-theme-text flashcards-loading-text text-sm text-[#c9b4ff]">
                 Loading your uploaded study materials...
               </p>
-
             </div>
-          ) : documents.length === 0 &&
+          ) : documents.length ===
+              0 &&
             !documentsError ? (
-            <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
-
+            <div className="flashcards-theme-surface rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
               <div className="flex items-start gap-3">
-
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
-
                   <svg
                     aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
@@ -351,23 +769,21 @@ function Flashcards() {
                       d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
                     />
                   </svg>
-
                 </div>
 
                 <div>
-
-                  <p className="font-medium text-amber-200">
+                  <p className="flashcards-theme-text flashcards-warning-heading font-medium text-amber-200">
                     No uploaded study materials
                   </p>
 
-                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                  <p className="flashcards-theme-text flashcards-warning-body mt-1 text-sm leading-6 text-amber-100/70">
                     Upload a PDF, DOCX or TXT document before
                     generating flashcards.
                   </p>
 
                   <Link
                     to="/upload"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
+                    className="flashcards-theme-text flashcards-accent flashcards-link mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff]"
                   >
                     Upload Study Material
 
@@ -386,194 +802,102 @@ function Flashcards() {
                         d="m9 18 6-6-6-6"
                       />
                     </svg>
-
                   </Link>
-
                 </div>
-
               </div>
-
             </div>
           ) : (
-            <select
+            <AnimatedSelect
               id="flashcard-document"
-              value={selectedDocument}
-              onChange={(event) => {
-                setSelectedDocument(event.target.value)
+              value={
+                selectedDocument
+              }
+              placeholder="Select a document"
+              options={documents.map(
+                (document) => ({
+                  value:
+                    document.file_id,
+
+                  label:
+                    document.file_name,
+                })
+              )}
+              onChange={(
+                newValue
+              ) => {
+                setSelectedDocument(
+                  newValue
+                )
+
                 clearGeneratedFlashcards()
+
                 setError('')
-                setRetryableError(false)
+
+                setRetryableError(
+                  false
+                )
               }}
-              className="w-full rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-[#d9d4eb] outline-none transition focus:border-[#7a44ff] focus:ring-2 focus:ring-[#7a44ff]/25"
-            >
-              <option value="">
-                Select a document
-              </option>
-
-              {documents.map((document) => (
-                <option
-                  key={document.file_id}
-                  value={document.file_id}
-                >
-                  {document.file_name}
-                </option>
-              ))}
-            </select>
+            />
           )}
-
         </div>
+
 
         {/* Document Error */}
         {documentsError && (
           <div
-            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            className="flashcards-theme-surface mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
             role="alert"
           >
-            <p className="text-sm leading-6 text-red-300">
+            <p className="flashcards-theme-text flashcards-error-text text-sm leading-6 text-red-300">
               {documentsError}
             </p>
           </div>
         )}
 
+
         {/* AI Consent Status */}
         <div className="mt-6">
-
           {consentInitialLoading ? (
             <div
-              className="flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
+              className="flashcards-theme-surface flex items-center gap-3 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-4"
               role="status"
             >
-
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
 
-              <p className="text-sm text-[#c9b4ff]">
+              <p className="flashcards-theme-text flashcards-loading-text text-sm text-[#c9b4ff]">
                 Checking your AI processing consent...
               </p>
-
             </div>
-          ) : consentStatus !== 'granted' ? (
-            <div className="rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
-
-              <div className="flex items-start gap-3">
-
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
-
-                  <svg
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3 4 7v5c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V7l-8-4Z"
-                    />
-                  </svg>
-
-                </div>
-
-                <div>
-
-                  <p className="font-medium text-amber-200">
-                    AI processing consent required
-                  </p>
-
-                  <p className="mt-1 text-sm leading-6 text-amber-100/70">
-                    Grant AI processing consent before generating AI study content.
-                  </p>
-
-                  <Link
-                    to="/privacy"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff] transition hover:text-[#c9b4ff]"
-                  >
-                    Manage AI Consent
-
-                    <svg
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="h-4 w-4"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m9 18 6-6-6-6"
-                      />
-                    </svg>
-
-                  </Link>
-
-                </div>
-
-              </div>
-
-            </div>
-          ) : (
-            <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
-
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
-
-                  <svg
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m5 12 4 4L19 6"
-                    />
-                  </svg>
-
-                </div>
-
-                <p className="text-sm font-medium text-emerald-300">
-                  AI processing consent is granted.
-                </p>
-
-              </div>
-
-            </div>
-          )}
-
+          ) : consentStatus !==
+            'granted' ? (
+            <AIConsentRequired
+              featureName="AI-generated flashcards"
+            />
+          ) : null}
         </div>
+
 
         {/* Consent Error */}
         {consentError && (
           <div
-            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            className="flashcards-theme-surface mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
             role="alert"
           >
-            <p className="text-sm leading-6 text-red-300">
+            <p className="flashcards-theme-text flashcards-error-text text-sm leading-6 text-red-300">
               {consentError}
             </p>
           </div>
         )}
 
+
         {/* Flashcard Error */}
         {error && (
           <div
-            className="mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            className="flashcards-theme-surface mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
             role="alert"
           >
-
             <div className="flex items-start gap-3">
-
               <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-400/10 text-red-300">
-
                 <svg
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
@@ -589,51 +913,57 @@ function Flashcards() {
                     d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
                   />
                 </svg>
-
               </div>
 
               <div>
-
-                <p className="text-sm leading-6 text-red-300">
+                <p className="flashcards-theme-text flashcards-error-text text-sm leading-6 text-red-300">
                   {error}
                 </p>
 
                 {retryableError && (
                   <button
                     type="button"
-                    onClick={handleGenerate}
-                    disabled={generationLoading}
-                    className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={
+                      handleGenerate
+                    }
+                    disabled={
+                      generationLoading
+                    }
+                    className="flashcards-theme-interactive flashcards-retry-button mt-3 inline-flex items-center justify-center gap-2 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d]"
                   >
+                    {generationLoading && (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]" />
+                    )}
+
                     {generationLoading
                       ? 'Retrying...'
                       : 'Retry'}
                   </button>
                 )}
-
               </div>
-
             </div>
-
           </div>
         )}
 
+
         {/* Generate Button */}
         <div className="mt-6 flex justify-end">
-
           <button
             type="button"
-            onClick={handleGenerate}
+            onClick={
+              handleGenerate
+            }
             disabled={
               documentsLoading ||
-              documents.length === 0 ||
+              documents.length ===
+                0 ||
               consentInitialLoading ||
-              consentStatus !== 'granted' ||
+              consentStatus !==
+                'granted' ||
               generationLoading
             }
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+            className="flashcards-generate-button inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
           >
-
             {generationLoading && (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             )}
@@ -641,80 +971,72 @@ function Flashcards() {
             {generationLoading
               ? 'Generating Flashcards...'
               : 'Generate Flashcards'}
-
           </button>
-
         </div>
-
       </div>
+
 
       {/* Generated Flashcards */}
       {flashcards.length > 0 && (
         <div className="mt-8">
-
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-
             <div>
-
               <div className="flex flex-wrap items-center gap-3">
-
-                <h2 className="text-2xl font-semibold text-[#f3f0ff]">
+                <h2 className="flashcards-theme-text flashcards-heading text-2xl font-semibold text-[#f3f0ff]">
                   Study Flashcards
                 </h2>
 
                 {generatedOutput?.is_ai_generated && (
-                  <span className="rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-xs font-semibold text-[#c9b4ff]">
+                  <span className="flashcards-theme-interactive flashcards-ai-badge rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-xs font-semibold text-[#c9b4ff]">
                     AI Generated
                   </span>
                 )}
-
               </div>
 
-              <p className="mt-2 text-sm text-[#727494]">
+              <p className="flashcards-theme-text flashcards-muted mt-2 text-sm text-[#727494]">
                 Source:{' '}
-                <span className="text-[#a6a8c7]">
+
+                <span className="flashcards-theme-text flashcards-source text-[#a6a8c7]">
                   {generatedOutput?.file_name ||
                     selectedDocumentName}
                 </span>
               </p>
-
             </div>
 
-            <div className="rounded-full border border-[#2a1b4d] bg-[#160b32] px-4 py-2 text-sm font-medium text-[#a6a8c7]">
+
+            <div className="flashcards-theme-surface flashcards-counter rounded-full border border-[#2a1b4d] bg-[#160b32] px-4 py-2 text-sm font-medium text-[#a6a8c7]">
               Card{' '}
-              <span className="font-semibold text-[#c9b4ff]">
+
+              <span className="flashcards-theme-text flashcards-accent-soft font-semibold text-[#c9b4ff]">
                 {currentCard + 1}
               </span>{' '}
+
               of {flashcards.length}
             </div>
-
           </div>
 
-          {/* Progress Bar */}
-          <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-[#241743]">
 
+          {/* Progress Bar */}
+          <div className="flashcards-theme-surface flashcards-progress-track mb-5 h-1.5 overflow-hidden rounded-full bg-[#241743]">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#7a44ff] to-[#d83dff] transition-all duration-300"
               style={{
-                width: `${
-                  ((currentCard + 1) / flashcards.length) * 100
-                }%`,
+                width: `${(
+                  (currentCard + 1) /
+                  flashcards.length
+                ) * 100}%`,
               }}
             />
-
           </div>
 
-          {/* Flashcard */}
-          <div className="relative flex min-h-80 flex-col justify-between overflow-hidden rounded-2xl border border-[#2a1b4d] bg-[#160b32] p-7 shadow-[0_18px_50px_rgba(0,0,0,0.12)] sm:p-8">
 
+          {/* Flashcard */}
+          <div className="flashcards-theme-surface flashcards-card relative flex min-h-80 flex-col justify-between overflow-hidden rounded-2xl border border-[#2a1b4d] bg-[#160b32] p-7 shadow-[0_18px_50px_rgba(0,0,0,0.12)] sm:p-8">
             <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#7a44ff]/10 blur-3xl" />
 
             <div className="relative">
-
               <div className="flex items-center gap-2">
-
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7a44ff]/10 text-[#a97cff]">
-
+                <div className="flashcards-accent flex h-8 w-8 items-center justify-center rounded-lg bg-[#7a44ff]/10 text-[#a97cff]">
                   <svg
                     aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
@@ -730,26 +1052,26 @@ function Flashcards() {
                       d="M9 8h6M9 12h6m-7 8h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
                     />
                   </svg>
-
                 </div>
 
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+                <p className="flashcards-theme-text flashcards-accent text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
                   Question
                 </p>
-
               </div>
 
-              <h3 className="mt-5 max-w-4xl text-2xl font-semibold leading-relaxed text-[#f3f0ff]">
-                {flashcards[currentCard]?.question}
+              <h3 className="flashcards-theme-text flashcards-heading mt-5 max-w-4xl text-2xl font-semibold leading-relaxed text-[#f3f0ff]">
+                {
+                  flashcards[
+                    currentCard
+                  ]?.question
+                }
               </h3>
 
+
               {showAnswer && (
-                <div className="mt-8 border-t border-[#2a1b4d] pt-6">
-
+                <div className="flashcards-theme-border flashcards-answer-border mt-8 border-t border-[#2a1b4d] pt-6">
                   <div className="flex items-center gap-2">
-
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
-
                       <svg
                         aria-hidden="true"
                         xmlns="http://www.w3.org/2000/svg"
@@ -765,33 +1087,36 @@ function Flashcards() {
                           d="m5 12 4 4L19 6"
                         />
                       </svg>
-
                     </div>
 
-                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-emerald-300">
+                    <p className="flashcards-theme-text flashcards-answer-label text-xs font-semibold uppercase tracking-[0.15em] text-emerald-300">
                       Answer
                     </p>
-
                   </div>
 
-                  <p className="mt-4 max-w-4xl leading-7 text-[#d9d4eb]">
-                    {flashcards[currentCard]?.answer}
+                  <p className="flashcards-theme-text flashcards-heading mt-4 max-w-4xl leading-7 text-[#d9d4eb]">
+                    {
+                      flashcards[
+                        currentCard
+                      ]?.answer
+                    }
                   </p>
-
                 </div>
               )}
-
             </div>
+
 
             {!showAnswer && (
               <div className="relative mt-8">
-
                 <button
                   type="button"
-                  onClick={() => setShowAnswer(true)}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition hover:brightness-110 sm:w-auto"
+                  onClick={() =>
+                    setShowAnswer(
+                      true
+                    )
+                  }
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition duration-300 hover:brightness-110 sm:w-auto"
                 >
-
                   Reveal Answer
 
                   <svg
@@ -809,24 +1134,24 @@ function Flashcards() {
                       d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Zm10 2.5A2.5 2.5 0 1 0 12 9a2.5 2.5 0 0 0 0 5.5Z"
                     />
                   </svg>
-
                 </button>
-
               </div>
             )}
-
           </div>
+
 
           {/* Navigation */}
           <div className="mt-5 flex items-center justify-between gap-4">
-
             <button
               type="button"
-              onClick={handlePrevious}
-              disabled={currentCard === 0}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-5 py-2.5 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
+              onClick={
+                handlePrevious
+              }
+              disabled={
+                currentCard === 0
+              }
+              className="flashcards-theme-interactive flashcards-navigation-button inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-5 py-2.5 text-sm font-medium text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
             >
-
               <svg
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
@@ -844,18 +1169,20 @@ function Flashcards() {
               </svg>
 
               Previous
-
             </button>
+
 
             <button
               type="button"
-              onClick={handleNext}
-              disabled={
-                currentCard === flashcards.length - 1
+              onClick={
+                handleNext
               }
-              className="inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-5 py-2.5 text-sm font-medium text-[#c9b4ff] transition hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
+              disabled={
+                currentCard ===
+                flashcards.length - 1
+              }
+              className="flashcards-theme-interactive flashcards-navigation-button inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-5 py-2.5 text-sm font-medium text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-35"
             >
-
               Next
 
               <svg
@@ -873,18 +1200,14 @@ function Flashcards() {
                   d="m9 18 6-6-6-6"
                 />
               </svg>
-
             </button>
-
           </div>
 
+
           {/* Responsible AI Warning */}
-          <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
-
+          <div className="flashcards-theme-surface mt-6 rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
             <div className="flex items-start gap-3">
-
               <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
-
                 <svg
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
@@ -900,31 +1223,25 @@ function Flashcards() {
                     d="M12 9v4m0 4h.01M10.3 4.6 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"
                   />
                 </svg>
-
               </div>
 
               <div>
-
-                <h3 className="font-semibold text-amber-200">
+                <h3 className="flashcards-theme-text flashcards-warning-heading font-semibold text-amber-200">
                   AI-Generated Content
                 </h3>
 
-                <p className="mt-1 text-sm leading-6 text-amber-100/70">
+                <p className="flashcards-theme-text flashcards-warning-body mt-1 text-sm leading-6 text-amber-100/70">
                   {disclaimer ||
                     'This content was generated by AI and may contain errors or omissions. Please check it against your original study material.'}
                 </p>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
       )}
-
     </div>
   )
 }
+
 
 export default Flashcards

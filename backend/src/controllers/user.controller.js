@@ -102,7 +102,11 @@ const registerUser = async (req, res) => {
     await sendVerificationCodeEmail({
       to: email,
       fullName,
-      code: verificationCode
+      code: verificationCode,
+      theme:
+        req.body?.theme === "light"
+          ? "light"
+          : "dark"
     });
 
     return res.status(201).json({
@@ -288,7 +292,11 @@ const loginUser = async (req, res) => {
       await sendLoginCodeEmail({
         to: user.email,
         fullName: user.full_name,
-        code: loginCode
+        code: loginCode,
+        theme:
+          req.body?.theme === "light"
+            ? "light"
+            : "dark"
       });
     } catch (emailError) {
       await db.execute(
@@ -622,7 +630,11 @@ const resendLoginCode = async (req, res) => {
     await sendLoginCodeEmail({
       to: user.email,
       fullName: user.full_name,
-      code: loginCode
+      code: loginCode,
+      theme:
+        req.body?.theme === "light"
+          ? "light"
+          : "dark"
     });
 
     await db.execute(
@@ -1319,7 +1331,11 @@ const resendVerificationCode = async (req, res) => {
     await sendVerificationCodeEmail({
       to: user.email,
       fullName: user.full_name,
-      code: verificationCode
+      code: verificationCode,
+      theme:
+        req.body?.theme === "light"
+          ? "light"
+          : "dark"
     });
 
     await db.execute(

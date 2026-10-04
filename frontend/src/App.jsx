@@ -17,6 +17,7 @@ import Privacy from './pages/Privacy'
 import Profile from './pages/Profile'
 import VerifyEmail from './pages/VerifyEmail'
 import VerifyLogin from './pages/VerifyLogin'
+import ForgotPassword from './pages/ForgotPassword'
 
 function App() {
   return (
@@ -31,6 +32,11 @@ function App() {
       <Route
         path="/login"
         element={<Login />}
+      />
+
+      <Route
+        path="/forgot-password"
+        element={<ForgotPassword />}
       />
 
       <Route

@@ -10,32 +10,69 @@ import {
   getProgress,
 } from '../services/progressService'
 
+import AnimatedSelect from '../components/AnimatedSelect'
+
+
 function Progress() {
-  const [period, setPeriod] = useState('all')
-  const [progress, setProgress] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [period, setPeriod] =
+    useState('all')
 
-  const [selectedActivityIds, setSelectedActivityIds] =
-    useState([])
+  const [progress, setProgress] =
+    useState(null)
 
-  const [activityActionLoading, setActivityActionLoading] =
-    useState(false)
+  const [loading, setLoading] =
+    useState(true)
 
-  const [activityError, setActivityError] =
+  const [
+    contentVisible,
+    setContentVisible,
+  ] = useState(true)
+
+  const [error, setError] =
     useState('')
 
-  const [activityStatus, setActivityStatus] =
-    useState('')
+  const [
+    selectedActivityIds,
+    setSelectedActivityIds,
+  ] = useState([])
 
-  const [quizPerformanceOpen, setQuizPerformanceOpen] =
-    useState(false)
+  const [
+    activityActionLoading,
+    setActivityActionLoading,
+  ] = useState(false)
 
-  const [recentActivityOpen, setRecentActivityOpen] =
-    useState(false)
+  const [
+    activityActionType,
+    setActivityActionType,
+  ] = useState(null)
+
+  const [
+    activityError,
+    setActivityError,
+  ] = useState('')
+
+  const [
+    activityStatus,
+    setActivityStatus,
+  ] = useState('')
+
+  const [
+    quizPerformanceOpen,
+    setQuizPerformanceOpen,
+  ] = useState(false)
+
+  const [
+    recentActivityOpen,
+    setRecentActivityOpen,
+  ] = useState(false)
+
 
   const loadProgress = useCallback(
-    async ({ showLoading = true } = {}) => {
+    async (
+      {
+        showLoading = true,
+      } = {}
+    ) => {
       if (showLoading) {
         setLoading(true)
       }
@@ -43,10 +80,13 @@ function Progress() {
       setError('')
 
       try {
-        const response = await getProgress(period)
+        const response =
+          await getProgress(period)
 
         if (!response.ok) {
-          if (response.status === 401) {
+          if (
+            response.status === 401
+          ) {
             setError(
               'Your login session is missing or invalid. Please sign in again.'
             )
@@ -61,7 +101,8 @@ function Progress() {
         }
 
         setProgress(
-          response.data?.progress || null
+          response.data?.progress ||
+            null
         )
       } catch (loadError) {
         console.error(
@@ -76,10 +117,20 @@ function Progress() {
         if (showLoading) {
           setLoading(false)
         }
+
+        window.setTimeout(
+          () => {
+            setContentVisible(
+              true
+            )
+          },
+          50
+        )
       }
     },
     [period]
   )
+
 
   useEffect(() => {
     setSelectedActivityIds([])
@@ -89,71 +140,124 @@ function Progress() {
     loadProgress()
   }, [loadProgress])
 
+
   useEffect(() => {
     if (!activityStatus) {
       return undefined
     }
 
-    const timer = window.setTimeout(() => {
-      setActivityStatus('')
-    }, 4000)
+    const timer =
+      window.setTimeout(
+        () => {
+          setActivityStatus('')
+        },
+        4000
+      )
 
     return () => {
       window.clearTimeout(timer)
     }
   }, [activityStatus])
 
-  const stats = {
-    uploadedMaterials:
-      progress?.total_files ?? 0,
 
-    summariesGenerated:
-      progress?.summaries_generated ?? 0,
+  const handlePeriodChange = (
+    newPeriod
+  ) => {
+    if (
+      newPeriod === period
+    ) {
+      return
+    }
 
-    flashcardsGenerated:
-      progress?.flashcards_generated ?? 0,
+    setContentVisible(false)
 
-    quizzesGenerated:
-      progress?.quizzes_generated ?? 0,
-
-    explanationsGenerated:
-      progress?.explanations_generated ?? 0,
-
-    quizzesCompleted:
-      progress?.total_quiz_attempts ?? 0,
-
-    averageScore:
-      progress?.average_percentage ?? 0,
-
-    studyPlansCreated:
-      progress?.total_study_plans ?? 0,
+    window.setTimeout(
+      () => {
+        setPeriod(newPeriod)
+      },
+      200
+    )
   }
 
+
+  const stats = {
+    uploadedMaterials:
+      progress?.total_files ??
+      0,
+
+    summariesGenerated:
+      progress
+        ?.summaries_generated ??
+      0,
+
+    flashcardsGenerated:
+      progress
+        ?.flashcards_generated ??
+      0,
+
+    quizzesGenerated:
+      progress
+        ?.quizzes_generated ??
+      0,
+
+    explanationsGenerated:
+      progress
+        ?.explanations_generated ??
+      0,
+
+    quizzesCompleted:
+      progress
+        ?.total_quiz_attempts ??
+      0,
+
+    averageScore:
+      progress
+        ?.average_percentage ??
+      0,
+
+    studyPlansCreated:
+      progress
+        ?.total_study_plans ??
+      0,
+  }
+
+
   const quizHistory =
-    progress?.recent_attempts ?? []
+    progress?.recent_attempts ??
+    []
+
 
   const recentActivity =
-    progress?.recent_activity ?? []
+    progress?.recent_activity ??
+    []
+
 
   const selectableActivityIds =
     recentActivity
       .map((activity) =>
-        Number(activity.activity_id)
+        Number(
+          activity.activity_id
+        )
       )
       .filter(
         (activityId) =>
-          Number.isInteger(activityId) &&
+          Number.isInteger(
+            activityId
+          ) &&
           activityId > 0
       )
 
+
   const allVisibleActivitiesSelected =
-    selectableActivityIds.length > 0 &&
+    selectableActivityIds.length >
+      0 &&
     selectableActivityIds.every(
       (activityId) =>
         selectedActivityIds.includes(
           activityId
         )
     )
+
 
   const questionAccuracy =
     progress?.total_questions > 0
@@ -165,45 +269,65 @@ function Progress() {
         )
       : 0
 
-  const getScoreStyle = (percentage) => {
+
+  const getScoreStyle = (
+    percentage
+  ) => {
     if (percentage >= 80) {
-      return 'border-green-500/30 bg-green-500/10 text-green-300'
+      return 'progress-score-good border-green-500/30 bg-green-500/10 text-green-300'
     }
 
     if (percentage >= 60) {
-      return 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+      return 'progress-score-mid border-amber-500/30 bg-amber-500/10 text-amber-300'
     }
 
-    return 'border-red-500/30 bg-red-500/10 text-red-300'
+    return 'progress-score-low border-red-500/30 bg-red-500/10 text-red-300'
   }
 
-  const formatDate = (dateValue) => {
+
+  const formatDate = (
+    dateValue
+  ) => {
     if (!dateValue) {
       return ''
     }
 
-    const date = new Date(dateValue)
+    const date =
+      new Date(dateValue)
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
       return ''
     }
 
     return date.toLocaleDateString()
   }
 
-  const formatDateTime = (dateValue) => {
+
+  const formatDateTime = (
+    dateValue
+  ) => {
     if (!dateValue) {
       return ''
     }
 
-    const date = new Date(dateValue)
+    const date =
+      new Date(dateValue)
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
       return ''
     }
 
     return date.toLocaleString()
   }
+
 
   const getActivityLabel = (
     activityType
@@ -255,6 +379,7 @@ function Progress() {
     )
   }
 
+
   const handleActivitySelection = (
     activityId
   ) => {
@@ -279,7 +404,8 @@ function Progress() {
         ) {
           return currentIds.filter(
             (id) =>
-              id !== numericActivityId
+              id !==
+              numericActivityId
           )
         }
 
@@ -291,30 +417,41 @@ function Progress() {
     )
   }
 
-  const handleSelectAllVisible = () => {
-    if (allVisibleActivitiesSelected) {
-      setSelectedActivityIds([])
-      return
+
+  const handleSelectAllVisible =
+    () => {
+      if (
+        allVisibleActivitiesSelected
+      ) {
+        setSelectedActivityIds(
+          []
+        )
+
+        return
+      }
+
+      setSelectedActivityIds(
+        selectableActivityIds
+      )
     }
 
-    setSelectedActivityIds(
-      selectableActivityIds
-    )
-  }
 
   const handleDeleteSelectedActivities =
     async () => {
       if (
-        selectedActivityIds.length === 0
+        selectedActivityIds.length ===
+        0
       ) {
         setActivityError(
           'Select at least one activity to delete.'
         )
+
         return
       }
 
       const activityWord =
-        selectedActivityIds.length === 1
+        selectedActivityIds.length ===
+        1
           ? 'entry'
           : 'entries'
 
@@ -327,7 +464,45 @@ function Progress() {
         return
       }
 
-      setActivityActionLoading(true)
+      const actionStartedAt =
+        Date.now()
+
+      const waitForMinimumFeedback =
+        async () => {
+          const elapsedTime =
+            Date.now() -
+            actionStartedAt
+
+          const remainingFeedbackTime =
+            Math.max(
+              0,
+              2000 -
+                elapsedTime
+            )
+
+          if (
+            remainingFeedbackTime >
+            0
+          ) {
+            await new Promise(
+              (resolve) => {
+                window.setTimeout(
+                  resolve,
+                  remainingFeedbackTime
+                )
+              }
+            )
+          }
+        }
+
+      setActivityActionType(
+        'delete-selected'
+      )
+
+      setActivityActionLoading(
+        true
+      )
+
       setActivityError('')
       setActivityStatus('')
 
@@ -338,7 +513,9 @@ function Progress() {
           )
 
         if (!response.ok) {
-          if (response.status === 401) {
+          if (
+            response.status === 401
+          ) {
             setActivityError(
               'Your login session is missing or invalid. Please sign in again.'
             )
@@ -352,13 +529,49 @@ function Progress() {
           return
         }
 
-        const deletedCount = Number(
-          response.data?.deleted_count ?? 0
+        const deletedCount =
+          Number(
+            response.data
+              ?.deleted_count ?? 0
+          )
+
+        await waitForMinimumFeedback()
+
+        setActivityActionLoading(
+          false
         )
 
-        setSelectedActivityIds([])
+        setActivityActionType(
+          null
+        )
 
-        if (deletedCount === 1) {
+        setSelectedActivityIds(
+          []
+        )
+
+        await loadProgress({
+          showLoading: false,
+        })
+
+        if (
+          deletedCount === 1
+        ) {
+          setActivityStatus(
+            '1 activity entry was removed from your history.'
+          )
+        } else {
+          setActivityStatus(
+            `${deletedCount} activity entries were removed from your history.`
+          )
+        }
+
+        setSelectedActivityIds(
+          []
+        )
+
+        if (
+          deletedCount === 1
+        ) {
           setActivityStatus(
             '1 activity entry was removed from your history.'
           )
@@ -381,9 +594,18 @@ function Progress() {
           'Unable to connect to the server while deleting activity history.'
         )
       } finally {
-        setActivityActionLoading(false)
+        await waitForMinimumFeedback()
+
+        setActivityActionLoading(
+          false
+        )
+
+        setActivityActionType(
+          null
+        )
       }
     }
+
 
   const handleClearActivityHistory =
     async () => {
@@ -396,7 +618,45 @@ function Progress() {
         return
       }
 
-      setActivityActionLoading(true)
+      const actionStartedAt =
+        Date.now()
+
+      const waitForMinimumFeedback =
+        async () => {
+          const elapsedTime =
+            Date.now() -
+            actionStartedAt
+
+          const remainingFeedbackTime =
+            Math.max(
+              0,
+              2000 -
+                elapsedTime
+            )
+
+          if (
+            remainingFeedbackTime >
+            0
+          ) {
+            await new Promise(
+              (resolve) => {
+                window.setTimeout(
+                  resolve,
+                  remainingFeedbackTime
+                )
+              }
+            )
+          }
+        }
+
+      setActivityActionType(
+        'clear-history'
+      )
+
+      setActivityActionLoading(
+        true
+      )
+
       setActivityError('')
       setActivityStatus('')
 
@@ -405,7 +665,9 @@ function Progress() {
           await clearActivityHistory()
 
         if (!response.ok) {
-          if (response.status === 401) {
+          if (
+            response.status === 401
+          ) {
             setActivityError(
               'Your login session is missing or invalid. Please sign in again.'
             )
@@ -419,13 +681,49 @@ function Progress() {
           return
         }
 
-        const deletedCount = Number(
-          response.data?.deleted_count ?? 0
+        const deletedCount =
+          Number(
+            response.data
+              ?.deleted_count ?? 0
+          )
+
+        await waitForMinimumFeedback()
+
+        setActivityActionLoading(
+          false
         )
 
-        setSelectedActivityIds([])
+        setActivityActionType(
+          null
+        )
 
-        if (deletedCount === 0) {
+        setSelectedActivityIds(
+          []
+        )
+
+        await loadProgress({
+          showLoading: false,
+        })
+
+        if (
+          deletedCount === 0
+        ) {
+          setActivityStatus(
+            'Your activity history is already clear.'
+          )
+        } else {
+          setActivityStatus(
+            'Activity history cleared successfully.'
+          )
+        }
+
+        setSelectedActivityIds(
+          []
+        )
+
+        if (
+          deletedCount === 0
+        ) {
           setActivityStatus(
             'Your activity history is already clear.'
           )
@@ -448,24 +746,462 @@ function Progress() {
           'Unable to connect to the server while clearing activity history.'
         )
       } finally {
-        setActivityActionLoading(false)
+        await waitForMinimumFeedback()
+
+        setActivityActionLoading(
+          false
+        )
+
+        setActivityActionType(
+          null
+        )
       }
     }
 
+
   const cardClass =
-    'rounded-xl border border-[#2A1B4D] bg-[#160B32] p-5'
+    'progress-theme-surface progress-card rounded-xl border border-[#2A1B4D] bg-[#160B32] p-5'
+
 
   const smallCardClass =
-    'rounded-lg border border-[#2A1B4D] bg-[#120928] p-4'
+    'progress-theme-surface progress-small-card rounded-lg border border-[#2A1B4D] bg-[#120928] p-4'
+
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="progress-theme mx-auto max-w-4xl">
+      <style>
+        {`
+          .progress-theme-surface {
+            transition:
+              background-color 500ms ease,
+              border-color 500ms ease,
+              box-shadow 300ms ease;
+          }
+
+          .progress-theme-interactive {
+            transition:
+              color 100ms ease,
+              background-color 300ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease,
+              opacity 300ms ease;
+          }
+
+          .progress-theme
+          [class~="text-white"],
+          .progress-theme
+          [class~="text-[#C2C4E4]"],
+          .progress-theme
+          [class~="text-[#c2c4e4]"],
+          .progress-theme
+          [class~="text-[#AEB1D1]"],
+          .progress-theme
+          [class~="text-[#898CC0]"],
+          .progress-theme
+          [class~="text-[#898cc0]"],
+          .progress-theme
+          [class~="text-[#595C90]"],
+          .progress-theme
+          [class~="text-[#727494]"],
+          .progress-theme
+          [class~="text-[#A77BFF]"],
+          .progress-theme
+          [class~="text-[#a97cff]"] {
+            transition:
+              color 100ms ease;
+          }
+
+
+          /*
+           * Main text
+           */
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-white"] {
+            color:
+              #171717 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#C2C4E4]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#c2c4e4]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#AEB1D1]"] {
+            color:
+              #45424d !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#898CC0]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#898cc0]"] {
+            color:
+              #65676b !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#595C90]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#727494]"] {
+            color:
+              #7a7575 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#A77BFF]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-[#a97cff]"] {
+            color:
+              #7a44ff !important;
+          }
+
+
+          /*
+           * Main cards
+           */
+          [data-theme-mode='light']
+          .progress-card,
+          [data-theme-mode='light']
+          .progress-accordion {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          /*
+           * Secondary cards
+           */
+          [data-theme-mode='light']
+          .progress-small-card,
+          [data-theme-mode='light']
+          .progress-subtle-surface,
+          [data-theme-mode='light']
+          .progress-table-head {
+            background-color:
+              #f7f7fb !important;
+
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          /*
+           * Icons / accordion arrows
+           */
+          [data-theme-mode='light']
+          .progress-icon,
+          [data-theme-mode='light']
+          .progress-chevron {
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.08
+              ) !important;
+
+            border-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.20
+              ) !important;
+
+            color:
+              #7a44ff !important;
+          }
+
+
+          /*
+           * Accordions
+           */
+          [data-theme-mode='light']
+          .progress-accordion:hover {
+            border-color:
+              #7a44ff !important;
+
+            box-shadow:
+              0 0 24px
+              rgba(
+                122,
+                68,
+                255,
+                0.12
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-accordion-header {
+            background-color:
+              #ffffff !important;
+          }
+
+
+          /*
+           * Borders
+           */
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="border-[#2A1B4D]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="border-[#2a1b4d]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="border-[#392461]"],
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="border-[#3A2763]"] {
+            border-color:
+              #dfdfdf !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="divide-[#2A1B4D]"] {
+            border-color:
+              #dfdfdf !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-table-body
+          > :not([hidden])
+          ~ :not([hidden]) {
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          /*
+           * Accuracy progress bar
+           */
+          [data-theme-mode='light']
+          .progress-track {
+            background-color:
+              #e5e1ec !important;
+          }
+
+
+          /*
+           * Quiz table hover
+           */
+          [data-theme-mode='light']
+          .progress-table-row:hover {
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.06
+              ) !important;
+          }
+
+
+          /*
+           * Quiz score badges
+           */
+          [data-theme-mode='light']
+          .progress-score-good {
+            color:
+              #047857 !important;
+
+            background-color:
+              rgba(
+                16,
+                185,
+                129,
+                0.08
+              ) !important;
+
+            border-color:
+              rgba(
+                16,
+                185,
+                129,
+                0.28
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-score-mid {
+            color:
+              #92400e !important;
+
+            background-color:
+              rgba(
+                245,
+                158,
+                11,
+                0.08
+              ) !important;
+
+            border-color:
+              rgba(
+                245,
+                158,
+                11,
+                0.28
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-score-low {
+            color:
+              #b91c1c !important;
+
+            background-color:
+              rgba(
+                239,
+                68,
+                68,
+                0.07
+              ) !important;
+
+            border-color:
+              rgba(
+                239,
+                68,
+                68,
+                0.28
+              ) !important;
+          }
+
+
+          /*
+           * Status colours
+           */
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-red-300"] {
+            color:
+              #b91c1c !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-theme
+          [class~="text-emerald-300"] {
+            color:
+              #047857 !important;
+          }
+
+
+          /*
+           * Activity destructive buttons
+           */
+          [data-theme-mode='light']
+          .progress-delete-button,
+          [data-theme-mode='light']
+          .progress-clear-button {
+            color:
+              #b91c1c !important;
+
+            background-color:
+              rgba(
+                239,
+                68,
+                68,
+                0.07
+              ) !important;
+
+            border-color:
+              rgba(
+                239,
+                68,
+                68,
+                0.25
+              ) !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-delete-button:hover:not(:disabled),
+          [data-theme-mode='light']
+          .progress-clear-button:hover:not(:disabled) {
+            color:
+              #991b1b !important;
+
+            background-color:
+              rgba(
+                239,
+                68,
+                68,
+                0.11
+              ) !important;
+
+            border-color:
+              rgba(
+                239,
+                68,
+                68,
+                0.45
+              ) !important;
+          }
+
+
+          /*
+           * Disabled buttons
+           */
+          [data-theme-mode='light']
+          .progress-theme
+          button:disabled {
+            background-image:
+              none !important;
+
+            background-color:
+              #e6e3eb !important;
+
+            border-color:
+              #dfdfdf !important;
+
+            color:
+              #9a96a6 !important;
+
+            box-shadow:
+              none !important;
+          }
+
+
+          /*
+           * Loading status
+           */
+          [data-theme-mode='light']
+          .progress-loading {
+            background-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.07
+              ) !important;
+
+            border-color:
+              rgba(
+                122,
+                68,
+                255,
+                0.20
+              ) !important;
+          }
+        `}
+      </style>
+
 
       {/* Page Heading */}
       <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-
         <div>
-
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#A77BFF]">
             Study Analytics
           </p>
@@ -478,11 +1214,10 @@ function Progress() {
             Review your study activity, quiz performance and generated
             study resources.
           </p>
-
         </div>
 
-        <div className="w-full sm:w-44">
 
+        <div className="w-full sm:w-44">
           <label
             htmlFor="progress-period"
             className="mb-2 block text-sm font-medium text-[#C2C4E4]"
@@ -490,36 +1225,41 @@ function Progress() {
             Time Period
           </label>
 
-          <select
+          <AnimatedSelect
             id="progress-period"
             value={period}
-            onChange={(event) =>
-              setPeriod(event.target.value)
+            disabled={
+              loading ||
+              !contentVisible
             }
-            disabled={loading}
-            className="w-full rounded-lg border border-[#2A1B4D] bg-[#120928] px-3 py-2.5 text-sm text-[#C2C4E4] outline-none transition focus:border-[#7A44FF] focus:ring-1 focus:ring-[#7A44FF] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="all">
-              All Time
-            </option>
-
-            <option value="week">
-              This Week
-            </option>
-
-            <option value="month">
-              This Month
-            </option>
-          </select>
-
+            options={[
+              {
+                value: 'all',
+                label: 'All Time',
+              },
+              {
+                value: 'week',
+                label:
+                  'This Week',
+              },
+              {
+                value: 'month',
+                label:
+                  'This Month',
+              },
+            ]}
+            onChange={
+              handlePeriodChange
+            }
+          />
         </div>
-
       </div>
+
 
       {/* Loading */}
       {loading && (
         <div
-          className="mb-5 rounded-lg border border-[#3A2763] bg-[#2A1F46] p-4"
+          className="progress-theme-surface progress-loading mb-5 rounded-lg border border-[#3A2763] bg-[#2A1F46] p-4"
           role="status"
         >
           <p className="text-sm text-[#C2C4E4]">
@@ -527,6 +1267,7 @@ function Progress() {
           </p>
         </div>
       )}
+
 
       {/* Main Error */}
       {error && (
@@ -540,759 +1281,776 @@ function Progress() {
         </div>
       )}
 
-      {/* Main Statistics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        <div className={cardClass}>
+      <div
+        className={`transition-all duration-300 ease-out ${
+          contentVisible
+            ? 'translate-y-0 opacity-100'
+            : 'pointer-events-none translate-y-2 opacity-0'
+        }`}
+      >
+        {/* Main Statistics */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={cardClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Study Materials
+                </p>
 
-          <div className="flex items-start justify-between gap-3">
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {
+                    stats.uploadedMaterials
+                  }
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Study Materials
-              </p>
+              <div className="progress-theme-interactive progress-icon flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M7 3.75h7l3 3V20.25H7V3.75Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
 
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.uploadedMaterials}
-              </p>
+                  <path
+                    d="M14 3.75v3h3"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M7 3.75h7l3 3V20.25H7V3.75Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-
-                <path
-                  d="M14 3.75v3h3"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-            </div>
-
+            <p className="mt-2 text-xs text-[#595C90]">
+              Uploaded documents
+            </p>
           </div>
 
-          <p className="mt-2 text-xs text-[#595C90]">
-            Uploaded documents
-          </p>
 
-        </div>
+          <div className={cardClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Flashcards
+                </p>
 
-        <div className={cardClass}>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {
+                    stats.flashcardsGenerated
+                  }
+                </p>
+              </div>
 
-          <div className="flex items-start justify-between gap-3">
+              <div className="progress-theme-interactive progress-icon flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="5"
+                    y="6"
+                    width="14"
+                    height="12"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Flashcards
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.flashcardsGenerated}
-              </p>
+                  <path
+                    d="M8 9h8M8 12h5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <rect
-                  x="5"
-                  y="6"
-                  width="14"
-                  height="12"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-
-                <path
-                  d="M8 9h8M8 12h5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-            </div>
-
+            <p className="mt-2 text-xs text-[#595C90]">
+              Generated study sets
+            </p>
           </div>
 
-          <p className="mt-2 text-xs text-[#595C90]">
-            Generated study sets
-          </p>
 
-        </div>
+          <div className={cardClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Quizzes Completed
+                </p>
 
-        <div className={cardClass}>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {
+                    stats.quizzesCompleted
+                  }
+                </p>
+              </div>
 
-          <div className="flex items-start justify-between gap-3">
+              <div className="progress-theme-interactive progress-icon flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="6"
+                    y="4"
+                    width="12"
+                    height="16"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
 
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Quizzes Completed
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.quizzesCompleted}
-              </p>
+                  <path
+                    d="m9 12 2 2 4-4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <rect
-                  x="6"
-                  y="4"
-                  width="12"
-                  height="16"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-
-                <path
-                  d="m9 12 2 2 4-4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-            </div>
-
+            <p className="mt-2 text-xs text-[#595C90]">
+              Practice attempts
+            </p>
           </div>
 
-          <p className="mt-2 text-xs text-[#595C90]">
-            Practice attempts
-          </p>
 
-        </div>
+          <div className={cardClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[#898CC0]">
+                  Average Score
+                </p>
 
-        <div className={cardClass}>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  {stats.averageScore}%
+                </p>
+              </div>
 
-          <div className="flex items-start justify-between gap-3">
-
-            <div>
-              <p className="text-sm font-medium text-[#898CC0]">
-                Average Score
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-white">
-                {stats.averageScore}%
-              </p>
+              <div className="progress-theme-interactive progress-icon flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 18V12M12 18V7M18 18V4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 18V12M12 18V7M18 18V4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-            </div>
-
+            <p className="mt-2 text-xs text-[#595C90]">
+              Quiz performance
+            </p>
           </div>
-
-          <p className="mt-2 text-xs text-[#595C90]">
-            Quiz performance
-          </p>
-
         </div>
 
-      </div>
 
-      {/* Generated Resources / Accuracy */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {/* Generated Resources / Accuracy */}
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className={cardClass}>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+              Resources
+            </p>
 
-        <div className={cardClass}>
+            <h2 className="text-xl font-semibold text-white">
+              Generated Study Resources
+            </h2>
 
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-            Resources
-          </p>
-
-          <h2 className="text-xl font-semibold text-white">
-            Generated Study Resources
-          </h2>
-
-          <p className="mt-1 text-sm text-[#898CC0]">
-            AI-generated resources for the selected period.
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Summaries
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.summariesGenerated}
-              </p>
-            </div>
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Study Plans
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.studyPlansCreated}
-              </p>
-            </div>
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Quizzes
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.quizzesGenerated}
-              </p>
-            </div>
-
-            <div className={smallCardClass}>
-              <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                Explanations
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-white">
-                {stats.explanationsGenerated}
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className={cardClass}>
-
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-            Performance
-          </p>
-
-          <h2 className="text-xl font-semibold text-white">
-            Quiz Question Accuracy
-          </h2>
-
-          <p className="mt-1 text-sm text-[#898CC0]">
-            Correct answers across your practice attempts.
-          </p>
-
-          <div className="mt-5">
-
-            <div className="flex items-center justify-between">
-
-              <span className="text-sm text-[#C2C4E4]">
-                Correct Answers
-              </span>
-
-              <span className="text-sm font-semibold text-white">
-                {questionAccuracy}%
-              </span>
-
-            </div>
-
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#120928]">
-
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] transition-all duration-500"
-                style={{
-                  width: `${questionAccuracy}%`,
-                }}
-              />
-
-            </div>
+            <p className="mt-1 text-sm text-[#898CC0]">
+              AI-generated resources for the selected period.
+            </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-
               <div className={smallCardClass}>
                 <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                  Correct
+                  Summaries
                 </p>
 
                 <p className="mt-1 text-xl font-semibold text-white">
-                  {progress?.total_correct ?? 0}
+                  {
+                    stats.summariesGenerated
+                  }
                 </p>
               </div>
+
 
               <div className={smallCardClass}>
                 <p className="text-xs uppercase tracking-wide text-[#595C90]">
-                  Questions
+                  Study Plans
                 </p>
 
                 <p className="mt-1 text-xl font-semibold text-white">
-                  {progress?.total_questions ?? 0}
+                  {
+                    stats.studyPlansCreated
+                  }
                 </p>
               </div>
 
+
+              <div className={smallCardClass}>
+                <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                  Quizzes
+                </p>
+
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {
+                    stats.quizzesGenerated
+                  }
+                </p>
+              </div>
+
+
+              <div className={smallCardClass}>
+                <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                  Explanations
+                </p>
+
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {
+                    stats.explanationsGenerated
+                  }
+                </p>
+              </div>
             </div>
-
           </div>
 
-        </div>
 
-      </div>
-
-      {/* Quiz Performance */}
-      <section className="group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
-
-        <button
-          type="button"
-          onClick={() =>
-            setQuizPerformanceOpen(
-              (current) => !current
-            )
-          }
-          aria-expanded={quizPerformanceOpen}
-          aria-controls="quiz-performance-content"
-          style={{
-            backgroundColor: '#160B32',
-          }}
-          className="relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
-        >
-
-          <div>
-
+          <div className={cardClass}>
             <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-              Quiz History
+              Performance
             </p>
 
             <h2 className="text-xl font-semibold text-white">
-              Quiz Performance
+              Quiz Question Accuracy
             </h2>
 
             <p className="mt-1 text-sm text-[#898CC0]">
-              Review your recent practice quiz results.
+              Correct answers across your practice attempts.
             </p>
 
+            <div className="mt-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#C2C4E4]">
+                  Correct Answers
+                </span>
+
+                <span className="text-sm font-semibold text-white">
+                  {questionAccuracy}%
+                </span>
+              </div>
+
+              <div className="progress-theme-surface progress-track mt-3 h-2 overflow-hidden rounded-full bg-[#120928]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#7A44FF] to-[#D83DFF] transition-all duration-500"
+                  style={{
+                    width:
+                      `${questionAccuracy}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className={smallCardClass}>
+                  <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                    Correct
+                  </p>
+
+                  <p className="mt-1 text-xl font-semibold text-white">
+                    {progress
+                      ?.total_correct ??
+                      0}
+                  </p>
+                </div>
+
+                <div className={smallCardClass}>
+                  <p className="text-xs uppercase tracking-wide text-[#595C90]">
+                    Questions
+                  </p>
+
+                  <p className="mt-1 text-xl font-semibold text-white">
+                    {progress
+                      ?.total_questions ??
+                      0}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
 
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              aria-hidden="true"
-              className={`h-4 w-4 transition-transform duration-300 ${
-                quizPerformanceOpen
-                  ? 'rotate-180'
-                  : ''
-              }`}
-            >
-              <path
-                d="M5 7.5L10 12.5L15 7.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+        {/* Quiz Performance */}
+        <section className="progress-theme-surface progress-accordion group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
+          <button
+            type="button"
+            onClick={() =>
+              setQuizPerformanceOpen(
+                (current) =>
+                  !current
+              )
+            }
+            aria-expanded={
+              quizPerformanceOpen
+            }
+            aria-controls="quiz-performance-content"
+            style={{
+              backgroundColor:
+                '#160B32',
+            }}
+            className="progress-theme-surface progress-accordion-header relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
+          >
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+                Quiz History
+              </p>
 
-          </div>
+              <h2 className="text-xl font-semibold text-white">
+                Quiz Performance
+              </h2>
 
-        </button>
+              <p className="mt-1 text-sm text-[#898CC0]">
+                Review your recent practice quiz results.
+              </p>
+            </div>
 
-        <div
-          id="quiz-performance-content"
-          aria-hidden={!quizPerformanceOpen}
-          className={`grid transition-all duration-300 ease-in-out ${
-            quizPerformanceOpen
-              ? 'visible grid-rows-[1fr] opacity-100'
-              : 'invisible grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="min-h-0 overflow-hidden">
+            <div className="progress-theme-interactive progress-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform duration-300 ${
+                  quizPerformanceOpen
+                    ? 'rotate-180'
+                    : ''
+                }`}
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </button>
 
-            <div className="border-t border-[#2A1B4D]">
 
-              <div className="overflow-x-auto">
+          <div
+            id="quiz-performance-content"
+            aria-hidden={
+              !quizPerformanceOpen
+            }
+            className={`grid transition-all duration-300 ease-in-out ${
+              quizPerformanceOpen
+                ? 'visible grid-rows-[1fr] opacity-100'
+                : 'invisible grid-rows-[0fr] opacity-0'
+            }`}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="border-t border-[#2A1B4D]">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="progress-theme-surface progress-table-head bg-[#120928]/60">
+                      <tr>
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Quiz
+                        </th>
 
-                <table className="min-w-full">
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Score
+                        </th>
 
-                  <thead className="bg-[#120928]/60">
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Result
+                        </th>
 
-                    <tr>
-
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Quiz
-                      </th>
-
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Score
-                      </th>
-
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Result
-                      </th>
-
-                      <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                        Date
-                      </th>
-
-                    </tr>
-
-                  </thead>
-
-                  <tbody className="divide-y divide-[#2A1B4D]">
-
-                    {!loading &&
-                      quizHistory.length === 0 && (
-                        <tr>
-
-                          <td
-                            colSpan="4"
-                            className="px-5 py-8 text-center text-sm text-[#898CC0]"
-                          >
-                            No quiz attempts found for this time period.
-                          </td>
-
-                        </tr>
-                      )}
-
-                    {quizHistory.map((quiz) => (
-                      <tr
-                        key={quiz.attempt_id}
-                        className="transition hover:bg-[#211044]"
-                      >
-
-                        <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">
-                          {quiz.quiz_title}
-                        </td>
-
-                        <td className="px-5 py-4 text-sm text-[#898CC0]">
-                          {quiz.score}/{quiz.total}
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <span
-                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreStyle(
-                              quiz.percentage
-                            )}`}
-                          >
-                            {quiz.percentage}%
-                          </span>
-
-                        </td>
-
-                        <td className="px-5 py-4 text-sm text-[#898CC0]">
-                          {formatDate(
-                            quiz.attempted_at
-                          )}
-                        </td>
-
+                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                          Date
+                        </th>
                       </tr>
-                    ))}
+                    </thead>
 
-                  </tbody>
 
-                </table>
+                    <tbody className="progress-table-body divide-y divide-[#2A1B4D]">
+                      {!loading &&
+                        quizHistory.length ===
+                          0 && (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="px-5 py-8 text-center text-sm text-[#898CC0]"
+                            >
+                              No quiz attempts found for this time period.
+                            </td>
+                          </tr>
+                        )}
 
+
+                      {quizHistory.map(
+                        (quiz) => (
+                          <tr
+                            key={
+                              quiz.attempt_id
+                            }
+                            className="progress-theme-interactive progress-table-row transition hover:bg-[#211044]"
+                          >
+                            <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">
+                              {
+                                quiz.quiz_title
+                              }
+                            </td>
+
+                            <td className="px-5 py-4 text-sm text-[#898CC0]">
+                              {
+                                quiz.score
+                              }
+                              /
+                              {
+                                quiz.total
+                              }
+                            </td>
+
+                            <td className="px-5 py-4">
+                              <span
+                                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreStyle(
+                                  quiz.percentage
+                                )}`}
+                              >
+                                {
+                                  quiz.percentage
+                                }
+                                %
+                              </span>
+                            </td>
+
+                            <td className="px-5 py-4 text-sm text-[#898CC0]">
+                              {formatDate(
+                                quiz.attempted_at
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+            </div>
+          </div>
+        </section>
 
+
+        {/* Recent Activity */}
+        <section className="progress-theme-surface progress-accordion group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
+          <button
+            type="button"
+            onClick={() =>
+              setRecentActivityOpen(
+                (current) =>
+                  !current
+              )
+            }
+            aria-expanded={
+              recentActivityOpen
+            }
+            aria-controls="recent-activity-content"
+            style={{
+              backgroundColor:
+                '#160B32',
+            }}
+            className="progress-theme-surface progress-accordion-header relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
+          >
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+                Activity
+              </p>
+
+              <h2 className="text-xl font-semibold text-white">
+                Recent Activity
+              </h2>
+
+              <p className="mt-1 text-sm text-[#898CC0]">
+                Your latest study actions for the selected time period.
+              </p>
             </div>
 
-          </div>
-        </div>
+            <div className="progress-theme-interactive progress-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform duration-300 ${
+                  recentActivityOpen
+                    ? 'rotate-180'
+                    : ''
+                }`}
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </button>
 
-      </section>
 
-      {/* Recent Activity */}
-      <section className="group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
+          <div
+            id="recent-activity-content"
+            aria-hidden={
+              !recentActivityOpen
+            }
+            className={`grid transition-all duration-300 ease-in-out ${
+              recentActivityOpen
+                ? 'visible grid-rows-[1fr] opacity-100'
+                : 'invisible grid-rows-[0fr] opacity-0'
+            }`}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="border-t border-[#2A1B4D] p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={
+                      handleDeleteSelectedActivities
+                    }
+                    disabled={
+                      activityActionLoading ||
+                      selectedActivityIds.length ===
+                        0
+                    }
+                    className="progress-theme-interactive progress-delete-button inline-flex min-w-[150px] items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-300 transition-all duration-300 hover:border-red-400/50 hover:bg-red-500/10 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+                  >
+                    {activityActionLoading &&
+                    activityActionType ===
+                      'delete-selected' ? (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]"
+                        />
 
-        <button
-          type="button"
-          onClick={() =>
-            setRecentActivityOpen(
-              (current) => !current
-            )
-          }
-          aria-expanded={recentActivityOpen}
-          aria-controls="recent-activity-content"
-          style={{
-            backgroundColor: '#160B32',
-          }}
-          className="relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
-        >
-
-          <div>
-
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-              Activity
-            </p>
-
-            <h2 className="text-xl font-semibold text-white">
-              Recent Activity
-            </h2>
-
-            <p className="mt-1 text-sm text-[#898CC0]">
-              Your latest study actions for the selected time period.
-            </p>
-
-          </div>
-
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              aria-hidden="true"
-              className={`h-4 w-4 transition-transform duration-300 ${
-                recentActivityOpen
-                  ? 'rotate-180'
-                  : ''
-              }`}
-            >
-              <path
-                d="M5 7.5L10 12.5L15 7.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-
-          </div>
-
-        </button>
-
-        <div
-          id="recent-activity-content"
-          aria-hidden={!recentActivityOpen}
-          className={`grid transition-all duration-300 ease-in-out ${
-            recentActivityOpen
-              ? 'visible grid-rows-[1fr] opacity-100'
-              : 'invisible grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="min-h-0 overflow-hidden">
-
-            <div className="border-t border-[#2A1B4D] p-5">
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-
-                <button
-                  type="button"
-                  onClick={
-                    handleDeleteSelectedActivities
-                  }
-                  disabled={
-                    activityActionLoading ||
-                    selectedActivityIds.length === 0
-                  }
-                  className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {activityActionLoading
-                    ? 'Please wait...'
-                    : `Delete Selected${
-                        selectedActivityIds.length > 0
+                        Deleting...
+                      </>
+                    ) : (
+                      `Delete Selected${
+                        selectedActivityIds.length >
+                        0
                           ? ` (${selectedActivityIds.length})`
                           : ''
-                      }`}
-                </button>
+                      }`
+                    )}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={
-                    handleClearActivityHistory
-                  }
-                  disabled={
-                    activityActionLoading ||
-                    loading
-                  }
-                  className="rounded-lg border border-red-500/40 bg-[#301127] px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-[#40142F] focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {activityActionLoading
-                    ? 'Please wait...'
-                    : 'Clear Activity History'}
-                </button>
 
-              </div>
+                  <button
+                    type="button"
+                    onClick={
+                      handleClearActivityHistory
+                    }
+                    disabled={
+                      activityActionLoading ||
+                      loading
+                    }
+                    className="progress-theme-interactive progress-clear-button inline-flex min-w-[170px] items-center justify-center gap-2 rounded-lg border border-red-500/40 bg-[#301127] px-4 py-2 text-sm font-medium text-red-300 transition-all duration-300 hover:bg-[#40142F] focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+                  >
+                    {activityActionLoading &&
+                    activityActionType ===
+                      'clear-history' ? (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]"
+                        />
 
-              {activityStatus && (
-                <div
-                  className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <p className="text-sm text-emerald-300">
-                    {activityStatus}
-                  </p>
+                        Clearing...
+                      </>
+                    ) : (
+                      'Clear Activity History'
+                    )}
+                  </button>
                 </div>
-              )}
 
-              {activityError && (
-                <div
-                  className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4"
-                  role="alert"
-                >
-                  <p className="text-sm text-red-300">
-                    {activityError}
-                  </p>
-                </div>
-              )}
 
-              {recentActivity.length > 0 && (
-                <div className="mt-4 flex flex-col gap-2 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-
-                  <label className="flex cursor-pointer items-center gap-3 text-sm text-[#C2C4E4]">
-
-                    <input
-                      type="checkbox"
-                      checked={
-                        allVisibleActivitiesSelected
+                {activityStatus && (
+                  <div
+                    className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <p className="text-sm text-emerald-300">
+                      {
+                        activityStatus
                       }
-                      onChange={
-                        handleSelectAllVisible
-                      }
-                      disabled={
-                        activityActionLoading
-                      }
-                      className="h-4 w-4 rounded accent-[#7A44FF]"
-                    />
-
-                    Select all visible
-
-                  </label>
-
-                  <span className="text-xs text-[#898CC0]">
-                    {selectedActivityIds.length}{' '}
-                    selected
-                  </span>
-
-                </div>
-              )}
-
-              <div className="mt-3 divide-y divide-[#2A1B4D]">
-
-                {!loading &&
-                  recentActivity.length === 0 && (
-                    <p className="py-8 text-center text-sm text-[#898CC0]">
-                      No recent activity found for this time period.
                     </p>
-                  )}
-
-                {recentActivity.map(
-                  (activity) => {
-                    const activityId =
-                      Number(
-                        activity.activity_id
-                      )
-
-                    const isSelected =
-                      selectedActivityIds.includes(
-                        activityId
-                      )
-
-                    return (
-                      <div
-                        key={activity.activity_id}
-                        className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                      >
-
-                        <div className="flex items-start gap-3">
-
-                          <input
-                            id={`activity-${activityId}`}
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() =>
-                              handleActivitySelection(
-                                activityId
-                              )
-                            }
-                            disabled={
-                              activityActionLoading
-                            }
-                            aria-label={`Select ${getActivityLabel(
-                              activity.activity_type
-                            )}`}
-                            className="mt-1 h-4 w-4 flex-shrink-0 rounded accent-[#7A44FF]"
-                          />
-
-                          <div>
-
-                            <label
-                              htmlFor={`activity-${activityId}`}
-                              className="cursor-pointer text-sm font-medium text-[#C2C4E4]"
-                            >
-                              {getActivityLabel(
-                                activity.activity_type
-                              )}
-                            </label>
-
-                            <p className="mt-1 text-sm text-[#898CC0]">
-                              {activity.detail}
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        <p className="text-sm text-[#AEB1D1] sm:flex-shrink-0">
-                          {formatDateTime(
-                            activity.occurred_at
-                          )}
-                        </p>
-
-                      </div>
-                    )
-                  }
+                  </div>
                 )}
 
+
+                {activityError && (
+                  <div
+                    className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4"
+                    role="alert"
+                  >
+                    <p className="text-sm text-red-300">
+                      {
+                        activityError
+                      }
+                    </p>
+                  </div>
+                )}
+
+
+                {recentActivity.length >
+                  0 && (
+                  <div className="progress-theme-surface progress-subtle-surface mt-4 flex flex-col gap-2 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <label className="flex cursor-pointer items-center gap-3 text-sm text-[#C2C4E4]">
+                      <input
+                        type="checkbox"
+                        checked={
+                          allVisibleActivitiesSelected
+                        }
+                        onChange={
+                          handleSelectAllVisible
+                        }
+                        disabled={
+                          activityActionLoading
+                        }
+                        className="h-4 w-4 rounded accent-[#7A44FF]"
+                      />
+
+                      Select all visible
+                    </label>
+
+                    <span className="text-xs text-[#898CC0]">
+                      {
+                        selectedActivityIds.length
+                      }{' '}
+                      selected
+                    </span>
+                  </div>
+                )}
+
+
+                <div className="mt-3 divide-y divide-[#2A1B4D]">
+                  {!loading &&
+                    recentActivity.length ===
+                      0 && (
+                      <p className="py-8 text-center text-sm text-[#898CC0]">
+                        No recent activity found for this time period.
+                      </p>
+                    )}
+
+
+                  {recentActivity.map(
+                    (activity) => {
+                      const activityId =
+                        Number(
+                          activity.activity_id
+                        )
+
+                      const isSelected =
+                        selectedActivityIds.includes(
+                          activityId
+                        )
+
+                      return (
+                        <div
+                          key={
+                            activity.activity_id
+                          }
+                          className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              id={`activity-${activityId}`}
+                              type="checkbox"
+                              checked={
+                                isSelected
+                              }
+                              onChange={() =>
+                                handleActivitySelection(
+                                  activityId
+                                )
+                              }
+                              disabled={
+                                activityActionLoading
+                              }
+                              aria-label={`Select ${getActivityLabel(
+                                activity.activity_type
+                              )}`}
+                              className="mt-1 h-4 w-4 flex-shrink-0 rounded accent-[#7A44FF]"
+                            />
+
+                            <div>
+                              <label
+                                htmlFor={`activity-${activityId}`}
+                                className="cursor-pointer text-sm font-medium text-[#C2C4E4]"
+                              >
+                                {getActivityLabel(
+                                  activity.activity_type
+                                )}
+                              </label>
+
+                              <p className="mt-1 text-sm text-[#898CC0]">
+                                {
+                                  activity.detail
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-[#AEB1D1] sm:flex-shrink-0">
+                            {formatDateTime(
+                              activity.occurred_at
+                            )}
+                          </p>
+                        </div>
+                      )
+                    }
+                  )}
+                </div>
+
+
+                <div className="progress-theme-surface progress-subtle-surface mt-4 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3">
+                  <p className="text-xs leading-5 text-[#898CC0]">
+                    Removing activity history only removes entries from this
+                    list. Your uploaded study materials, generated AI content,
+                    quiz attempts and study plans are not deleted.
+                  </p>
+                </div>
               </div>
-
-              <div className="mt-4 rounded-lg border border-[#2A1B4D] bg-[#120928] px-4 py-3">
-
-                <p className="text-xs leading-5 text-[#898CC0]">
-                  Removing activity history only removes entries from this
-                  list. Your uploaded study materials, generated AI content,
-                  quiz attempts and study plans are not deleted.
-                </p>
-
-              </div>
-
             </div>
-
           </div>
-        </div>
-
-      </section>
-
+        </section>
+      </div>
     </div>
   )
 }
+
 
 export default Progress
