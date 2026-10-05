@@ -23,7 +23,13 @@ const {
   deleteProfilePicture,
   changeUserPassword,
   verifyUserEmail,
-  resendVerificationCode
+  resendVerificationCode,
+
+  // Forgot Password
+  requestPasswordReset,
+  verifyPasswordResetCode,
+  resetPassword
+
 } = require("../controllers/user.controller");
 
 router.post("/register", registerUser);
@@ -48,6 +54,24 @@ router.post(
 router.post(
   "/resend-login-code",
   resendLoginCode
+);
+
+/*
+ * Forgot Password
+ */
+router.post(
+  "/forgot-password",
+  requestPasswordReset
+);
+
+router.post(
+  "/verify-reset-code",
+  verifyPasswordResetCode
+);
+
+router.post(
+  "/reset-password",
+  resetPassword
 );
 
 router.get(

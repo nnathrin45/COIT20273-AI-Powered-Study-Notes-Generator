@@ -2,7 +2,7 @@
   "test_id": "DP-04",
   "title": "Scanned PDF rejected",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:23.689Z",
+  "captured_at": "2026-09-26T11:05:09.216Z",
   "checking": "an image-only document is refused rather than accepted with empty content",
   "request": {
     "method": "POST",

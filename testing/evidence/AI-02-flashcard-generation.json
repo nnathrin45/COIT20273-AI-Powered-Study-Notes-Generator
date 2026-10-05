@@ -2,13 +2,13 @@
   "test_id": "AI-02",
   "title": "Flashcard generation",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:22.580Z",
+  "captured_at": "2026-09-26T11:05:06.489Z",
   "checking": "flashcards are returned as an array of question/answer records, not as a string",
   "request": {
     "method": "POST",
     "endpoint": "/api/ai/generate",
     "body": {
-      "file_id": 397,
+      "file_id": 84,
       "output_type": "flashcards"
     }
   },
@@ -18,8 +18,8 @@
       "status": "success",
       "message": "Content generated successfully",
       "output": {
-        "output_id": 184,
-        "file_id": 397,
+        "output_id": 34,
+        "file_id": 84,
         "file_name": "photosynthesis.txt",
         "output_type": "flashcards",
         "content": [

@@ -2,7 +2,7 @@
   "test_id": "DP-06",
   "title": "Unsupported file type rejected",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:23.933Z",
+  "captured_at": "2026-09-26T11:05:09.382Z",
   "checking": "an extension outside the allow-list is refused",
   "request": {
     "method": "POST",

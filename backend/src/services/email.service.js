@@ -2,22 +2,16 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 
-
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT || 587),
-
     secure:
-        String(
-            process.env.EMAIL_SECURE
-        ).toLowerCase() === "true",
-
+        String(process.env.EMAIL_SECURE).toLowerCase() === "true",
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_APP_PASSWORD
     }
 });
-
 
 const getFromAddress = () => {
     const fromName =
@@ -31,13 +25,11 @@ const getFromAddress = () => {
     return `"${fromName}" <${fromAddress}>`;
 };
 
-
 const verifyEmailConnection = async () => {
     await transporter.verify();
 
     return true;
 };
-
 
 const sendEmail = async ({
     to,
@@ -60,7 +52,6 @@ const sendEmail = async ({
     });
 };
 
-
 const generateVerificationCode = () => {
     return crypto
         .randomInt(
@@ -70,7 +61,6 @@ const generateVerificationCode = () => {
         .toString();
 };
 
-
 const hashVerificationCode = async (
     code
 ) => {
@@ -79,7 +69,6 @@ const hashVerificationCode = async (
         10
     );
 };
-
 
 /*
  * Normalise the theme value received
@@ -95,7 +84,6 @@ const normaliseEmailTheme = (
         ? "light"
         : "dark";
 };
-
 
 /*
  * Shared verification email HTML.
@@ -115,10 +103,8 @@ const buildVerificationEmailHtml = ({
     const selectedTheme =
         normaliseEmailTheme(theme);
 
-
     const isLight =
         selectedTheme === "light";
-
 
     /*
      * Theme colours
@@ -211,7 +197,6 @@ const buildVerificationEmailHtml = ({
                 "0 18px 50px rgba(0,0,0,0.35)"
         };
 
-
     return `
     <div style="
         margin: 0;
@@ -251,7 +236,6 @@ const buildVerificationEmailHtml = ({
                     ${badgeText}
                 </div>
 
-
                 <h2 style="
                     margin: 0;
                     color: ${colours.heading};
@@ -263,7 +247,6 @@ const buildVerificationEmailHtml = ({
 
             </div>
 
-
             <p style="
                 margin: 0 0 16px;
                 color: ${colours.greeting};
@@ -273,7 +256,6 @@ const buildVerificationEmailHtml = ({
                 Hi ${fullName},
             </p>
 
-
             <p style="
                 margin: 0;
                 color: ${colours.body};
@@ -282,7 +264,6 @@ const buildVerificationEmailHtml = ({
             ">
                 ${description}
             </p>
-
 
             <div style="
                 margin: 28px 0;
@@ -299,7 +280,6 @@ const buildVerificationEmailHtml = ({
                 ${code}
             </div>
 
-
             <p style="
                 margin: 0 0 18px;
                 color: ${colours.greeting};
@@ -314,7 +294,6 @@ const buildVerificationEmailHtml = ({
                     10 minutes
                 </strong>.
             </p>
-
 
             <div style="
                 margin-top: 24px;
@@ -333,7 +312,6 @@ const buildVerificationEmailHtml = ({
 
             </div>
 
-
             <p style="
                 margin: 24px 0 0;
                 color: ${colours.footer};
@@ -349,7 +327,6 @@ const buildVerificationEmailHtml = ({
     `;
 };
 
-
 /*
  * Registration Email Verification
  */
@@ -361,7 +338,6 @@ const sendVerificationCodeEmail = async ({
 }) => {
     const safeName =
         fullName || "Student";
-
 
     return sendEmail({
         to,
@@ -398,7 +374,6 @@ const sendVerificationCodeEmail = async ({
     });
 };
 
-
 /*
  * Sign-In Two-Factor Verification
  */
@@ -410,7 +385,6 @@ const sendLoginCodeEmail = async ({
 }) => {
     const safeName =
         fullName || "Student";
-
 
     return sendEmail({
         to,
@@ -447,6 +421,52 @@ const sendLoginCodeEmail = async ({
     });
 };
 
+/*
+ * Forgot Password
+ */
+const sendPasswordResetCodeEmail = async ({
+    to,
+    fullName,
+    code,
+    theme = "dark"
+}) => {
+    const safeName =
+        fullName || "Student";
+
+    return sendEmail({
+        to,
+
+        subject:
+            "Your StudyA password reset code",
+
+        text:
+            `Hi ${safeName},\n\n` +
+            `Your StudyA password reset code is: ${code}\n\n` +
+            `This code will expire in 10 minutes.\n\n` +
+            `If you did not request a password reset, you can safely ignore this email.`,
+
+        html:
+            buildVerificationEmailHtml({
+                fullName: safeName,
+
+                code,
+
+                theme,
+
+                badgeText:
+                    "Password Reset",
+
+                heading:
+                    "Reset your StudyA password",
+
+                description:
+                    "Use the password reset code below to create a new password.",
+
+                securityMessage:
+                    "If you did not request a password reset, you can safely ignore this email."
+            })
+    });
+};
 
 module.exports = {
     sendEmail,
@@ -454,5 +474,6 @@ module.exports = {
     generateVerificationCode,
     hashVerificationCode,
     sendVerificationCodeEmail,
-    sendLoginCodeEmail
+    sendLoginCodeEmail,
+    sendPasswordResetCodeEmail
 };

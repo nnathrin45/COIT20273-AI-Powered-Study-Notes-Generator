@@ -2,7 +2,7 @@
   "test_id": "ERR-08",
   "title": "Invalid input handling",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:24.790Z",
+  "captured_at": "2026-09-26T11:05:11.587Z",
   "checking": "each invalid request is rejected with its own code, and none reaches the model",
   "request": null,
   "response": {

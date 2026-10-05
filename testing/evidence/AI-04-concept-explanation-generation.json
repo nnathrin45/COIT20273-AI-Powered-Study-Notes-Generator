@@ -2,13 +2,13 @@
   "test_id": "AI-04",
   "title": "Concept explanation generation",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:22.584Z",
+  "captured_at": "2026-09-26T11:05:06.506Z",
   "checking": "the concept and level are echoed back with the explanation, and both reach the model",
   "request": {
     "method": "POST",
     "endpoint": "/api/ai/generate",
     "body": {
-      "file_id": 397,
+      "file_id": 84,
       "output_type": "explanation",
       "concept": "the Calvin cycle",
       "level": "beginner"
@@ -20,8 +20,8 @@
       "status": "success",
       "message": "Content generated successfully",
       "output": {
-        "output_id": 186,
-        "file_id": 397,
+        "output_id": 36,
+        "file_id": 84,
         "file_name": "photosynthesis.txt",
         "output_type": "explanation",
         "content": "The Calvin cycle is the stage of photosynthesis that takes carbon dioxide and builds it into sugar, using the ATP and NADPH made during the light-dependent reactions.",

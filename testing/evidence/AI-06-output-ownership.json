@@ -2,48 +2,48 @@
   "test_id": "AI-06",
   "title": "Output ownership",
   "issue": "#119",
-  "captured_at": "2026-09-21T10:51:22.591Z",
+  "captured_at": "2026-09-26T11:05:06.525Z",
   "checking": "every stored output records the user and document it was generated from",
   "request": null,
   "response": {
     "outputs": [
       {
-        "output_id": 183,
-        "file_id": 397,
-        "user_id": 642,
+        "output_id": 33,
+        "file_id": 84,
+        "user_id": 132,
         "output_type": "summary"
       },
       {
-        "output_id": 184,
-        "file_id": 397,
-        "user_id": 642,
+        "output_id": 34,
+        "file_id": 84,
+        "user_id": 132,
         "output_type": "flashcards"
       },
       {
-        "output_id": 185,
-        "file_id": 397,
-        "user_id": 642,
+        "output_id": 35,
+        "file_id": 84,
+        "user_id": 132,
         "output_type": "quiz"
       },
       {
-        "output_id": 186,
-        "file_id": 397,
-        "user_id": 642,
+        "output_id": 36,
+        "file_id": 84,
+        "user_id": 132,
         "output_type": "explanation"
       },
       {
-        "output_id": 187,
-        "file_id": 397,
-        "user_id": 642,
+        "output_id": 37,
+        "file_id": 84,
+        "user_id": 132,
         "output_type": "quiz"
       },
       {
-        "output_id": 188,
-        "file_id": 397,
-        "user_id": 642,
+        "output_id": 38,
+        "file_id": 84,
+        "user_id": 132,
         "output_type": "summary"
       }
     ]
   },
-  "notes": "expected user_id 642, file_id 397 on every row"
+  "notes": "expected user_id 132, file_id 84 on every row"
 }
