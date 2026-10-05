@@ -1470,7 +1470,11 @@ const requestPasswordReset = async (req, res) => {
       await sendPasswordResetCodeEmail({
         to: user.email,
         fullName: user.full_name,
-        code: resetCode
+        code: resetCode,
+        theme:
+          req.body?.theme === "light"
+            ? "light"
+            : "dark"
       });
     } catch (emailError) {
       // Remove reset code if email delivery fails.
