@@ -116,6 +116,7 @@ export const requestPasswordReset = async (
       requiresAuth: false,
       body: {
         email,
+        theme: getCurrentTheme(),
       },
     }
   )
