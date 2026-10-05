@@ -287,36 +287,284 @@ Where appropriate, students receive clear feedback and retry options without los
 
 ## Project Structure
 
+StudyA follows a separated frontend, backend, database, documentation and testing structure to support maintainability, integration and collaborative development.
+
 ```text
 COIT20273-AI-Powered-Study-Notes-Generator/
-|
-|-- backend/
-|   |-- src/
-|   |-- tests/
-|   |-- package.json
-|
-|-- database/
-|   |-- schema.sql
-|
-|-- docs/
-|
-|-- frontend/
-|   |-- src/
-|   |   |-- assets/
-|   |   |-- components/
-|   |   |-- pages/
-|   |   |-- services/
-|   |-- package.json
-|
-|-- meeting-notes/
-|
-|-- testing/
-|   |-- evidence/
-|   |-- reports/
-|
-|-- .gitignore
-|-- README.md
+│
+├── backend/
+│   │
+│   ├── src/
+│   │   │
+│   │   ├── config/
+│   │   │   └── database.js
+│   │   │
+│   │   ├── controllers/
+│   │   │   ├── ai.controller.js
+│   │   │   ├── consent.controller.js
+│   │   │   ├── note.controller.js
+│   │   │   ├── progress.controller.js
+│   │   │   ├── studyPlan.controller.js
+│   │   │   ├── upload.controller.js
+│   │   │   ├── uploaded.controller.js
+│   │   │   └── user.controller.js
+│   │   │
+│   │   ├── middleware/
+│   │   │   ├── auth.middleware.js
+│   │   │   ├── profilePicture.middleware.js
+│   │   │   └── upload.middleware.js
+│   │   │
+│   │   ├── routes/
+│   │   │   ├── ai.routes.js
+│   │   │   ├── consent.routes.js
+│   │   │   ├── health.routes.js
+│   │   │   ├── note.routes.js
+│   │   │   ├── progress.routes.js
+│   │   │   ├── studyPlan.routes.js
+│   │   │   ├── upload.routes.js
+│   │   │   ├── uploaded.routes.js
+│   │   │   └── user.routes.js
+│   │   │
+│   │   ├── services/
+│   │   │   ├── activity.service.js
+│   │   │   ├── ai.service.js
+│   │   │   ├── consent.service.js
+│   │   │   ├── docx.service.js
+│   │   │   ├── email.service.js
+│   │   │   ├── pdf.service.js
+│   │   │   └── txt.service.js
+│   │   │
+│   │   ├── profile-pictures/
+│   │   │   └── [user profile images]
+│   │   │
+│   │   ├── uploads/
+│   │   │   └── [uploaded study documents]
+│   │   │
+│   │   └── server.js
+│   │
+│   ├── tests/
+│   │   │
+│   │   ├── final/
+│   │   │   ├── ai-integration.final.test.js
+│   │   │   ├── document-processing.final.test.js
+│   │   │   ├── error-handling.final.test.js
+│   │   │   ├── privacy-consent.final.test.js
+│   │   │   └── quality-pipeline.final.test.js
+│   │   │
+│   │   ├── helpers/
+│   │   │   ├── api.js
+│   │   │   ├── evidence.js
+│   │   │   └── final-harness.js
+│   │   │
+│   │   ├── integration/
+│   │   │   ├── ai-timeout-handling.test.js
+│   │   │   ├── consent-and-ai-guards.test.js
+│   │   │   ├── quiz-scoring.test.js
+│   │   │   └── upload.test.js
+│   │   │
+│   │   ├── unit/
+│   │   │   ├── ai-service.test.js
+│   │   │   ├── ai-timeout.test.js
+│   │   │   └── extraction-accuracy.test.js
+│   │   │
+│   │   ├── README.md
+│   │   └── run-final.js
+│   │
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── package.json
+│   └── package-lock.json
+│
+├── database/
+│   └── schema.sql
+│
+├── docs/
+│   ├── api-spec.md
+│   ├── architecture-flow-document-processing-ai.md
+│   ├── member2-backend-contribution.md
+│   ├── member2-report2-evidence-mapping.md
+│   ├── requirements-document-processing-ai-integration.md
+│   └── security-testing.md
+│
+├── frontend/
+│   │
+│   ├── public/
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   │
+│   ├── src/
+│   │   │
+│   │   ├── assets/
+│   │   │   ├── hero.png
+│   │   │   ├── react.svg
+│   │   │   ├── studya-logo-light.png
+│   │   │   ├── studya-logo.png
+│   │   │   └── vite.svg
+│   │   │
+│   │   ├── components/
+│   │   │   ├── AIConsent.jsx
+│   │   │   ├── AIConsentRequired.jsx
+│   │   │   ├── AnimatedSelect.jsx
+│   │   │   ├── AppLayout.jsx
+│   │   │   ├── FirstLoginConsentModal.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   ├── StudyALogo.jsx
+│   │   │   └── ThemeToggle.jsx
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Explanation.jsx
+│   │   │   ├── Flashcards.jsx
+│   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Privacy.jsx
+│   │   │   ├── Profile.jsx
+│   │   │   ├── Progress.jsx
+│   │   │   ├── Quiz.jsx
+│   │   │   ├── Register.jsx
+│   │   │   ├── SavedMaterials.jsx
+│   │   │   ├── StudyPlanner.jsx
+│   │   │   ├── Summary.jsx
+│   │   │   ├── Upload.jsx
+│   │   │   ├── VerifyEmail.jsx
+│   │   │   └── VerifyLogin.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   ├── aiService.js
+│   │   │   ├── api.js
+│   │   │   ├── authService.js
+│   │   │   ├── consentService.js
+│   │   │   ├── profileService.js
+│   │   │   ├── progressService.js
+│   │   │   ├── studyPlanService.js
+│   │   │   ├── uploadedService.js
+│   │   │   └── uploadService.js
+│   │   │
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   │
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── README.md
+│   └── vite.config.js
+│
+├── meeting-notes/
+│   └── [team meeting documentation]
+│
+├── testing/
+│   │
+│   ├── evidence/
+│   │   ├── AI-01-summary-generation.json
+│   │   ├── AI-02-flashcard-generation.json
+│   │   ├── AI-03-practice-quiz-generation.json
+│   │   ├── AI-04-concept-explanation-generation.json
+│   │   ├── AI-05-structured-response-round-trip.json
+│   │   ├── AI-06-output-ownership.json
+│   │   ├── AI-07-cross-user-output-isolation.json
+│   │   │
+│   │   ├── DP-01-pdf-extracted-text.txt
+│   │   ├── DP-02-docx-extracted-text.txt
+│   │   ├── DP-03-txt-extracted-text.txt
+│   │   ├── DP-04-scanned-pdf-rejected.json
+│   │   ├── DP-05-extracted-text-storage.json
+│   │   ├── DP-06-unsupported-file-type-rejected.json
+│   │   ├── DP-07-corrupt-document-handled-safely.json
+│   │   │
+│   │   ├── ERR-01-gemini-timeout.json
+│   │   ├── ERR-02-daily-quota-exhausted.json
+│   │   ├── ERR-03-short-rate-limit.json
+│   │   ├── ERR-04-malformed-ai-response.json
+│   │   ├── ERR-05-empty-ai-response.json
+│   │   ├── ERR-06-upstream-service-unavailable.json
+│   │   ├── ERR-07-consistent-ai-error-contract.json
+│   │   ├── ERR-08-invalid-input-handling.json
+│   │   │
+│   │   ├── PRIV-01-consent-required-before-processing.json
+│   │   ├── PRIV-02-revoked-consent-blocks-processing.json
+│   │   ├── PRIV-03-prompt-sent-to-model.txt
+│   │   ├── PRIV-04-responsible-ai-labelling.json
+│   │   ├── PRIV-05-no-credentials-in-api-responses.json
+│   │   ├── PRIV-06-upstream-error-does-not-leak-credentials.json
+│   │   ├── PRIV-07-secrets-excluded-from-version-control.json
+│   │   │
+│   │   ├── QA-01-full-pipeline-end-to-end.json
+│   │   ├── QA-02-quiz-marking-against-a-known-key.json
+│   │   ├── QA-03-consent-enforced-across-all-content-types.json
+│   │   └── QA-04-ai-accuracy-review-artefact.json
+│   │
+│   ├── fixtures/
+│   │   ├── source/
+│   │   │   ├── doc1-software-testing.txt
+│   │   │   ├── doc2-database-design.txt
+│   │   │   └── doc3-computer-networks.txt
+│   │   │
+│   │   ├── known-doc1-software-testing.txt
+│   │   ├── known-doc2-database-design.docx
+│   │   ├── known-doc3-computer-networks.pdf
+│   │   ├── sample-study-material.txt
+│   │   ├── scanned-no-text.pdf
+│   │   └── two-page-text.pdf
+│   │
+│   ├── manual-verification/
+│   │   ├── ERR-01-live-timeout.png
+│   │   ├── FR16-01-summary.png
+│   │   ├── FR16-02-flashcards-1.png
+│   │   ├── FR16-03-flashcards-2.png
+│   │   ├── FR16-04-quiz-1.png
+│   │   ├── FR16-05-quiz-2.png
+│   │   ├── FR16-06-explanation.png
+│   │   └── README.md
+│   │
+│   ├── reports/
+│   │   ├── final-verification-report.html
+│   │   ├── final.junit.xml
+│   │   ├── regression.junit.xml
+│   │   └── summary.json
+│   │
+│   ├── ai-accuracy-review-2026-09-12.md
+│   ├── COIT20273-API.postman_collection.json
+│   │
+│   ├── member1-accessibility-testing.md
+│   ├── member1-auth-security-testing.md
+│   ├── member1-final-frontend-refinement-testing.md
+│   ├── member1-final-lecturer-feedback-verification.md
+│   ├── member1-progress-backend-testing.md
+│   ├── member1-progress-frontend-testing.md
+│   ├── member1-responsive-browser-testing.md
+│   ├── member1-saved-materials-integration-testing.md
+│   ├── member1-study-planner-backend-testing.md
+│   ├── member1-study-planner-integration-testing.md
+│   ├── member1-uploaded-file-deletion-testing.md
+│   ├── member1-usability-testing.md
+│   │
+│   ├── postman-test-notes.txt
+│   ├── run-verification-suite.js
+│   ├── test-log-document-processing-ai.md
+│   ├── verification-results-2026-09-10.json
+│   ├── verification-results-2026-09-12.json
+│   ├── verification-results-2026-09-12-run2.json
+│   └── verify-ai-generation.js
+│
+├── .gitignore
+└── README.md
 ```
+
+### Structure Overview
+
+- **`backend/`** — Node.js/Express backend containing authentication, document processing, AI integration, consent, study planning, progress tracking, uploaded-material management and API functionality.
+- **`database/`** — MySQL database schema used by StudyA.
+- **`docs/`** — API, architecture, requirements, security and project contribution documentation.
+- **`frontend/`** — React/Vite user interface containing StudyA pages, reusable components, application services, authentication interfaces and Light/Dark Theme support.
+- **`meeting-notes/`** — Team meeting documentation and collaboration records.
+- **`testing/`** — Automated tests, test fixtures, manual-verification evidence, accessibility/usability testing, integration evidence and generated verification reports.
+
+Runtime-generated files such as uploaded study documents, profile images, build output, dependency folders and local environment files are not individually shown in this structure.
 
 The project separates frontend, backend, database, documentation and testing artefacts to support maintainability and team collaboration.
 
