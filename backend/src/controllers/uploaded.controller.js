@@ -134,10 +134,7 @@ const deleteUploadedFile = async (req, res) => {
      * inside the known uploads directory. This prevents a stored path from
      * being used to delete a file outside the application's upload folder.
      */
-    const uploadDirectory = path.resolve(
-      __dirname,
-      "../uploads"
-    );
+    const uploadDirectory = require("../config/storage").uploadDirectory;
 
     const storedFileName = path.basename(file.file_path);
 
