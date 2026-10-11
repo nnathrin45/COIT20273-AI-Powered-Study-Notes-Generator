@@ -728,6 +728,50 @@ function StudyPlanner() {
   }
 
 
+  const renderDeadlineStatus = (storedDeadline) => {
+    if (!storedDeadline) {
+      return null
+    }
+
+    const value = String(storedDeadline).trim()
+
+    const calendarMatch =
+      /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+
+    const deadlineDate = calendarMatch
+      ? new Date(
+          Number(calendarMatch[1]),
+          Number(calendarMatch[2]) - 1,
+          Number(calendarMatch[3])
+        )
+      : new Date(value)
+
+    if (Number.isNaN(deadlineDate.getTime())) {
+      return null
+    }
+
+    // Compare calendar days, not hours or minutes.
+    deadlineDate.setHours(0, 0, 0, 0)
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const overdue = deadlineDate < today
+
+    return (
+      <span
+        data-overdue={overdue ? 'true' : 'false'}
+        className={`study-planner-deadline-status ml-2 inline-flex whitespace-nowrap rounded-full border px-2 py-0.5 align-middle text-[11px] font-semibold ${
+          overdue
+            ? 'border-amber-400/30 bg-amber-400/10 text-amber-300'
+            : 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+        }`}
+      >
+        {overdue ? 'Overdue' : 'Active'}
+      </span>
+    )
+  }
+
   const parsePlanData = (
     planData
   ) => {
@@ -1366,6 +1410,56 @@ function StudyPlanner() {
 
             border-color:
               #dfdfdf !important;
+          }
+
+          /* Saved Study Plans staggered cascade */
+          @keyframes studya-planner-page-enter {
+            from {
+              opacity: 0;
+              transform: translateY(9px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .study-planner-plan-row {
+            animation:
+              studya-planner-page-enter 240ms
+              cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
+          .study-planner-plan-row:nth-child(2) {
+            animation-delay: 50ms;
+          }
+
+          .study-planner-plan-row:nth-child(3) {
+            animation-delay: 100ms;
+          }
+
+          .study-planner-plan-row:nth-child(4) {
+            animation-delay: 150ms;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .study-planner-plan-row {
+              animation: none;
+            }
+          }
+          [data-theme-mode='light']
+          .study-planner-deadline-status[data-overdue='true'] {
+            color: #92400e !important;
+            background-color: #fffbeb !important;
+            border-color: #fcd34d !important;
+          }
+
+          [data-theme-mode='light']
+          .study-planner-deadline-status[data-overdue='false'] {
+            color: #065f46 !important;
+            background-color: #ecfdf5 !important;
+            border-color: #a7f3d0 !important;
           }
 
           /*
@@ -2065,7 +2159,7 @@ function StudyPlanner() {
                     {paginatedPlans.map(
                       (plan) => (
                         <tr
-                          key={plan.plan_id}
+                          key={`${currentPlanPage}-${plan.plan_id}`}
                                                     onClick={() =>
                             navigate(
                               `/study-plan/${plan.plan_id}`
@@ -2144,6 +2238,7 @@ function StudyPlanner() {
                                 plan.deadline
                               ) || '—'}
                             </span>
+                            {renderDeadlineStatus(plan.deadline)}
                           </td>
 
                           <td className="px-5 py-4">

@@ -1245,6 +1245,38 @@ function Progress() {
               ) !important;
           }
 
+          /* Quiz Performance staggered cascade */
+          @keyframes studya-progress-quiz-page-enter {
+            from {
+              opacity: 0;
+              transform: translateY(9px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .progress-quiz-table-body > .progress-quiz-table-row {
+            animation:
+              studya-progress-quiz-page-enter 240ms
+              cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
+          .progress-quiz-table-body > .progress-quiz-table-row:nth-child(2) {
+            animation-delay: 50ms;
+          }
+
+          .progress-quiz-table-body > .progress-quiz-table-row:nth-child(3) {
+            animation-delay: 100ms;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .progress-quiz-table-body > .progress-quiz-table-row {
+              animation: none;
+            }
+          }
           /*
            * Quiz Performance pagination — light mode
            */
@@ -1988,9 +2020,7 @@ function Progress() {
                 {paginatedQuizHistory.map(
                   (quiz) => (
                     <tr
-                      key={
-                        quiz.attempt_id
-                      }
+                      key={`${currentQuizHistoryPage}-${quiz.attempt_id}`}
                       className="progress-theme-interactive progress-table-row progress-quiz-table-row transition hover:bg-[#211044]"
                     >
                       <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">

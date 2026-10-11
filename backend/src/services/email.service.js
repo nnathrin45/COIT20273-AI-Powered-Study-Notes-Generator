@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 const getFromAddress = () => {
     const fromName =
         process.env.EMAIL_FROM_NAME ||
-        "StudyA";
+        "StudyAI";
 
     const fromAddress =
         process.env.EMAIL_FROM_ADDRESS ||
@@ -318,7 +318,7 @@ const buildVerificationEmailHtml = ({
                 font-size: 11px;
                 text-align: center;
             ">
-                StudyA &mdash; AI-Powered Study Notes
+                StudyAI &mdash; AI-Powered Study Notes
             </p>
 
         </div>
@@ -343,13 +343,13 @@ const sendVerificationCodeEmail = async ({
         to,
 
         subject:
-            "Verify your StudyA email address",
+            "Verify your StudyAI email address",
 
         text:
             `Hi ${safeName},\n\n` +
-            `Your StudyA verification code is: ${code}\n\n` +
+            `Your StudyAI verification code is: ${code}\n\n` +
             `This code will expire in 10 minutes.\n\n` +
-            `If you did not create a StudyA account, you can ignore this email.`,
+            `If you did not create a StudyAI account, you can ignore this email.`,
 
         html:
             buildVerificationEmailHtml({
@@ -363,13 +363,13 @@ const sendVerificationCodeEmail = async ({
                     "Email Verification",
 
                 heading:
-                    "Verify your StudyA email",
+                    "Verify your StudyAI email",
 
                 description:
-                    "Use the verification code below to complete your StudyA registration.",
+                    "Use the verification code below to complete your StudyAI registration.",
 
                 securityMessage:
-                    "If you did not create a StudyA account, you can safely ignore this email."
+                    "If you did not create a StudyAI account, you can safely ignore this email."
             })
     });
 };
@@ -390,13 +390,13 @@ const sendLoginCodeEmail = async ({
         to,
 
         subject:
-            "Your StudyA sign-in verification code",
+            "Your StudyAI sign-in verification code",
 
         text:
             `Hi ${safeName},\n\n` +
-            `Your StudyA sign-in verification code is: ${code}\n\n` +
+            `Your StudyAI sign-in verification code is: ${code}\n\n` +
             `This code will expire in 10 minutes.\n\n` +
-            `If you did not attempt to sign in to StudyA, you can ignore this email.`,
+            `If you did not attempt to sign in to StudyAI, you can ignore this email.`,
 
         html:
             buildVerificationEmailHtml({
@@ -410,13 +410,13 @@ const sendLoginCodeEmail = async ({
                     "Secure Sign-In",
 
                 heading:
-                    "Verify your StudyA sign-in",
+                    "Verify your StudyAI sign-in",
 
                 description:
-                    "Use the verification code below to complete your StudyA sign-in.",
+                    "Use the verification code below to complete your StudyAI sign-in.",
 
                 securityMessage:
-                    "If you did not attempt to sign in to StudyA, you can safely ignore this email."
+                    "If you did not attempt to sign in to StudyAI, you can safely ignore this email."
             })
     });
 };
@@ -437,11 +437,11 @@ const sendPasswordResetCodeEmail = async ({
         to,
 
         subject:
-            "Your StudyA password reset code",
+            "Your StudyAI password reset code",
 
         text:
             `Hi ${safeName},\n\n` +
-            `Your StudyA password reset code is: ${code}\n\n` +
+            `Your StudyAI password reset code is: ${code}\n\n` +
             `This code will expire in 10 minutes.\n\n` +
             `If you did not request a password reset, you can safely ignore this email.`,
 
@@ -457,7 +457,7 @@ const sendPasswordResetCodeEmail = async ({
                     "Password Reset",
 
                 heading:
-                    "Reset your StudyA password",
+                    "Reset your StudyAI password",
 
                 description:
                     "Use the password reset code below to create a new password.",
@@ -603,11 +603,11 @@ const sendStudySessionReminderEmail = async ({
         to,
 
         subject:
-            `StudyA reminder: ${sessionLabel} is ${safeTiming}`,
+            `StudyAI reminder: ${sessionLabel} is ${safeTiming}`,
 
         text:
             `Hi ${safeName},\n\n` +
-            `You have an upcoming StudyA session ${safeTiming}.\n\n` +
+            `You have an upcoming StudyAI session ${safeTiming}.\n\n` +
             `Subject: ${subjectName}\n` +
             `Topic: ${topic}\n` +
             `Session: ${sessionLabel}\n` +
@@ -615,7 +615,7 @@ const sendStudySessionReminderEmail = async ({
             `Duration: ${duration || "Not specified"}\n` +
             `Activity: ${activity || "Study session"}\n\n` +
             `View your study plan:\n${studyPlanUrl}\n\n` +
-            `StudyA`,
+            `StudyAI`,
 
         html: `
         <div style="
@@ -757,7 +757,7 @@ const sendStudySessionReminderEmail = async ({
                     line-height: 1.6;
                 ">
                     This reminder was created from one of your saved
-                    StudyA study-plan sessions.
+                    StudyAI study-plan sessions.
                 </p>
             </div>
         </div>

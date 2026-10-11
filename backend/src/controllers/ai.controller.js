@@ -299,13 +299,96 @@ const generateOutput = async (req, res) => {
       }
     }
 
+    /*
+     * Include recent messages from the authenticated user's
+     * selected Concept Explanation chat.
+     *
+     * The chat ownership and main-file match have already
+     * been validated above.
+     */
+    let conversationHistory = "";
+
+    if (output_type === "explanation" && explanationChat) {
+      const [previousTurns] = await db.execute(
+        `SELECT
+           em.concept,
+           ao.content
+         FROM explanation_chat_outputs eco
+         INNER JOIN ai_outputs ao
+           ON ao.output_id = eco.output_id
+         INNER JOIN explanation_metadata em
+           ON em.output_id = ao.output_id
+         WHERE eco.chat_id = ?
+           AND ao.user_id = ?
+           AND ao.file_id = ?
+           AND ao.output_type = 'explanation'
+         ORDER BY
+           ao.generated_at DESC,
+           ao.output_id DESC
+         LIMIT 5`,
+        [
+          explanationChat.chat_id,
+          req.user.user_id,
+          file.file_id
+        ]
+      );
+
+      const historyParts = [];
+      let historyLength = 0;
+
+      for (const turn of previousTurns) {
+        const previousQuestion =
+          String(turn.concept || "").trim().slice(0, 500);
+
+        const previousAnswerText =
+          String(turn.content || "").trim();
+
+        /*
+         * Preserve both the opening and conclusion of
+         * long answers rather than only their beginning.
+         * Keep the same 750-character per-answer ceiling.
+         */
+        const maxPreviousAnswerChars = 750;
+        const excerptMarker =
+          "\n[Middle of previous answer omitted]\n";
+
+        const openingChars = 300;
+        const endingChars =
+          maxPreviousAnswerChars -
+          openingChars -
+          excerptMarker.length;
+
+        const previousAnswer =
+          previousAnswerText.length <= maxPreviousAnswerChars
+            ? previousAnswerText
+            : previousAnswerText.slice(0, openingChars) +
+              excerptMarker +
+              previousAnswerText.slice(-endingChars);
+
+        const part =
+          `Student: ${previousQuestion}\nAssistant: ${previousAnswer}`;
+
+        if (historyLength + part.length + 2 > 6000) {
+          break;
+        }
+
+        // The database returns newest first; reverse the
+        // selected turns so the prompt reads chronologically.
+        historyParts.unshift(part);
+        historyLength += part.length + 2;
+      }
+
+      conversationHistory = historyParts.join("\n\n");
+    }
+
     const content =
       await generate(
         generationText,
         output_type,
         {
           concept,
-          level
+          level,
+          history: conversationHistory
         }
       );
 
@@ -1848,6 +1931,89 @@ const deleteExplanationChat =
     }
   };
 
+const renameExplanationChat = async (req, res) => {
+  try {
+    const chatId = Number(req.params.chatId);
+
+    if (!Number.isSafeInteger(chatId) || chatId <= 0) {
+      return res.status(400).json({
+        status: "error",
+        code: "INVALID_CHAT_ID",
+        message: "A valid conversation ID is required"
+      });
+    }
+
+    if (typeof req.body?.title !== "string") {
+      return res.status(400).json({
+        status: "error",
+        code: "INVALID_CHAT_TITLE",
+        message: "A conversation title is required"
+      });
+    }
+
+    const title = req.body.title
+      .trim()
+      .replace(/\s+/g, " ");
+
+    if (title.length === 0 || title.length > 255) {
+      return res.status(400).json({
+        status: "error",
+        code: "INVALID_CHAT_TITLE",
+        message: "Conversation titles must contain 1 to 255 characters"
+      });
+    }
+
+    // "New chat" is reserved for automatic first-question naming.
+    if (title === "New chat") {
+      return res.status(400).json({
+        status: "error",
+        code: "RESERVED_CHAT_TITLE",
+        message: 'Please choose a title other than "New chat"'
+      });
+    }
+
+    const [existingChats] = await db.execute(
+      `SELECT chat_id
+       FROM explanation_chats
+       WHERE chat_id = ? AND user_id = ?`,
+      [chatId, req.user.user_id]
+    );
+
+    if (existingChats.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        code: "EXPLANATION_CHAT_NOT_FOUND",
+        message: "Conversation not found"
+      });
+    }
+
+    await db.execute(
+      `UPDATE explanation_chats
+       SET title = ?,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE chat_id = ? AND user_id = ?`,
+      [title, chatId, req.user.user_id]
+    );
+
+    return res.json({
+      status: "success",
+      message: "Conversation renamed successfully",
+      chat: {
+        chat_id: chatId,
+        title
+      }
+    });
+  } catch (error) {
+    console.error("Explanation chat rename error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      code: "EXPLANATION_CHAT_RENAME_ERROR",
+      message: "Unable to rename this conversation"
+    });
+  }
+};
+
 module.exports = {
   generateOutput,
   getOutputsForFile,
@@ -1860,5 +2026,6 @@ module.exports = {
   uploadExplanationChatSource,
   getExplanationChatSources,
   deleteExplanationChatSource,
+  renameExplanationChat,
   deleteExplanationChat
 };

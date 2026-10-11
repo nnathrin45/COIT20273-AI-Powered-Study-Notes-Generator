@@ -805,6 +805,47 @@ function Upload() {
           }
 
 
+          /* Smooth uploaded-material pagination */
+          @keyframes studya-upload-page-enter {
+            from {
+              opacity: 0;
+              transform: translateY(9px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .upload-file-row {
+            animation:
+              studya-upload-page-enter 240ms
+              cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
+          /* Staggered cascade for uploaded materials */
+          .upload-file-row:nth-child(2) {
+            animation-delay: 50ms;
+          }
+
+          .upload-file-row:nth-child(3) {
+            animation-delay: 100ms;
+          }
+
+          .upload-file-row:nth-child(4) {
+            animation-delay: 150ms;
+          }
+
+          .upload-file-row:nth-child(5) {
+            animation-delay: 200ms;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .upload-file-row {
+              animation: none;
+            }
+          }
           [data-theme-mode='light']
           .upload-file-row {
             background-color: #f7f7fb !important;
@@ -1437,7 +1478,7 @@ function Upload() {
                 {paginatedUploadedFiles.map(
                   (file) => (
                     <div
-                      key={file.file_id}
+                      key={`${currentUploadedFilesPage}-${file.file_id}`}
                       className="upload-theme-surface upload-file-row group flex flex-col gap-4 rounded-lg border border-[#2a1b4d] bg-[#120928]/40 p-4 hover:border-[#7a44ff]/40 hover:bg-[#19103a] sm:flex-row sm:items-center sm:justify-between"
                     >
                       <button
@@ -1446,7 +1487,7 @@ function Upload() {
                           navigate(`/upload/${file.file_id}`)
                         }
                         aria-label={`Open details for ${file.file_name}`}
-                        className="upload-theme-interactive flex min-w-0 flex-1 items-start gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a44ff]/60"
+                        className="upload-theme-interactive flex min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a44ff]/60"
                       >
                         <div className="upload-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
                           <svg

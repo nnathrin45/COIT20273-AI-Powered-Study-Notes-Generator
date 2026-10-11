@@ -133,6 +133,19 @@ export const getExplanationChatMessages = async (
 }
 
 
+export const renameExplanationChat = async (
+  chatId,
+  title
+) => {
+  return apiRequest(
+    `/api/ai/explanation/chats/${chatId}`,
+    {
+      method: 'PATCH',
+      requiresAuth: true,
+      body: { title },
+    }
+  )
+}
 export const deleteExplanationChat = async (
   chatId
 ) => {

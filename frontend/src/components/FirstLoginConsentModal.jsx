@@ -622,7 +622,7 @@ function FirstLoginConsentModal({
 
             <p className="first-consent-body text-sm leading-6 text-[#a6a8c7]">
               You can continue using StudyA if you decline.
-              Uploads, Study Planner, Saved Materials, Progress and
+              Uploads, Study Planner, Progress and
               other non-AI features will remain available.
             </p>
           </div>

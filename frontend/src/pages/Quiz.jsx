@@ -23,6 +23,7 @@ import AIConsentRequired from '../components/AIConsentRequired'
 function Quiz() {
   const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState('')
+  const [quizDifficulty, setQuizDifficulty] = useState('intermediate')
 
   const [documentsLoading, setDocumentsLoading] =
     useState(true)
@@ -464,6 +465,7 @@ function Quiz() {
               Number(selectedDocument),
 
             outputType: 'quiz',
+            level: quizDifficulty,
           })
 
         if (!response.ok) {
@@ -2922,7 +2924,39 @@ function Quiz() {
           </div>
 
           {/* Generate New Quiz */}
-          <div className="flex items-end lg:justify-end">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-end">
+            <div className="w-full xl:w-44">
+              <label
+                htmlFor="quiz-difficulty"
+                className="quiz-theme-text mb-2 block text-xs font-medium text-[#898cc0]"
+              >
+                Quiz Difficulty
+              </label>
+
+              <AnimatedSelect
+                id="quiz-difficulty"
+                value={quizDifficulty}
+                options={[
+                  {
+                    value: 'beginner',
+                    label: 'Beginner',
+                  },
+                  {
+                    value: 'intermediate',
+                    label: 'Intermediate',
+                  },
+                  {
+                    value: 'advanced',
+                    label: 'Advanced',
+                  },
+                ]}
+                onChange={(newValue) => {
+                  setQuizDifficulty(newValue)
+                  setError('')
+                  setRetryableError(false)
+                }}
+              />
+            </div>
             <button
               type="button"
               onClick={
