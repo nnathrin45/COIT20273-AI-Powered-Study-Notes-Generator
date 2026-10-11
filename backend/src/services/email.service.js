@@ -25,9 +25,30 @@ const getFromAddress = () => {
     return `"${fromName}" <${fromAddress}>`;
 };
 
-const verifyEmailConnection = async () => {
-    await transporter.verify();
+const useResend = () =>
+    process.env.EMAIL_PROVIDER === "resend";
 
+const getResendConfig = () => {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.RESEND_FROM_ADDRESS;
+
+    if (!apiKey || !from) {
+        throw new Error(
+            "Resend email configuration is incomplete."
+        );
+    }
+
+    return { apiKey, from };
+};
+
+const verifyEmailConnection = async () => {
+    if (useResend()) {
+        // Checks configuration; actual delivery is checked by sendEmail.
+        getResendConfig();
+        return true;
+    }
+
+    await transporter.verify();
     return true;
 };
 
@@ -41,6 +62,40 @@ const sendEmail = async ({
         throw new Error(
             "Recipient email address is required"
         );
+    }
+
+    if (useResend()) {
+        const { apiKey, from } = getResendConfig();
+
+        const response = await fetch(
+            "https://api.resend.com/emails",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    from,
+                    to: [to],
+                    subject,
+                    text,
+                    html
+                }),
+                signal: AbortSignal.timeout(20000)
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                `Resend email failed (${response.status}): ` +
+                (result.message || "Unknown email error")
+            );
+        }
+
+        return result;
     }
 
     return transporter.sendMail({
