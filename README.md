@@ -1,4 +1,4 @@
-# StudyA — AI-Powered Study Notes Generator
+# StudyAI — AI-Powered Study Notes Generator
 
 StudyA is an AI-powered study support web application developed for the **COIT20273 Capstone Project** at CQUniversity.
 
