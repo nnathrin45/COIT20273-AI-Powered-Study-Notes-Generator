@@ -22,6 +22,7 @@ import AIConsentRequired from '../components/AIConsentRequired'
 function Flashcards() {
   const [documents, setDocuments] = useState([])
   const [selectedDocument, setSelectedDocument] = useState('')
+  const [flashcardDifficulty, setFlashcardDifficulty] = useState('intermediate')
 
   const [documentsLoading, setDocumentsLoading] =
     useState(true)
@@ -336,6 +337,7 @@ function Flashcards() {
 
           outputType:
             'flashcards',
+          level: flashcardDifficulty,
         })
 
       if (!response.ok) {
@@ -471,8 +473,8 @@ function Flashcards() {
 
 
   const handleExportWord = async () => {
-    const cards = Array.isArray(generatedOutput?.content)
-      ? generatedOutput.content
+    const cards = Array.isArray(flashcards)
+      ? flashcards
       : []
 
     if (cards.length === 0) {
@@ -602,7 +604,7 @@ function Flashcards() {
 
       anchor.href = downloadUrl
       anchor.download =
-        `${safeSourceName}-flashcards.docx`
+        `${safeSourceName}-flashcards-${Date.now()}.docx`
 
       document.body.appendChild(anchor)
       anchor.click()
@@ -625,8 +627,8 @@ function Flashcards() {
 
 
   const handleExportPdf = () => {
-    const cards = Array.isArray(generatedOutput?.content)
-      ? generatedOutput.content
+    const cards = Array.isArray(flashcards)
+      ? flashcards
       : []
 
     if (cards.length === 0) {
@@ -1577,43 +1579,68 @@ function Flashcards() {
           )}
         </div>
 
-          <div className="flex items-end lg:justify-end">
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={
-                documentsLoading ||
-                documents.length === 0 ||
-                consentInitialLoading ||
-                consentStatus !== 'granted' ||
-                generationLoading
-              }
-              className="flashcards-generate-button inline-flex w-fit shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
-            >
-              {generationLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 5v14M5 12h14"
-                  />
-                </svg>
-              )}
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-end">
+            <div className="w-full sm:w-44">
+              <label
+                htmlFor="flashcard-difficulty"
+                className="mb-2 block text-xs font-medium text-[#898cc0]"
+              >
+                Flashcard Difficulty
+              </label>
+              <AnimatedSelect
+                id="flashcard-difficulty"
+                value={flashcardDifficulty}
+                options={[
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' },
+                ]}
+                onChange={(newValue) => {
+                  setFlashcardDifficulty(newValue)
+                  setError('')
+                  setRetryableError(false)
+                }}
+              />
+            </div>
 
-              {generationLoading
-                ? 'Generating Flashcards...'
-                : 'Generate New Flashcards'}
-            </button>
+            <div className="flex items-end lg:justify-end">
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={
+                  documentsLoading ||
+                  documents.length === 0 ||
+                  consentInitialLoading ||
+                  consentStatus !== 'granted' ||
+                  generationLoading
+                }
+                className="flashcards-generate-button inline-flex w-fit shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+              >
+                {generationLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 5v14M5 12h14"
+                    />
+                  </svg>
+                )}
+
+                {generationLoading
+                  ? 'Generating Flashcards...'
+                  : 'Generate New Flashcards'}
+              </button>
+            </div>
           </div>
 
 
@@ -1763,7 +1790,7 @@ function Flashcards() {
             </p>
           ) : (
             <div className="space-y-2">
-              {savedFlashcardSets.map(
+              {[...savedFlashcardSets].reverse().map(
                 (flashcardSet, index) => {
                   const isActiveFlashcardSet =
                     generatedOutput?.output_id ===
@@ -1803,8 +1830,7 @@ function Flashcards() {
                     >
                       <p className="flashcards-theme-text flashcards-heading text-sm font-semibold text-[#e7e2f5]">
                         Flashcards{' '}
-                        {savedFlashcardSets.length -
-                          index}
+                        {index + 1}
                       </p>
 
                       <p className="flashcards-theme-text flashcards-body mt-1 text-xs text-[#727494]">

@@ -19,6 +19,7 @@ import FirstLoginConsentModal from './FirstLoginConsentModal'
 import { getConsentStatus } from '../services/consentService'
 import StudyALogo from './StudyALogo'
 import StudyAOrbitDecoration from './StudyAOrbitDecoration'
+import { SHOW_SAVED_MATERIALS } from '../featureFlags'
 import StudyABackgroundVideo from './StudyABackgroundVideo'
 
 
@@ -137,6 +138,7 @@ const menuItems = [
       />
     ),
   },
+  ...(SHOW_SAVED_MATERIALS ? [
   {
     name: 'Saved Materials',
     path: '/saved-materials',
@@ -148,6 +150,7 @@ const menuItems = [
       />
     ),
   },
+  ] : []),
   {
     name: 'Progress',
     path: '/progress',
@@ -198,7 +201,7 @@ const sidebarSections = [
     label: 'Organise',
     paths: [
       '/study-plan',
-      '/saved-materials',
+      ...(SHOW_SAVED_MATERIALS ? ['/saved-materials'] : []),
     ],
   },
   {
@@ -1336,7 +1339,13 @@ function AppLayout() {
         style={surfaceThemeTransition}
       >
         {/* Shared animated workspace background */}
-        <StudyABackgroundVideo />
+        <StudyABackgroundVideo
+          fixedToViewport
+          videoClassName="absolute right-[-14px] top-[130px] h-auto w-[170px] max-w-none opacity-25 sm:right-[-8px] sm:top-[150px] sm:w-[210px] lg:right-[10px] lg:top-[225px] lg:w-[260px] lg:opacity-55 xl:right-[20px] xl:w-[290px] 2xl:right-[-80px] 2xl:w-[310px]"
+        />
+
+        {/* Shared orbit behind page content */}
+        <StudyAOrbitDecoration />
 
         {/* Header */}
         <header
@@ -1729,9 +1738,6 @@ function AppLayout() {
         </main>
       </div>
 
-
-      {/* Fixed decorative orbit */}
-      <StudyAOrbitDecoration />
 
       {/* Theme Switch */}
       <button

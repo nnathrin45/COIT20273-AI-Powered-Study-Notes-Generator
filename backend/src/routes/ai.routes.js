@@ -17,6 +17,7 @@ const {
   uploadExplanationChatSource,
   getExplanationChatSources,
   deleteExplanationChatSource,
+  renameExplanationChat,
   deleteExplanationChat
 } = require("../controllers/ai.controller");
 
@@ -50,6 +51,12 @@ router.get(
   getExplanationChatMessages
 );
 
+// Rename an authenticated user's Concept Explanation conversation
+router.patch(
+  "/explanation/chats/:chatId",
+  authenticateUser,
+  renameExplanationChat
+);
 // Delete one Concept Explanation chat and its generated explanation outputs
 router.delete(
   "/explanation/chats/:chatId",

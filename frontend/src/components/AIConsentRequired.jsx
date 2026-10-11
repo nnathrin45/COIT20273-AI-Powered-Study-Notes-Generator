@@ -109,7 +109,7 @@ function AIConsentRequired({
           </p>
 
           <p className="ai-consent-required-note mt-2 text-sm leading-6 text-[#898cc0]">
-            Your uploads, Study Planner, Saved Materials, Progress
+            Your uploads, Study Planner, Progress
             and other non-AI features remain available.
           </p>
 

@@ -1355,7 +1355,7 @@ function Summary() {
               </p>
             ) : (
               <div className="space-y-2">
-                {savedSummaries.map(
+                {[...savedSummaries].reverse().map(
                   (summary, index) => {
                     const isActiveSummary =
                       generatedOutput?.output_id ===
@@ -1379,8 +1379,7 @@ function Summary() {
                       >
                         <p className="summary-theme-text summary-heading text-sm font-semibold text-[#e7e2f5]">
                           Summary{' '}
-                          {savedSummaries.length -
-                            index}
+                          {index + 1}
                         </p>
 
                         <p className="summary-theme-text summary-body mt-1 text-xs text-[#727494]">

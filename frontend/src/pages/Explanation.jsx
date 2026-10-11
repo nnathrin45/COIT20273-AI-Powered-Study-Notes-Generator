@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { getConsentStatus } from '../services/consentService'
 import { getUploadedFiles } from '../services/uploadedService'
@@ -10,6 +10,7 @@ import {
   getExplanationChatMessages,
   getExplanationChatSources,
   getExplanationChats,
+  renameExplanationChat,
   uploadExplanationChatSource,
 } from '../services/aiService'
 import AnimatedSelect from '../components/AnimatedSelect'
@@ -79,6 +80,91 @@ function Explanation() {
     setChatMessagesLoading,
   ] = useState(false)
 
+  const conversationScrollRef = useRef(null)
+
+  useLayoutEffect(() => {
+    if (chatMessagesLoading || chatMessages.length === 0) {
+      return undefined
+    }
+
+    const container = conversationScrollRef.current
+
+    if (!container) {
+      return undefined
+    }
+
+    let active = true
+    let frame = null
+
+    const previousScrollBehavior =
+      container.style.scrollBehavior
+
+    // Avoid any smooth-scroll CSS delaying the initial jump.
+    container.style.scrollBehavior = 'auto'
+
+    const scrollToLatestMessage = () => {
+      if (!active) {
+        return
+      }
+
+      container.scrollTop = Math.max(
+        0,
+        container.scrollHeight - container.clientHeight
+      )
+    }
+
+    const scheduleScroll = () => {
+      if (!active) {
+        return
+      }
+
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame)
+      }
+
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        scrollToLatestMessage()
+      })
+    }
+
+    // Move immediately, then follow any delayed layout resizing.
+    scrollToLatestMessage()
+    scheduleScroll()
+
+    const resizeObserver = new ResizeObserver(scheduleScroll)
+
+    resizeObserver.observe(container)
+
+    if (container.firstElementChild) {
+      resizeObserver.observe(container.firstElementChild)
+    }
+
+    // Keep the initial position stable while content settles.
+    // Then release control so older messages can be read freely.
+    const settleTimer = window.setTimeout(() => {
+      scrollToLatestMessage()
+      active = false
+      resizeObserver.disconnect()
+
+      container.style.scrollBehavior =
+        previousScrollBehavior
+    }, 1400)
+
+    return () => {
+      active = false
+      resizeObserver.disconnect()
+      window.clearTimeout(settleTimer)
+
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame)
+      }
+
+      container.style.scrollBehavior =
+        previousScrollBehavior
+    }
+  }, [activeChatId, chatMessages, chatMessagesLoading])
+
   const [
     chatActionLoading,
     setChatActionLoading,
@@ -86,6 +172,13 @@ function Explanation() {
 
   const [chatError, setChatError] =
     useState('')
+
+  const [editingChatId, setEditingChatId] = useState('')
+  const [editingChatTitle, setEditingChatTitle] = useState('')
+  const [renameSaving, setRenameSaving] = useState(false)
+
+  const renameSavingRef = useRef(false)
+  const renameCancelledRef = useRef(false)
 
   const [
     chatSources,
@@ -1052,6 +1145,110 @@ function Explanation() {
       setRetryableError(false)
     }
 
+
+  const handleStartChatRename = (chat) => {
+    if (
+      generationLoading ||
+      chatActionLoading ||
+      renameSavingRef.current
+    ) {
+      return
+    }
+
+    renameCancelledRef.current = false
+    setEditingChatId(String(chat.chat_id))
+    setEditingChatTitle(chat.title || '')
+    setChatError('')
+  }
+
+  const handleCancelChatRename = () => {
+    renameCancelledRef.current = true
+    setEditingChatId('')
+    setEditingChatTitle('')
+    setChatError('')
+  }
+
+  const handleSaveChatRename = async (chat) => {
+    if (
+      renameCancelledRef.current ||
+      renameSavingRef.current
+    ) {
+      return
+    }
+
+    const title = editingChatTitle
+      .trim()
+      .replace(/\s+/g, ' ')
+
+    if (
+      !title ||
+      title.length > 255 ||
+      title === 'New chat'
+    ) {
+      setChatError(
+        'Enter a conversation name between 1 and 255 characters, other than "New chat".'
+      )
+      return
+    }
+
+    if (title === chat.title) {
+      setEditingChatId('')
+      setEditingChatTitle('')
+      return
+    }
+
+    renameSavingRef.current = true
+    setRenameSaving(true)
+    setChatError('')
+
+    try {
+      const response = await renameExplanationChat(
+        Number(chat.chat_id),
+        title
+      )
+
+      if (
+        !response.ok ||
+        response.data?.status !== 'success'
+      ) {
+        setChatError(
+          response.data?.message ||
+            'Unable to rename this conversation.'
+        )
+        return
+      }
+
+      const savedTitle =
+        response.data?.chat?.title || title
+
+      setChats((currentChats) =>
+        currentChats.map((currentChat) =>
+          String(currentChat.chat_id) ===
+          String(chat.chat_id)
+            ? {
+                ...currentChat,
+                title: savedTitle,
+              }
+            : currentChat
+        )
+      )
+
+      setEditingChatId('')
+      setEditingChatTitle('')
+    } catch (renameError) {
+      console.error(
+        'Unable to rename conversation:',
+        renameError
+      )
+
+      setChatError(
+        'Unable to connect to the server to rename this conversation.'
+      )
+    } finally {
+      renameSavingRef.current = false
+      setRenameSaving(false)
+    }
+  }
 
   const handleDeleteChat =
     async (chatId) => {
@@ -2450,11 +2647,23 @@ function Explanation() {
                               chat.chat_id
                             )
                           }
+                          onDoubleClick={() =>
+                            handleStartChatRename(chat)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === 'F2') {
+                              event.preventDefault()
+                              handleStartChatRename(chat)
+                            }
+                          }}
+                          title="Double-click to rename"
                           disabled={
                             generationLoading ||
                             chatActionLoading
                           }
-                          className="min-w-0 flex-1 rounded-md px-2 py-2 text-left disabled:cursor-not-allowed"
+                          className={`min-w-0 flex-1 rounded-md px-2 py-2 text-left disabled:cursor-not-allowed ${
+  editingChatId === String(chat.chat_id) ? 'hidden' : ''
+}`}
                         >
                           <p
                             className={
@@ -2479,6 +2688,39 @@ function Explanation() {
                           </p>
                         </button>
 
+                        {editingChatId === String(chat.chat_id) && (
+                          <input
+                            autoFocus
+                            type="text"
+                            maxLength={255}
+                            aria-label={`Rename ${chat.title}`}
+                            value={editingChatTitle}
+                            disabled={renameSaving}
+                            onFocus={(event) => {
+                              event.currentTarget.select()
+                            }}
+                            onChange={(event) => {
+                              setEditingChatTitle(event.target.value)
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault()
+                                event.currentTarget.blur()
+                              }
+
+                              if (event.key === 'Escape') {
+                                event.preventDefault()
+                                handleCancelChatRename()
+                              }
+                            }}
+                            onBlur={() => {
+                              if (!renameCancelledRef.current) {
+                                void handleSaveChatRename(chat)
+                              }
+                            }}
+                            className="explanation-theme-surface min-w-0 flex-1 rounded-md border border-[#7a44ff] bg-[#120928] px-2 py-2 text-sm text-[#f3f0ff] outline-none focus:ring-2 focus:ring-[#7a44ff]/30 disabled:opacity-60"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={(event) => {
@@ -2846,7 +3088,7 @@ function Explanation() {
 
 
           {/* Conversation */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6">
+          <div ref={conversationScrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6">
             {chatMessagesLoading ? (
               <div className="flex min-h-[260px] items-center justify-center">
                 <div
@@ -2976,7 +3218,7 @@ function Explanation() {
                   <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white" />
 
                   <p className="text-sm text-white">
-                    StudyA is preparing your explanation...
+                    StudyAI is preparing your explanation...
                   </p>
                 </div>
               </div>

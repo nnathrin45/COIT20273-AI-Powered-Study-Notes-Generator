@@ -50,10 +50,12 @@ ${text}
 ---`,
 
   // FR10.1 - question/answer pairs parsed into individual flashcard records
-  flashcards: (text) =>
+  flashcards: (text, { level = "intermediate" }) =>
     `You are helping a university student revise from their own study material.
 
 Create revision flashcards from the study material below.
+
+Difficulty requirement: ${FLASHCARD_LEVEL_GUIDANCE[level]}
 
 Rules:
 - Use only information present in the material. Do not add facts from outside it.
@@ -71,10 +73,12 @@ ${text}
 ---`,
 
   // FR11.1 - multiple-choice and true/false questions, each with a marked answer
-  quiz: (text) =>
+  quiz: (text, { level = "intermediate" }) =>
     `You are helping a university student test themselves on their own study material.
 
 Create a practice quiz from the study material below.
+
+Difficulty requirement: ${QUIZ_LEVEL_GUIDANCE[level]}
 
 Rules:
 - Use only information present in the material. Do not add facts from outside it.
@@ -98,7 +102,7 @@ ${text}
 ---`,
 
   // FR12.1 - explanation pitched at a user-selected level
-  explanation: (text, { concept, level }) =>
+  explanation: (text, { concept, level, history = "" }) =>
     `You are helping a university student understand a concept from their own study material.
 
 Explain this concept: ${concept}
@@ -112,7 +116,15 @@ Rules:
 - SUPPLEMENTARY CHAT MATERIAL is supporting context only. Use it when it helps answer the student's question, but do not treat it as replacing or changing the primary study material.
 - If supplementary material conflicts with the primary study material, prefer the primary study material and clearly avoid silently combining conflicting claims.
 - If the concept does not appear in either the primary material or relevant supplementary material, say so plainly instead of inventing content.
+- Use previous conversation messages to understand follow-up questions and references to earlier discussions.
+- Treat previous answers as conversational context, not authoritative evidence. The primary study material remains the main source of truth.
+- If no previous messages are provided, do not invent earlier discussions.
 - Write in clear prose with short paragraphs. Do not use markdown headings.
+
+Previous conversation in this chat:
+---
+${history || "No previous conversation messages."}
+---
 
 Source material:
 ---
@@ -127,11 +139,107 @@ const LEVEL_GUIDANCE = {
     "a beginner: assume no prior knowledge, define every term you use, keep " +
     "sentences short, and use an everyday analogy if one fits the material.",
   intermediate:
-    "an intermediate learner: assume familiarity with the basics, focus on how " +
-    "the parts relate to each other, and use the subject's proper terminology.",
+    "an intermediate learner: assume familiarity with the basics and explain " +
+    "how concepts work together through a concrete application or decision flow. " +
+    "Use proper terminology, show causes and consequences, and provide one " +
+    "source-grounded example or a clearly labelled hypothetical illustration. " +
+    "Go beyond definitions without requiring specialist background knowledge.",
   advanced:
-    "an advanced learner: assume solid background knowledge, be precise and " +
-    "concise, and cover mechanisms, edge cases or limitations the material raises."
+    "an advanced learner: assume solid background knowledge and deliver a " +
+    "substantive critical analysis, not simply more jargon or a shorter summary. " +
+    "Explain mechanisms, decision rights, dependencies, trade-offs, risks and " +
+    "limitations where supported by the material. Apply the framework to a " +
+    "source-grounded scenario or a clearly labelled hypothetical scenario, " +
+    "evaluate alternative decisions and their implications, and distinguish " +
+    "established source facts from illustrative reasoning. If evidence is " +
+    "missing, state the limitation instead of inventing conclusions."
+};
+
+const QUIZ_LEVEL_GUIDANCE = {
+  beginner:
+    "BEGINNER. Focus on foundational concepts, definitions, " +
+    "terminology and straightforward understanding. Ask direct " +
+    "questions that can be answered by recalling or recognising " +
+    "information in the material. Avoid complex multi-step scenarios " +
+    "and unnecessarily tricky distractors.",
+  intermediate:
+    "INTERMEDIATE. Test understanding and application rather than " +
+    "simple recall alone. Include practical situations, relationships " +
+    "between concepts and cause-and-effect reasoning. Require the " +
+    "student to select appropriate actions or conclusions supported " +
+    "by the material. Keep scenarios manageable and unambiguous.",
+  advanced:
+    "ADVANCED. Emphasise analytical reasoning, complex applications, " +
+    "dependencies, risks, trade-offs and evaluation of alternatives. " +
+    "Use challenging but answerable scenarios requiring students " +
+    "to combine multiple facts or principles from the material. " +
+    "At least two-thirds of the questions should require applying " +
+    "multiple source-supported concepts to a situation, evaluating " +
+    "competing decisions, or reasoning about consequences. " +
+    "Before constructing questions, silently identify distinct " +
+    "substantive concepts and meaningful relationships in the " +
+    "source material. Do not include this planning in the JSON. " +
+    "When enough material exists, target six questions: five " +
+    "scenario-based multiple-choice questions and one true/false " +
+    "question testing a meaningful scenario-based implication. " +
+    "For each scenario question, provide at least two relevant " +
+    "considerations, such as objectives, risks, resource constraints, " +
+    "dependencies or consequences supported by the source. " +
+    "Require the learner to evaluate those considerations together " +
+    "to select the best justified decision or conclusion. " +
+    "Use distinct substantive topics across the quiz rather than " +
+    "repeatedly testing the same straightforward principle. " +
+    "Avoid questions whose answers can be obtained simply by " +
+    "recognising one definition, item in a list, or assessment rule. " +
+    "For most multiple-choice questions, describe a realistic " +
+    "decision or competing constraints and ask for the best " +
+    "justified action, outcome or evaluation. Do not merely " +
+    "turn a simple definition or rule into a longer question. " +
+    "When substantive subject content is available, avoid " +
+    "basic recall about assessment logistics, mark weightings, " +
+    "group arrangements, AI-use rules and meeting counts. " +
+    "Prioritise application of the material's actual management " +
+    "principles and relationships instead. Make incorrect options " +
+    "plausible, closely competing, and clearly distinguishable " +
+    "using the source, with exactly one defensible correct answer. " +
+    "True/false questions should test meaningful relationships " +
+    "or implications instead of isolated factual recall. " +
+    "Do not invent facts, unsupported assumptions or ambiguity merely " +
+    "to make questions harder. Hypothetical scenarios may illustrate " +
+    "source principles, but the correct answer must follow from " +
+    "the material rather than invented organizational rules. " +
+    "If the source lacks enough information for a complex scenario, " +
+    "ask a rigorous source-supported question."
+};
+const FLASHCARD_LEVEL_GUIDANCE = {
+  beginner:
+    "BEGINNER. Test definitions, fundamental terminology, " +
+    "basic facts and straightforward comprehension. " +
+    "Ask direct questions with short and clear answers.",
+  intermediate:
+    "INTERMEDIATE. Test how concepts relate, how processes " +
+    "work and how knowledge applies in practical situations. " +
+    "Use cause-and-effect reasoning and manageable examples.",
+  advanced:
+    "ADVANCED. Create challenging application and analysis " +
+    "flashcards, not merely longer factual explanations. " +
+    "When sufficient material exists, at least two-thirds of " +
+    "the cards must require an actual decision, recommendation, " +
+    "comparison of consequences, or evaluation of constraints. " +
+    "Use hypothetical scenarios that ask learners to connect multiple concepts " +
+    "from the source and justify a choice with source-grounded reasons. " +
+    "Do not simply prefix a definition or factual list with Scenario. " +
+    "Weak card: What is portfolio capacity management? Stronger " +
+    "card: Two components compete for scarce specialists; how " +
+    "should capacity analysis and strategic priority guide resource " +
+    "allocation, and why? Use only examples relevant to the " +
+    "uploaded material. Each answer should explain the " +
+    "recommendation and trade-offs rather than list facts. " +
+    "Avoid simple definitions, lists and assessment logistics " +
+    "when substantive subject content is available. " +
+    "Do not invent unsupported source facts, policies, numbers " +
+    "or decision rights. If the source is insufficient for " +
+    "a scenario, use a rigorous source-grounded comparison."
 };
 
 const LEVELS = Object.keys(LEVEL_GUIDANCE);
@@ -400,6 +508,18 @@ const buildPrompt = (text, outputType, options = {}) => {
     }
   }
 
+  if (
+    ["quiz", "flashcards"].includes(outputType) &&
+    options.level &&
+    !LEVELS.includes(options.level)
+  ) {
+    const error = new Error(
+      `Difficulty must be one of: ${LEVELS.join(", ")}`
+    );
+    error.code = "INVALID_LEVEL";
+    throw error;
+  }
+
   /*
    * Apply the shared 50,000-character input ceiling.
    * Concept Explanation preserves a guaranteed share
@@ -413,7 +533,11 @@ const buildPrompt = (text, outputType, options = {}) => {
 
   return template(input, {
     concept: typeof options.concept === "string" ? options.concept.trim() : "",
-    level: options.level || "beginner"
+    level: options.level || (["quiz", "flashcards"].includes(outputType) ? "intermediate" : "beginner"),
+    history:
+      outputType === "explanation" && typeof options.history === "string"
+        ? options.history.slice(0, 6000)
+        : ""
   });
 };
 

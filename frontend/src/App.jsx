@@ -12,6 +12,7 @@ import Explanation from './pages/Explanation'
 import StudyPlanner from './pages/StudyPlanner'
 import StudyPlanDetails from './pages/StudyPlanDetails'
 import SavedMaterials from './pages/SavedMaterials'
+import { SHOW_SAVED_MATERIALS } from './featureFlags'
 import Progress from './pages/Progress'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -108,7 +109,7 @@ function App() {
 
           <Route
             path="/saved-materials"
-            element={<SavedMaterials />}
+            element={SHOW_SAVED_MATERIALS ? <SavedMaterials /> : <Navigate to="/dashboard" replace />}
           />
 
           <Route
