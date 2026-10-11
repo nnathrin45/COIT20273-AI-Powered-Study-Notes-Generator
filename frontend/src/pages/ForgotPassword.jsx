@@ -9,6 +9,7 @@ import {
 } from 'react-router'
 
 import StudyALogo from '../components/StudyALogo'
+import StudyABackgroundVideo from '../components/StudyABackgroundVideo'
 import ThemeToggle from '../components/ThemeToggle'
 
 import {
@@ -954,7 +955,12 @@ function ForgotPassword() {
       />
 
 
-      <div className="relative z-10 w-full max-w-md auth-page-transition">
+      <StudyABackgroundVideo
+          containerClassName="block"
+          videoClassName="absolute left-[-25px] top-[calc(50%-195px)] h-auto w-[260px] max-w-none opacity-40 sm:left-[3%] sm:top-[calc(50%-240px)] sm:w-[340px] sm:opacity-45 xl:left-[calc(50%-630px)] xl:top-[calc(50%-300px)] xl:w-[500px] xl:opacity-55 2xl:left-[calc(50%-675px)]"
+        />
+
+        <div className="relative z-10 w-full max-w-md auth-page-transition">
         {/* Branding */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex justify-center">
@@ -999,7 +1005,7 @@ function ForgotPassword() {
 
 
         {/* Main Card */}
-        <div className="forgot-password-card rounded-2xl border border-[#2A1B4D] bg-[#160B32]/95 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur sm:p-8">
+        <div className="forgot-password-card login-illuminated-surface rounded-2xl border border-[#2A1B4D] bg-[#160B32]/95 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur sm:p-8">
           {/* Current Reset Email */}
           {step !== 'email' &&
             step !== 'success' &&

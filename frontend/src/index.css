@@ -268,3 +268,331 @@ textarea:focus {
     0 0 0 2px rgba(122, 68, 255, 0.18),
     0 0 20px rgba(122, 68, 255, 0.08);
 }
+
+/*
+ * ==========================================================
+ * STUDYA SIDEBAR ILLUMINATED SURFACE
+ * ==========================================================
+ *
+ * Visual enhancement only.
+ * Navigation, collapsible sections, Study Activity,
+ * mobile drawer and routing behaviour remain unchanged.
+ */
+
+.studya-sidebar-surface {
+  isolation: isolate;
+
+  background:
+    radial-gradient(
+      ellipse 150% 38% at 20% -3%,
+      rgba(255, 255, 255, 0.075),
+      rgba(255, 255, 255, 0.025) 36%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 135% 38% at 100% 4%,
+      rgba(122, 68, 255, 0.11),
+      transparent 68%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.016),
+      transparent 34%
+    ),
+    #160b32 !important;
+
+  border-color:
+    rgba(169, 124, 255, 0.16) !important;
+
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 0 30px rgba(122, 68, 255, 0.025),
+    10px 0 34px rgba(3, 0, 15, 0.18);
+
+  transition:
+    background-color 500ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+
+/*
+ * Soft reflective highlight along the sidebar edge.
+ */
+.studya-sidebar-surface::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+
+  top: 8%;
+  right: 0;
+  bottom: 8%;
+  width: 1px;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(255, 255, 255, 0.11) 22%,
+      rgba(201, 180, 255, 0.15) 48%,
+      rgba(122, 68, 255, 0.09) 72%,
+      transparent
+    );
+
+  opacity: 0.72;
+}
+
+
+/*
+ * Light mode
+ */
+[data-theme-mode='light']
+.studya-sidebar-surface {
+  background:
+    radial-gradient(
+      ellipse 150% 40% at 18% -5%,
+      rgba(255, 255, 255, 1),
+      rgba(255, 255, 255, 0.58) 38%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 135% 38% at 100% 2%,
+      rgba(122, 68, 255, 0.06),
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(122, 68, 255, 0.015),
+      transparent 35%
+    ),
+    #ffffff !important;
+
+  border-color:
+    rgba(91, 72, 125, 0.14) !important;
+
+  box-shadow:
+    inset -1px 0 0 rgba(122, 68, 255, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    9px 0 28px rgba(61, 44, 92, 0.065);
+}
+
+
+[data-theme-mode='light']
+.studya-sidebar-surface::after {
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(122, 68, 255, 0.045) 22%,
+      rgba(122, 68, 255, 0.11) 48%,
+      rgba(122, 68, 255, 0.045) 72%,
+      transparent
+    );
+
+  opacity: 0.58;
+}
+
+/*
+ * ==========================================================
+ * STUDYA LOGIN ILLUMINATED SURFACE
+ * ==========================================================
+ *
+ * Visual enhancement only.
+ * Sign-in, validation, password recovery, 2FA and
+ * authentication behaviour remain unchanged.
+ */
+
+.login-illuminated-surface {
+  position: relative;
+  isolation: isolate;
+
+  background:
+    radial-gradient(
+      ellipse 82% 55% at 20% -8%,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.025) 36%,
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 72% 52% at 90% -10%,
+      rgba(122, 68, 255, 0.11),
+      transparent 66%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.018),
+      transparent 50%
+    ),
+    rgba(22, 11, 50, 0.97) !important;
+
+  border-color:
+    rgba(169, 124, 255, 0.18) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.075),
+    inset 0 0 28px rgba(122, 68, 255, 0.03),
+    0 24px 70px rgba(0, 0, 0, 0.28),
+    0 0 30px rgba(122, 68, 255, 0.045) !important;
+
+  transition:
+    background-color 500ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+
+/*
+ * Reflective top edge.
+ */
+.login-illuminated-surface::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.16) 28%,
+      rgba(201, 180, 255, 0.18) 50%,
+      rgba(255, 255, 255, 0.11) 72%,
+      transparent
+    );
+
+  opacity: 0.78;
+}
+
+
+.login-illuminated-surface:hover {
+  border-color:
+    rgba(122, 68, 255, 0.38) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 32px rgba(122, 68, 255, 0.045),
+    0 26px 74px rgba(0, 0, 0, 0.30),
+    0 0 28px rgba(122, 68, 255, 0.07) !important;
+}
+
+
+/*
+ * Light mode
+ */
+[data-theme-mode='light']
+.login-illuminated-surface {
+  background:
+    radial-gradient(
+      ellipse 82% 56% at 20% -10%,
+      rgba(255, 255, 255, 1),
+      rgba(255, 255, 255, 0.55) 38%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 90% -8%,
+      rgba(122, 68, 255, 0.06),
+      transparent 67%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(122, 68, 255, 0.018),
+      transparent 50%
+    ),
+    rgba(255, 255, 255, 0.97) !important;
+
+  border-color:
+    rgba(91, 72, 125, 0.15) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 20px rgba(122, 68, 255, 0.012),
+    0 20px 55px rgba(61, 44, 92, 0.10),
+    0 0 20px rgba(122, 68, 255, 0.035) !important;
+}
+
+
+[data-theme-mode='light']
+.login-illuminated-surface::after {
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(122, 68, 255, 0.07) 28%,
+      rgba(122, 68, 255, 0.12) 50%,
+      rgba(122, 68, 255, 0.06) 72%,
+      transparent
+    );
+
+  opacity: 0.55;
+}
+
+
+[data-theme-mode='light']
+.login-illuminated-surface:hover {
+  border-color:
+    rgba(122, 68, 255, 0.30) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 22px 58px rgba(91, 60, 145, 0.12),
+    0 0 20px rgba(122, 68, 255, 0.045) !important;
+}
+
+/*
+ * ==========================================================
+ * STUDYA FORGOT PASSWORD ILLUMINATION COMPATIBILITY
+ * ==========================================================
+ *
+ * Keeps the Forgot Password card visually identical to the
+ * accepted Login illumination in light mode.
+ */
+
+[data-theme-mode='light']
+.forgot-password-card.login-illuminated-surface {
+  background:
+    radial-gradient(
+      ellipse 82% 56% at 20% -10%,
+      rgba(255, 255, 255, 1),
+      rgba(255, 255, 255, 0.55) 38%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 90% -8%,
+      rgba(122, 68, 255, 0.06),
+      transparent 67%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(122, 68, 255, 0.018),
+      transparent 50%
+    ),
+    rgba(255, 255, 255, 0.97) !important;
+
+  border-color:
+    rgba(91, 72, 125, 0.15) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 20px rgba(122, 68, 255, 0.012),
+    0 20px 55px rgba(61, 44, 92, 0.10),
+    0 0 20px rgba(122, 68, 255, 0.035) !important;
+}
+
+
+[data-theme-mode='light']
+.forgot-password-card.login-illuminated-surface:hover {
+  border-color:
+    rgba(122, 68, 255, 0.30) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 22px 58px rgba(91, 60, 145, 0.12),
+    0 0 20px rgba(122, 68, 255, 0.045) !important;
+}

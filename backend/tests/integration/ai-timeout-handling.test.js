@@ -28,6 +28,10 @@ const path = require("path");
 // before anything below pulls that module in.
 require("dotenv").config({ path: path.join(__dirname, "..", "..", ".env") });
 
+const {
+  startServer, stopServer, request, createUser, uploadBuffer, cleanup
+} = require("../helpers/api");
+
 const db = require("../../src/config/database");
 const aiService = require("../../src/services/ai.service");
 
@@ -42,10 +46,6 @@ aiService.generate = async (...args) => {
 };
 
 const { generateOutput } = require("../../src/controllers/ai.controller");
-
-const {
-  startServer, stopServer, request, createUser, uploadBuffer, cleanup
-} = require("../helpers/api");
 
 const STUDY_TEXT =
   "Photosynthesis converts light energy into chemical energy stored as glucose. " +

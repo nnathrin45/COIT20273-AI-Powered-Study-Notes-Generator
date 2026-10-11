@@ -18,6 +18,8 @@ import {
 import FirstLoginConsentModal from './FirstLoginConsentModal'
 import { getConsentStatus } from '../services/consentService'
 import StudyALogo from './StudyALogo'
+import StudyAOrbitDecoration from './StudyAOrbitDecoration'
+import StudyABackgroundVideo from './StudyABackgroundVideo'
 
 
 const THEME_STORAGE_KEY = 'studya-theme'
@@ -45,6 +47,17 @@ const dropdownThemeTransition = {
     'opacity 300ms ease, transform 300ms ease, visibility 300ms ease, background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease, color 100ms ease',
 }
 
+
+import StudySessionNotifications from './StudySessionNotifications'
+import { getProgress } from '../services/progressService'
+
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+} from 'recharts'
 
 const menuItems = [
   {
@@ -149,6 +162,54 @@ const menuItems = [
 ]
 
 
+const SIDEBAR_SECTIONS_STORAGE_KEY =
+  'studya-sidebar-sections'
+
+
+const DEFAULT_SIDEBAR_SECTIONS = {
+  main: true,
+  studyTools: true,
+  organise: true,
+  insights: true,
+}
+
+
+const sidebarSections = [
+  {
+    key: 'main',
+    label: 'Main',
+    paths: [
+      '/dashboard',
+    ],
+  },
+  {
+    key: 'studyTools',
+    label: 'Study Tools',
+    paths: [
+      '/upload',
+      '/summaries',
+      '/flashcards',
+      '/quiz',
+      '/explanation',
+    ],
+  },
+  {
+    key: 'organise',
+    label: 'Organise',
+    paths: [
+      '/study-plan',
+      '/saved-materials',
+    ],
+  },
+  {
+    key: 'insights',
+    label: 'Insights',
+    paths: [
+      '/progress',
+    ],
+  },
+]
+
 function MenuIcon({ children }) {
   return (
     <svg
@@ -170,17 +231,278 @@ function SidebarContent({
   onNavigate,
   theme,
 }) {
-  const isLight = theme === 'light'
+  const isLight =
+    theme === 'light'
+
+
+  const [
+    sidebarProgress,
+    setSidebarProgress,
+  ] = useState(null)
+
+  const [
+    sidebarProgressLoading,
+    setSidebarProgressLoading,
+  ] = useState(true)
+
+  const [
+    sidebarProgressError,
+    setSidebarProgressError,
+  ] = useState('')
+
+
+  useEffect(() => {
+    let active = true
+
+    const loadSidebarProgress =
+      async () => {
+        setSidebarProgressLoading(
+          true
+        )
+
+        setSidebarProgressError(
+          ''
+        )
+
+        try {
+          const response =
+            await getProgress(
+              'week'
+            )
+
+          if (!active) {
+            return
+          }
+
+          if (!response.ok) {
+            setSidebarProgressError(
+              response.data?.message ||
+                'Unable to load study activity.'
+            )
+
+            return
+          }
+
+          setSidebarProgress(
+            response.data?.progress ??
+              null
+          )
+        } catch (
+          sidebarProgressLoadError
+        ) {
+          if (!active) {
+            return
+          }
+
+          console.error(
+            'Sidebar study activity load error:',
+            sidebarProgressLoadError
+          )
+
+          setSidebarProgressError(
+            'Unable to load study activity.'
+          )
+        } finally {
+          if (active) {
+            setSidebarProgressLoading(
+              false
+            )
+          }
+        }
+      }
+
+    loadSidebarProgress()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+
+  const sidebarActivityData =
+    (
+      sidebarProgress?.weekly_activity ??
+      []
+    ).map((entry) => {
+      const dateMatch =
+        /^(\d{4})-(\d{2})-(\d{2})$/.exec(
+          String(
+            entry.date || ''
+          )
+        )
+
+      let dayLabel =
+        String(
+          entry.date || ''
+        )
+
+      let fullDateLabel =
+        dayLabel
+
+      if (dateMatch) {
+        const activityDate =
+          new Date(
+            Number(
+              dateMatch[1]
+            ),
+            Number(
+              dateMatch[2]
+            ) - 1,
+            Number(
+              dateMatch[3]
+            )
+          )
+
+        dayLabel =
+          activityDate
+            .toLocaleDateString(
+              'en-AU',
+              {
+                weekday: 'short',
+              }
+            )
+
+        fullDateLabel =
+          activityDate
+            .toLocaleDateString(
+              'en-AU',
+              {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              }
+            )
+      }
+
+      return {
+        date:
+          String(
+            entry.date || ''
+          ),
+
+        day:
+          dayLabel,
+
+        fullDate:
+          fullDateLabel,
+
+        count:
+          Number(
+            entry.count ?? 0
+          ),
+      }
+    })
+
+
+  const weeklyActivityTotal =
+    sidebarActivityData.reduce(
+      (
+        total,
+        activity
+      ) =>
+        total +
+        activity.count,
+      0
+    )
+
+
+  const hasWeeklyActivity =
+    weeklyActivityTotal > 0
+
+  const [
+    openSections,
+    setOpenSections,
+  ] = useState(() => {
+    try {
+      const stored =
+        window.localStorage.getItem(
+          SIDEBAR_SECTIONS_STORAGE_KEY
+        )
+
+      if (!stored) {
+        return {
+          ...DEFAULT_SIDEBAR_SECTIONS,
+        }
+      }
+
+      const parsed =
+        JSON.parse(stored)
+
+      if (
+        !parsed ||
+        typeof parsed !== 'object'
+      ) {
+        return {
+          ...DEFAULT_SIDEBAR_SECTIONS,
+        }
+      }
+
+      return {
+        ...DEFAULT_SIDEBAR_SECTIONS,
+        ...parsed,
+      }
+    } catch {
+      return {
+        ...DEFAULT_SIDEBAR_SECTIONS,
+      }
+    }
+  })
+
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        SIDEBAR_SECTIONS_STORAGE_KEY,
+        JSON.stringify(
+          openSections
+        )
+      )
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [openSections])
+
+
+  const toggleSection =
+    (sectionKey) => {
+      setOpenSections(
+        (current) => ({
+          ...current,
+
+          [sectionKey]:
+            !current[
+              sectionKey
+            ],
+        })
+      )
+    }
+
+
+  const getNavigationClass =
+    (isActive) =>
+      `group relative flex items-center gap-3 overflow-hidden rounded-lg px-4 py-3 text-sm font-medium ${
+        isActive
+          ? isLight
+            ? 'bg-[#7a44ff]/10 text-[#7a44ff] shadow-[inset_0_0_20px_rgba(122,68,255,0.04)] before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full before:bg-[#7a44ff] before:shadow-[0_0_12px_rgba(122,68,255,0.35)]'
+            : 'bg-[#7a44ff]/15 text-[#b995ff] shadow-[inset_0_0_20px_rgba(122,68,255,0.05)] before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full before:bg-[#a97cff] before:shadow-[0_0_12px_rgba(169,124,255,0.65)]'
+          : isLight
+            ? 'text-[#65676b] hover:bg-[#7a44ff]/[0.06] hover:text-[#171717]'
+            : 'text-[#898cc0] hover:bg-white/[0.05] hover:text-[#d1cbea]'
+      }`
+
 
   return (
     <>
       {/* Brand */}
       <div
-        className={`flex h-20 items-center border-b px-4 ${isLight
+        className={`flex h-20 items-center border-b px-4 ${
+          isLight
             ? 'border-[#dfdfdf]'
             : 'border-[#2a1b4d]'
-          }`}
-        style={surfaceThemeTransition}
+        }`}
+        style={
+          surfaceThemeTransition
+        }
       >
         <StudyALogo
           alt="Study AI - AI-Powered Study Notes"
@@ -188,53 +510,463 @@ function SidebarContent({
         />
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <p
-          className={`mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] ${isLight
-              ? 'text-[#6c757d]'
-              : 'text-[#727494]'
-            }`}
-          style={textThemeTransition}
-        >
-          Main Menu
-        </p>
 
-        <nav className="space-y-1.5">
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onNavigate}
-              style={interactiveThemeTransition}
-              className={({ isActive }) =>
-                `group relative flex items-center gap-3 overflow-hidden rounded-lg px-4 py-3 text-sm font-medium ${isActive
-                  ? isLight
-                    ? 'bg-[#7a44ff]/10 text-[#7a44ff] shadow-[inset_0_0_20px_rgba(122,68,255,0.04)] before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full before:bg-[#7a44ff] before:shadow-[0_0_12px_rgba(122,68,255,0.35)]'
-                    : 'bg-[#7a44ff]/15 text-[#b995ff] shadow-[inset_0_0_20px_rgba(122,68,255,0.05)] before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full before:bg-[#a97cff] before:shadow-[0_0_12px_rgba(169,124,255,0.65)]'
-                  : isLight
-                    ? 'text-[#65676b] hover:bg-[#7a44ff]/[0.06] hover:text-[#171717]'
-                    : 'text-[#898cc0] hover:bg-white/[0.05] hover:text-[#d1cbea]'
-                }`
+      {/* Grouped Navigation */}
+      <div className="flex-1 overflow-y-auto px-4 py-5">
+        <nav
+          className="space-y-4"
+          aria-label="Main navigation"
+        >
+          {sidebarSections.map(
+            (section) => {
+              const isOpen =
+                openSections[
+                  section.key
+                ] !== false
+
+              const sectionItems =
+                section.paths
+                  .map(
+                    (path) =>
+                      menuItems.find(
+                        (item) =>
+                          item.path ===
+                          path
+                      )
+                  )
+                  .filter(Boolean)
+
+              return (
+                <div
+                  key={
+                    section.key
+                  }
+                >
+                  {/* Section heading */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleSection(
+                        section.key
+                      )
+                    }
+                    aria-expanded={
+                      isOpen
+                    }
+                    aria-controls={`sidebar-section-${section.key}`}
+                    style={
+                      interactiveThemeTransition
+                    }
+                    className={`group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.14em] ${
+                      isLight
+                        ? 'text-[#6c757d] hover:bg-[#7a44ff]/[0.05] hover:text-[#7a44ff]'
+                        : 'text-[#727494] hover:bg-white/[0.04] hover:text-[#b995ff]'
+                    }`}
+                  >
+                    <span>
+                      {
+                        section.label
+                      }
+                    </span>
+
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className={`h-3.5 w-3.5 transition-transform duration-300 ${
+                        isOpen
+                          ? 'rotate-180'
+                          : ''
+                      }`}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m6 9 6 6 6-6"
+                      />
+                    </svg>
+                  </button>
+
+
+                  {/* Section links */}
+                  <div
+                    id={`sidebar-section-${section.key}`}
+                    aria-hidden={
+                      !isOpen
+                    }
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isOpen
+                        ? 'visible grid-rows-[1fr] opacity-100'
+                        : 'invisible grid-rows-[0fr] opacity-0'
+                    }`}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <div className="mt-1 space-y-1.5">
+                        {sectionItems.map(
+                          (item) => (
+                            <NavLink
+                              key={
+                                item.path
+                              }
+                              to={
+                                item.path
+                              }
+                              onClick={
+                                onNavigate
+                              }
+                              style={
+                                interactiveThemeTransition
+                              }
+                              className={({
+                                isActive,
+                              }) =>
+                                getNavigationClass(
+                                  isActive
+                                )
+                              }
+                            >
+                              <span className="flex shrink-0 transition-transform duration-300 group-hover:scale-110">
+                                <MenuIcon>
+                                  {
+                                    item.icon
+                                  }
+                                </MenuIcon>
+                              </span>
+
+                              <span className="transition-transform duration-300 group-hover:translate-x-0.5">
+                                {
+                                  item.name
+                                }
+                              </span>
+                            </NavLink>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+          )}
+        </nav>
+      </div>
+
+
+      {/* Weekly Study Activity */}
+      <div className="shrink-0 px-4 pb-5">
+        <NavLink
+          to="/progress"
+          onClick={onNavigate}
+          style={
+            surfaceThemeTransition
+          }
+          className={`group block overflow-hidden rounded-xl border p-4 ${
+            isLight
+              ? 'border-[#ded8e8] bg-gradient-to-br from-white to-[#f7f3ff] shadow-[0_10px_30px_rgba(87,61,128,0.08)] hover:border-[#7a44ff]/40'
+              : 'border-[#39245f] bg-gradient-to-br from-[#211044] to-[#160b32] shadow-[0_10px_30px_rgba(0,0,0,0.20)] hover:border-[#7a44ff]/50'
+          }`}
+          aria-label="View weekly study activity in Progress"
+        >
+          {/* Card Heading */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p
+                className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${
+                  isLight
+                    ? 'text-[#7a44ff]'
+                    : 'text-[#a97cff]'
+                }`}
+                style={
+                  textThemeTransition
+                }
+              >
+                Study Activity
+              </p>
+
+              <div className="mt-1 flex items-end gap-2">
+                <span
+                  className={`text-2xl font-bold ${
+                    isLight
+                      ? 'text-[#171717]'
+                      : 'text-[#f3f0ff]'
+                  }`}
+                  style={
+                    textThemeTransition
+                  }
+                >
+                  {sidebarProgressLoading
+                    ? '—'
+                    : weeklyActivityTotal}
+                </span>
+
+                <span
+                  className={`pb-0.5 text-[11px] ${
+                    isLight
+                      ? 'text-[#747078]'
+                      : 'text-[#898cc0]'
+                  }`}
+                  style={
+                    textThemeTransition
+                  }
+                >
+                  actions this week
+                </span>
+              </div>
+            </div>
+
+
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition duration-300 group-hover:translate-x-0.5 ${
+                isLight
+                  ? 'bg-[#7a44ff]/10 text-[#7a44ff]'
+                  : 'bg-[#7a44ff]/15 text-[#b995ff]'
+              }`}
+            >
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m9 18 6-6-6-6"
+                />
+              </svg>
+            </div>
+          </div>
+
+
+          {/* Loading */}
+          {sidebarProgressLoading && (
+            <div className="mt-4 flex h-[92px] items-center justify-center">
+              <div
+                className={`h-5 w-5 animate-spin rounded-full border-2 ${
+                  isLight
+                    ? 'border-[#7a44ff]/20 border-t-[#7a44ff]'
+                    : 'border-[#a97cff]/20 border-t-[#a97cff]'
+                }`}
+              />
+            </div>
+          )}
+
+
+          {/* Error */}
+          {!sidebarProgressLoading &&
+            sidebarProgressError && (
+              <div className="mt-4 flex h-[92px] items-center justify-center px-2 text-center">
+                <p
+                  className={`text-xs leading-5 ${
+                    isLight
+                      ? 'text-[#747078]'
+                      : 'text-[#898cc0]'
+                  }`}
+                >
+                  Study activity is currently unavailable.
+                </p>
+              </div>
+            )}
+
+
+          {/* Empty Week */}
+          {!sidebarProgressLoading &&
+            !sidebarProgressError &&
+            !hasWeeklyActivity && (
+              <div className="mt-4 flex h-[92px] flex-col items-center justify-center text-center">
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  className={`mb-2 h-5 w-5 ${
+                    isLight
+                      ? 'text-[#9a83d4]'
+                      : 'text-[#8b6bc5]'
+                  }`}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 18 9 13l3 3 7-8"
+                  />
+                </svg>
+
+                <p
+                  className={`text-xs ${
+                    isLight
+                      ? 'text-[#747078]'
+                      : 'text-[#898cc0]'
+                  }`}
+                >
+                  No activity recorded this week.
+                </p>
+              </div>
+            )}
+
+
+          {/* Seven-Day Area Chart */}
+          {!sidebarProgressLoading &&
+            !sidebarProgressError &&
+            hasWeeklyActivity && (
+              <div className="mt-3 h-[105px] w-full">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                >
+                  <AreaChart
+                    data={
+                      sidebarActivityData
+                    }
+                    margin={{
+                      top: 8,
+                      right: 3,
+                      bottom: 0,
+                      left: 3,
+                    }}
+                  >
+                    <XAxis
+                      dataKey="day"
+                      axisLine={false}
+                      tickLine={false}
+                      interval={0}
+                      tick={{
+                        fill: isLight
+                          ? '#8b8591'
+                          : '#727494',
+
+                        fontSize: 9,
+                      }}
+                      dy={5}
+                    />
+
+                    <Tooltip
+                      cursor={{
+                        stroke:
+                          'rgba(122,68,255,0.20)',
+                      }}
+                      content={({
+                        active,
+                        payload,
+                      }) => {
+                        if (
+                          !active ||
+                          !payload ||
+                          payload.length ===
+                            0
+                        ) {
+                          return null
+                        }
+
+                        const activity =
+                          payload[0]
+                            .payload
+
+                        return (
+                          <div
+                            className={`rounded-lg border px-3 py-2 shadow-xl ${
+                              isLight
+                                ? 'border-[#ded8e8] bg-white'
+                                : 'border-[#39245f] bg-[#120928]'
+                            }`}
+                          >
+                            <p
+                              className={`text-[10px] ${
+                                isLight
+                                  ? 'text-[#747078]'
+                                  : 'text-[#898cc0]'
+                              }`}
+                            >
+                              {
+                                activity.fullDate
+                              }
+                            </p>
+
+                            <p
+                              className={`mt-1 text-xs font-semibold ${
+                                isLight
+                                  ? 'text-[#6530d6]'
+                                  : 'text-[#c9b4ff]'
+                              }`}
+                            >
+                              {
+                                activity.count
+                              }{' '}
+                              {activity.count ===
+                              1
+                                ? 'activity'
+                                : 'activities'}
+                            </p>
+                          </div>
+                        )
+                      }}
+                    />
+
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#A77BFF"
+                      strokeWidth={2.2}
+                      fill="#7A44FF"
+                      fillOpacity={
+                        isLight
+                          ? 0.12
+                          : 0.20
+                      }
+                      dot={false}
+                      activeDot={{
+                        r: 3.5,
+                        fill: '#D83DFF',
+                        strokeWidth: 0,
+                      }}
+                      isAnimationActive
+                      animationDuration={
+                        600
+                      }
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+
+          <div
+            className={`mt-3 border-t pt-3 ${
+              isLight
+                ? 'border-[#e5e1ec]'
+                : 'border-[#39245f]'
+            }`}
+            style={{
+              transition:
+                'border-color 500ms ease',
+            }}
+          >
+            <p
+              className={`text-[10px] ${
+                isLight
+                  ? 'text-[#8a858e]'
+                  : 'text-[#727494]'
+              }`}
+              style={
+                textThemeTransition
               }
             >
-              <span className="flex shrink-0 transition-transform duration-300 group-hover:scale-110">
-                <MenuIcon>
-                  {item.icon}
-                </MenuIcon>
-              </span>
-
-              <span className="transition-transform duration-300 group-hover:translate-x-0.5">
-                {item.name}
-              </span>
-            </NavLink>
-          ))}
-        </nav>
+              Uploads, AI resources, quizzes and study plans
+            </p>
+          </div>
+        </NavLink>
       </div>
     </>
   )
 }
-
 
 function AppLayout() {
   const [theme, setTheme] = useState(() => {
@@ -518,7 +1250,7 @@ function AppLayout() {
     >
       {/* Desktop Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden w-[280px] flex-col border-r lg:flex ${isLight
+        className={`studya-sidebar-surface fixed inset-y-0 left-0 z-40 hidden w-[280px] flex-col border-r lg:flex ${isLight
             ? 'border-[#dfdfdf] bg-white'
             : 'border-[#2a1b4d] bg-[#160b32]'
           }`}
@@ -546,7 +1278,7 @@ function AppLayout() {
 
           {/* Drawer */}
           <aside
-            className={`relative z-10 flex h-full w-[280px] max-w-[85vw] flex-col border-r shadow-2xl ${isLight
+            className={`studya-sidebar-surface relative z-10 flex h-full w-[280px] max-w-[85vw] flex-col border-r shadow-2xl ${isLight
                 ? 'border-[#dfdfdf] bg-white'
                 : 'border-[#2a1b4d] bg-[#160b32]'
               }`}
@@ -597,12 +1329,15 @@ function AppLayout() {
 
       {/* Main Application Area */}
       <div
-        className={`min-h-screen lg:pl-[280px] ${isLight
+        className={`relative isolate min-h-screen lg:pl-[280px] ${isLight
             ? 'bg-[#eff1f5]'
             : 'bg-[#120928]'
           }`}
         style={surfaceThemeTransition}
       >
+        {/* Shared animated workspace background */}
+        <StudyABackgroundVideo />
+
         {/* Header */}
         <header
           className={`sticky top-0 z-30 h-20 border-b backdrop-blur ${isLight
@@ -668,11 +1403,18 @@ function AppLayout() {
             </div>
 
 
-            {/* User Profile Menu */}
+            {/* User Profile Menu + Notifications */}
             <div
               ref={profileMenuRef}
-              className="relative shrink-0"
+              className="relative flex shrink-0 items-center gap-2"
             >
+              <StudySessionNotifications
+                isLight={isLight}
+                onOpen={() => {
+                  setProfileMenuOpen(false)
+                }}
+              />
+
               <button
                 type="button"
                 onClick={() =>
@@ -962,8 +1704,21 @@ function AppLayout() {
 
 
         {/* Page Content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto w-full max-w-[1500px]">
+        <main className="relative z-10 p-4 sm:p-6 lg:p-8">
+          <div
+            className={`mx-auto w-full ${
+              location.pathname.startsWith('/dashboard') ||
+              location.pathname.startsWith('/upload') ||
+              location.pathname.startsWith('/summaries') ||
+              location.pathname.startsWith('/flashcards') ||
+              location.pathname.startsWith('/quiz') ||
+              location.pathname.startsWith('/explanation') ||
+              location.pathname.startsWith('/study-plan') ||
+              location.pathname.startsWith('/progress')
+                ? 'max-w-[1660px]'
+                : 'max-w-[1500px]'
+            }`}
+          >
             <div
               key={location.pathname}
               className="app-page-transition"
@@ -974,6 +1729,9 @@ function AppLayout() {
         </main>
       </div>
 
+
+      {/* Fixed decorative orbit */}
+      <StudyAOrbitDecoration />
 
       {/* Theme Switch */}
       <button

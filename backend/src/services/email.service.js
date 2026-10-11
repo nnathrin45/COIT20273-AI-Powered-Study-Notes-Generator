@@ -468,6 +468,303 @@ const sendPasswordResetCodeEmail = async ({
     });
 };
 
+/*
+ * Study Planner Session Reminder
+ *
+ * This email is deliberately separate from authentication
+ * emails because it contains study-plan information rather
+ * than security credentials.
+ */
+const escapeStudyReminderHtml = (value) => {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+
+const formatStudyReminderDate = (value) => {
+    const match =
+        /^(\d{4})-(\d{2})-(\d{2})$/.exec(
+            String(value || "")
+        );
+
+    if (!match) {
+        return String(value || "");
+    }
+
+    const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+    ];
+
+    return (
+        `${Number(match[3])} ` +
+        `${months[Number(match[2]) - 1]} ` +
+        `${match[1]}`
+    );
+};
+
+
+const sendStudySessionReminderEmail = async ({
+    to,
+    fullName,
+    subjectName,
+    topic,
+    sessionLabel,
+    sessionDate,
+    activity,
+    duration,
+    planId,
+    timingLabel
+}) => {
+    const safeName =
+        fullName || "Student";
+
+    const readableDate =
+        formatStudyReminderDate(
+            sessionDate
+        );
+
+    const safeTiming =
+        timingLabel === "today"
+            ? "today"
+            : "tomorrow";
+
+    const frontendBaseUrl =
+        String(
+            process.env.FRONTEND_URL ||
+            "http://localhost:5173"
+        ).replace(/\/+$/, "");
+
+    const studyPlanUrl =
+        `${frontendBaseUrl}/study-plan/${planId}`;
+
+    const safeHtml = {
+        name:
+            escapeStudyReminderHtml(
+                safeName
+            ),
+
+        subject:
+            escapeStudyReminderHtml(
+                subjectName
+            ),
+
+        topic:
+            escapeStudyReminderHtml(
+                topic
+            ),
+
+        session:
+            escapeStudyReminderHtml(
+                sessionLabel
+            ),
+
+        date:
+            escapeStudyReminderHtml(
+                readableDate
+            ),
+
+        activity:
+            escapeStudyReminderHtml(
+                activity || "Study session"
+            ),
+
+        duration:
+            escapeStudyReminderHtml(
+                duration || "Not specified"
+            ),
+
+        url:
+            escapeStudyReminderHtml(
+                studyPlanUrl
+            ),
+
+        timing:
+            escapeStudyReminderHtml(
+                safeTiming
+            )
+    };
+
+    return sendEmail({
+        to,
+
+        subject:
+            `StudyA reminder: ${sessionLabel} is ${safeTiming}`,
+
+        text:
+            `Hi ${safeName},\n\n` +
+            `You have an upcoming StudyA session ${safeTiming}.\n\n` +
+            `Subject: ${subjectName}\n` +
+            `Topic: ${topic}\n` +
+            `Session: ${sessionLabel}\n` +
+            `Date: ${readableDate}\n` +
+            `Duration: ${duration || "Not specified"}\n` +
+            `Activity: ${activity || "Study session"}\n\n` +
+            `View your study plan:\n${studyPlanUrl}\n\n` +
+            `StudyA`,
+
+        html: `
+        <div style="
+            margin: 0;
+            padding: 32px 16px;
+            background: #eff1f5;
+            font-family: Arial, Helvetica, sans-serif;
+        ">
+            <div style="
+                max-width: 560px;
+                margin: 0 auto;
+                padding: 32px;
+                background: #ffffff;
+                border: 1px solid #dfdfdf;
+                border-radius: 16px;
+                color: #171717;
+                box-shadow: 0 12px 32px rgba(50,39,75,0.08);
+            ">
+                <div style="
+                    display: inline-block;
+                    margin-bottom: 16px;
+                    padding: 6px 10px;
+                    background: #f1ebff;
+                    border: 1px solid #ded0ff;
+                    border-radius: 999px;
+                    color: #7a44ff;
+                    font-size: 11px;
+                    font-weight: bold;
+                    letter-spacing: 1.1px;
+                    text-transform: uppercase;
+                ">
+                    Study Planner Reminder
+                </div>
+
+                <h1 style="
+                    margin: 0 0 10px;
+                    color: #171717;
+                    font-size: 24px;
+                    line-height: 1.3;
+                ">
+                    Upcoming study session
+                </h1>
+
+                <p style="
+                    margin: 0 0 24px;
+                    color: #65676b;
+                    font-size: 14px;
+                    line-height: 1.7;
+                ">
+                    Hi ${safeHtml.name}, you have a study session
+                    coming up ${safeHtml.timing}.
+                </p>
+
+                <div style="
+                    padding: 20px;
+                    background: #f7f5ff;
+                    border: 1px solid #ded0ff;
+                    border-radius: 12px;
+                ">
+                    <div style="
+                        margin-bottom: 14px;
+                        color: #7a44ff;
+                        font-size: 18px;
+                        font-weight: bold;
+                    ">
+                        ${safeHtml.subject}
+                    </div>
+
+                    <div style="
+                        margin-bottom: 8px;
+                        color: #45424d;
+                        font-size: 14px;
+                    ">
+                        <strong>Topic:</strong>
+                        ${safeHtml.topic}
+                    </div>
+
+                    <div style="
+                        margin-bottom: 8px;
+                        color: #45424d;
+                        font-size: 14px;
+                    ">
+                        <strong>Session:</strong>
+                        ${safeHtml.session}
+                    </div>
+
+                    <div style="
+                        margin-bottom: 8px;
+                        color: #45424d;
+                        font-size: 14px;
+                    ">
+                        <strong>Date:</strong>
+                        ${safeHtml.date}
+                    </div>
+
+                    <div style="
+                        margin-bottom: 8px;
+                        color: #45424d;
+                        font-size: 14px;
+                    ">
+                        <strong>Duration:</strong>
+                        ${safeHtml.duration}
+                    </div>
+
+                    <div style="
+                        color: #45424d;
+                        font-size: 14px;
+                        line-height: 1.6;
+                    ">
+                        <strong>Activity:</strong>
+                        ${safeHtml.activity}
+                    </div>
+                </div>
+
+                <div style="
+                    margin-top: 24px;
+                ">
+                    <a
+                        href="${safeHtml.url}"
+                        style="
+                            display: inline-block;
+                            padding: 12px 18px;
+                            background: #7a44ff;
+                            border-radius: 9px;
+                            color: #ffffff;
+                            font-size: 14px;
+                            font-weight: bold;
+                            text-decoration: none;
+                        "
+                    >
+                        View Study Plan
+                    </a>
+                </div>
+
+                <p style="
+                    margin: 24px 0 0;
+                    color: #9a96a6;
+                    font-size: 12px;
+                    line-height: 1.6;
+                ">
+                    This reminder was created from one of your saved
+                    StudyA study-plan sessions.
+                </p>
+            </div>
+        </div>
+        `
+    });
+};
+
 module.exports = {
     sendEmail,
     verifyEmailConnection,
@@ -475,5 +772,6 @@ module.exports = {
     hashVerificationCode,
     sendVerificationCodeEmail,
     sendLoginCodeEmail,
-    sendPasswordResetCodeEmail
+    sendPasswordResetCodeEmail,
+    sendStudySessionReminderEmail
 };

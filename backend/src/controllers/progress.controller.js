@@ -160,6 +160,113 @@ const getProgressDashboard = async (req, res) => {
       [userId]
     );
 
+    /*
+     * Sidebar weekly study activity.
+     *
+     * This is intentionally separate from recent_activity because
+     * recent_activity is limited to the latest 10 history records.
+     * The sidebar chart needs complete activity totals for each of
+     * the most recent seven calendar days.
+     */
+    const [weeklyActivityRows] =
+      await db.execute(
+        `SELECT
+           DATE_FORMAT(
+             occurred_at,
+             '%Y-%m-%d'
+           ) AS activity_date,
+           COUNT(*) AS activity_count
+         FROM activity_history
+         WHERE user_id = ?
+           AND occurred_at >=
+             DATE_SUB(
+               CURDATE(),
+               INTERVAL 6 DAY
+             )
+           AND occurred_at <
+             DATE_ADD(
+               CURDATE(),
+               INTERVAL 1 DAY
+             )
+         GROUP BY
+           activity_date
+         ORDER BY
+           activity_date ASC`,
+        [userId]
+      );
+
+
+    /*
+     * Always return exactly seven points so the graph remains stable,
+     * including days where the student had no recorded activity.
+     */
+    const weeklyActivityCounts =
+      new Map(
+        weeklyActivityRows.map(
+          (row) => [
+            row.activity_date,
+            Number(
+              row.activity_count
+            )
+          ]
+        )
+      );
+
+
+    const weeklyActivity = [];
+
+    for (
+      let daysAgo = 6;
+      daysAgo >= 0;
+      daysAgo -= 1
+    ) {
+      const activityDate =
+        new Date();
+
+      activityDate.setHours(
+        12,
+        0,
+        0,
+        0
+      );
+
+      activityDate.setDate(
+        activityDate.getDate() -
+          daysAgo
+      );
+
+      const year =
+        activityDate.getFullYear();
+
+      const month =
+        String(
+          activityDate.getMonth() +
+            1
+        ).padStart(
+          2,
+          "0"
+        );
+
+      const day =
+        String(
+          activityDate.getDate()
+        ).padStart(
+          2,
+          "0"
+        );
+
+      const dateKey =
+        `${year}-${month}-${day}`;
+
+      weeklyActivity.push({
+        date: dateKey,
+        count:
+          weeklyActivityCounts.get(
+            dateKey
+          ) || 0
+      });
+    }
+
     return res.status(200).json({
       status: "success",
       period,
@@ -207,6 +314,7 @@ const getProgressDashboard = async (req, res) => {
             )
           })
         ),
+        weekly_activity: weeklyActivity,
         recent_activity: recentActivity
       }
     });

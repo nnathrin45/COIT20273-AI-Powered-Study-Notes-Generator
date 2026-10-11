@@ -1202,6 +1202,159 @@ function SavedMaterials() {
             border-color:
               #c9c9d3 !important;
           }
+
+          /*
+           * STUDYA SAVED MATERIALS ILLUMINATED SURFACE
+           *
+           * Major outer surfaces only.
+           * Search, filtering, expansion, live data retrieval,
+           * delete actions and material rendering are unchanged.
+           */
+          .saved-materials-surface,
+          .saved-materials-library {
+            position: relative;
+
+            background:
+              radial-gradient(
+                ellipse 75% 52% at 22% -8%,
+                rgba(255, 255, 255, 0.075),
+                rgba(255, 255, 255, 0.025) 34%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 65% 48% at 88% -12%,
+                rgba(122, 68, 255, 0.10),
+                transparent 66%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.018),
+                transparent 48%
+              ),
+              #160b32 !important;
+
+            border-color:
+              rgba(169, 124, 255, 0.16) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.065),
+              inset 0 0 26px rgba(122, 68, 255, 0.025),
+              0 12px 34px rgba(3, 0, 15, 0.24);
+
+            transition:
+              background-color 500ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease;
+          }
+
+
+          /*
+           * Reflective upper edge.
+           */
+          .saved-materials-surface::after,
+          .saved-materials-library::after {
+            content: '';
+            position: absolute;
+            pointer-events: none;
+
+            top: 0;
+            left: 9%;
+            right: 9%;
+            height: 1px;
+
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.15) 28%,
+                rgba(201, 180, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.10) 72%,
+                transparent
+              );
+
+            opacity: 0.72;
+          }
+
+
+          .saved-materials-surface:hover,
+          .saved-materials-library:hover {
+            border-color:
+              rgba(122, 68, 255, 0.34) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.085),
+              inset 0 0 30px rgba(122, 68, 255, 0.04),
+              0 14px 38px rgba(30, 10, 62, 0.28),
+              0 0 22px rgba(122, 68, 255, 0.06) !important;
+          }
+
+
+          /*
+           * Light mode
+           */
+          [data-theme-mode='light']
+          .saved-materials-surface,
+          [data-theme-mode='light']
+          .saved-materials-library {
+            background:
+              radial-gradient(
+                ellipse 75% 55% at 20% -10%,
+                rgba(255, 255, 255, 0.96),
+                rgba(255, 255, 255, 0.52) 38%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 62% 48% at 88% -10%,
+                rgba(122, 68, 255, 0.055),
+                transparent 67%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(122, 68, 255, 0.018),
+                transparent 48%
+              ),
+              #ffffff !important;
+
+            border-color:
+              rgba(91, 72, 125, 0.14) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 0 20px rgba(122, 68, 255, 0.012),
+              0 10px 28px rgba(61, 44, 92, 0.075);
+          }
+
+
+          [data-theme-mode='light']
+          .saved-materials-surface::after,
+          [data-theme-mode='light']
+          .saved-materials-library::after {
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(122, 68, 255, 0.075) 28%,
+                rgba(122, 68, 255, 0.12) 50%,
+                rgba(122, 68, 255, 0.06) 72%,
+                transparent
+              );
+
+            opacity: 0.52;
+          }
+
+
+          [data-theme-mode='light']
+          .saved-materials-surface:hover,
+          [data-theme-mode='light']
+          .saved-materials-library:hover {
+            border-color:
+              rgba(122, 68, 255, 0.28) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              0 13px 32px rgba(91, 60, 145, 0.10),
+              0 0 18px rgba(122, 68, 255, 0.04) !important;
+          }
         `}
       </style>
 
