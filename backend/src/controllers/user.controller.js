@@ -1,3 +1,4 @@
+const { profilePictureDirectory } = require("../config/storage");
 const db = require("../config/database");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -832,11 +833,7 @@ const uploadProfilePicture = async (req, res) => {
     );
 
     if (oldProfilePicture) {
-      const oldFilePath = path.join(
-        __dirname,
-        "../profile-pictures",
-        path.basename(oldProfilePicture)
-      );
+      const oldFilePath = path.join(profilePictureDirectory, path.basename(oldProfilePicture));
 
       if (fs.existsSync(oldFilePath)) {
         fs.unlinkSync(oldFilePath);
@@ -899,11 +896,7 @@ const getProfilePicture = async (req, res) => {
       });
     }
 
-    const filePath = path.join(
-      __dirname,
-      "../profile-pictures",
-      path.basename(profilePicture)
-    );
+    const filePath = path.join(profilePictureDirectory, path.basename(profilePicture));
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({
@@ -956,11 +949,7 @@ const deleteProfilePicture = async (req, res) => {
     );
 
     if (profilePicture) {
-      const filePath = path.join(
-        __dirname,
-        "../profile-pictures",
-        path.basename(profilePicture)
-      );
+      const filePath = path.join(profilePictureDirectory, path.basename(profilePicture));
 
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

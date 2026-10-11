@@ -30,10 +30,33 @@ const progressRoutes = require("./routes/progress.routes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const FRONTEND_ORIGIN = (() => {
+  const frontendUrl = process.env.FRONTEND_URL;
+
+  if (process.env.NODE_ENV === "production" && !frontendUrl) {
+    throw new Error("FRONTEND_URL must be set in production.");
+  }
+
+  const parsed = new URL(frontendUrl || "http://localhost:5173");
+
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("FRONTEND_URL must use HTTP or HTTPS.");
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    parsed.protocol !== "https:"
+  ) {
+    throw new Error("FRONTEND_URL must use HTTPS in production.");
+  }
+
+  return parsed.origin;
+})();
+
 // Allow the React frontend to communicate with the backend
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

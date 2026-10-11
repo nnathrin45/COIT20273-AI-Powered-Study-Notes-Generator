@@ -25,11 +25,7 @@ const removeExplanationSourceFile =
      * Rebuild the location inside the known uploads folder
      * using only the stored basename.
      */
-    const uploadDirectory =
-      path.resolve(
-        __dirname,
-        "../uploads"
-      );
+    const uploadDirectory = require("../config/storage").uploadDirectory;
 
     const physicalFilePath =
       path.resolve(
