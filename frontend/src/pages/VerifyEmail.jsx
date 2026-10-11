@@ -10,6 +10,7 @@ import {
 } from 'react-router'
 
 import StudyALogo from '../components/StudyALogo'
+import StudyABackgroundVideo from '../components/StudyABackgroundVideo'
 import ThemeToggle from '../components/ThemeToggle'
 
 import {
@@ -607,6 +608,11 @@ function VerifyEmail() {
         className="verify-email-glow-secondary pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#D83DFF]/10 blur-[120px]"
       />
 
+
+      <StudyABackgroundVideo
+        containerClassName="block"
+        videoClassName="absolute left-[-25px] top-[calc(50%-195px)] h-auto w-[260px] max-w-none opacity-40 sm:left-[3%] sm:top-[calc(50%-240px)] sm:w-[340px] sm:opacity-45 xl:left-[calc(50%-630px)] xl:top-[calc(50%-300px)] xl:w-[500px] xl:opacity-55 2xl:left-[calc(50%-675px)]"
+      />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center auth-page-transition">
         <div className="verify-email-card w-full rounded-2xl border border-[#2a1b4d] bg-[#160b32] p-8 shadow-2xl shadow-purple-950/20">

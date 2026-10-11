@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { getProgress } from '../services/progressService'
+import { getStudyPlans } from '../services/studyPlanService'
 
 import {
   Area,
   AreaChart,
   CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -21,6 +25,21 @@ function Dashboard() {
 
   const [progressError, setProgressError] =
     useState('')
+
+  const [
+    dashboardStudyPlans,
+    setDashboardStudyPlans,
+  ] = useState([])
+
+  const [
+    studyPlansLoading,
+    setStudyPlansLoading,
+  ] = useState(true)
+
+  const [
+    studyPlansError,
+    setStudyPlansError,
+  ] = useState('')
 
 
   useEffect(() => {
@@ -67,6 +86,49 @@ function Dashboard() {
     loadProgress()
   }, [])
 
+
+  useEffect(() => {
+    const loadDashboardStudyPlans =
+      async () => {
+        setStudyPlansLoading(true)
+        setStudyPlansError('')
+
+        try {
+          const response =
+            await getStudyPlans()
+
+          if (!response.ok) {
+            setStudyPlansError(
+              response.data?.message ||
+                'Unable to load your study plans.'
+            )
+
+            return
+          }
+
+          setDashboardStudyPlans(
+            Array.isArray(
+              response.data?.plans
+            )
+              ? response.data.plans
+              : []
+          )
+        } catch (studyPlanLoadError) {
+          console.error(
+            'Dashboard study plans load error:',
+            studyPlanLoadError
+          )
+
+          setStudyPlansError(
+            'Unable to connect to the server to load your study plans.'
+          )
+        } finally {
+          setStudyPlansLoading(false)
+        }
+      }
+
+    loadDashboardStudyPlans()
+  }, [])
 
   const statsUnavailable =
     progressLoading ||
@@ -148,65 +210,55 @@ function Dashboard() {
   ]
 
 
-  const quickActions = [
+  const resourceMixData = [
     {
-      title: 'Upload Study Material',
-
-      description:
-        'Upload PDF, DOCX or TXT study materials.',
-
-      action: 'Upload material',
-
-      path: '/upload',
-
-      icon: (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 16V4m0 0L7 9m5-5 5 5M5 15v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"
-        />
+      name: 'Summaries',
+      value: Number(
+        progress?.summaries_generated ?? 0
       ),
+      color: '#7A44FF',
     },
-
     {
-      title: 'Study Planner',
-
-      description:
-        'Organise your available study time and upcoming topics.',
-
-      action: 'Create plan',
-
-      path: '/study-plan',
-
-      icon: (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M6 3v3m12-3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 7h3m2 0h3m-8 4h3m2 0h3"
-        />
+      name: 'Flashcards',
+      value: Number(
+        progress?.flashcards_generated ?? 0
       ),
+      color: '#A77BFF',
     },
-
     {
-      title: 'View Progress',
-
-      description:
-        'Review quiz scores and study activity.',
-
-      action: 'View progress',
-
-      path: '/progress',
-
-      icon: (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M4 19V9m5 10V5m5 14v-7m5 7V3"
-        />
+      name: 'Practice Quizzes',
+      value: Number(
+        progress?.quizzes_generated ?? 0
       ),
+      color: '#D83DFF',
+    },
+    {
+      name: 'Explanations',
+      value: Number(
+        progress?.explanations_generated ?? 0
+      ),
+      color: '#6D5CE7',
     },
   ]
 
+
+  const generatedResourceTotal =
+    resourceMixData.reduce(
+      (
+        total,
+        resource
+      ) =>
+        total +
+        resource.value,
+      0
+    )
+
+
+  const resourceMixChartData =
+    resourceMixData.filter(
+      (resource) =>
+        resource.value > 0
+    )
 
   const quizTrendData = (
     progress?.recent_attempts ?? []
@@ -331,8 +383,228 @@ function Dashboard() {
       : null
 
 
+  const recentDashboardActivity =
+    (
+      progress?.recent_activity ??
+      []
+    ).slice(0, 4)
+
+
+  const getDashboardActivityLabel =
+    (activityType) => {
+      const labels = {
+        quiz_attempt:
+          'Completed a practice quiz',
+
+        ai_summary:
+          'Generated a summary',
+
+        ai_flashcards:
+          'Generated flashcards',
+
+        ai_quiz:
+          'Generated a practice quiz',
+
+        ai_explanation:
+          'Generated an explanation',
+
+        upload:
+          'Uploaded study material',
+
+        study_plan:
+          'Created a study plan',
+
+        study_plan_delete:
+          'Deleted a study plan',
+
+        study_plan_deleted:
+          'Deleted a study plan',
+      }
+
+      return (
+        labels[activityType] ||
+        'Study activity'
+      )
+    }
+
+
+  const formatDashboardActivityDate =
+    (value) => {
+      if (!value) {
+        return ''
+      }
+
+      const parsed =
+        new Date(value)
+
+      if (
+        Number.isNaN(
+          parsed.getTime()
+        )
+      ) {
+        return ''
+      }
+
+      return parsed.toLocaleString(
+        'en-AU',
+        {
+          day: 'numeric',
+          month: 'short',
+          hour: 'numeric',
+          minute: '2-digit',
+        }
+      )
+    }
+
+
+  /*
+   * Study-plan deadlines are calendar dates.
+   * Read the YYYY-MM-DD portion directly so the
+   * browser timezone cannot shift the displayed day.
+   */
+  const getDeadlineKey =
+    (value) => {
+      const match =
+        /^(\d{4})-(\d{2})-(\d{2})/.exec(
+          String(value || '')
+        )
+
+      if (!match) {
+        return ''
+      }
+
+      return `${match[1]}-${match[2]}-${match[3]}`
+    }
+
+
+  const formatPlanDeadline =
+    (value) => {
+      const key =
+        getDeadlineKey(value)
+
+      if (!key) {
+        return ''
+      }
+
+      const [
+        year,
+        month,
+        day,
+      ] =
+        key
+          .split('-')
+          .map(Number)
+
+      const date =
+        new Date(
+          year,
+          month - 1,
+          day
+        )
+
+      return date.toLocaleDateString(
+        'en-AU',
+        {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }
+      )
+    }
+
+
+  const today =
+    new Date()
+
+  const todayKey =
+    [
+      today.getFullYear(),
+
+      String(
+        today.getMonth() + 1
+      ).padStart(2, '0'),
+
+      String(
+        today.getDate()
+      ).padStart(2, '0'),
+    ].join('-')
+
+
+  const getDeadlineStatus =
+    (deadlineValue) => {
+      const deadlineKey =
+        getDeadlineKey(
+          deadlineValue
+        )
+
+      if (!deadlineKey) {
+        return ''
+      }
+
+      const [
+        deadlineYear,
+        deadlineMonth,
+        deadlineDay,
+      ] =
+        deadlineKey
+          .split('-')
+          .map(Number)
+
+      const [
+        todayYear,
+        todayMonth,
+        todayDay,
+      ] =
+        todayKey
+          .split('-')
+          .map(Number)
+
+      const difference =
+        Math.round(
+          (
+            Date.UTC(
+              deadlineYear,
+              deadlineMonth - 1,
+              deadlineDay
+            ) -
+            Date.UTC(
+              todayYear,
+              todayMonth - 1,
+              todayDay
+            )
+          ) /
+            86400000
+        )
+
+      if (difference === 0) {
+        return 'Due today'
+      }
+
+      if (difference === 1) {
+        return 'Due tomorrow'
+      }
+
+      return `${difference} days remaining`
+    }
+
+
+  const upcomingStudyPlans =
+    dashboardStudyPlans
+      .filter((plan) => {
+        const deadlineKey =
+          getDeadlineKey(
+            plan.deadline
+          )
+
+        return (
+          deadlineKey &&
+          deadlineKey >= todayKey
+        )
+      })
+      .slice(0, 4)
+
   return (
-    <div className="dashboard-theme mx-auto max-w-7xl">
+    <div className="dashboard-theme mx-auto w-full max-w-[1660px]">
       <style>
         {`
           .dashboard-theme {
@@ -472,6 +744,156 @@ function Dashboard() {
           .dashboard-link:hover {
             color: #6634e8 !important;
           }
+
+          /*
+           * STUDYA ILLUMINATED SURFACE
+           *
+           * Visual enhancement only.
+           * No Dashboard functionality is affected.
+           */
+          .dashboard-surface {
+            position: relative;
+            isolation: isolate;
+
+            background:
+              radial-gradient(
+                ellipse 75% 52% at 22% -8%,
+                rgba(255, 255, 255, 0.075),
+                rgba(255, 255, 255, 0.025) 34%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 65% 48% at 88% -12%,
+                rgba(122, 68, 255, 0.10),
+                transparent 66%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.018),
+                rgba(255, 255, 255, 0) 48%
+              ),
+              #160b32 !important;
+
+            border-color:
+              rgba(169, 124, 255, 0.16) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.065),
+              inset 0 0 26px rgba(122, 68, 255, 0.025),
+              0 12px 34px rgba(3, 0, 15, 0.24);
+
+            transition:
+              background-color 500ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease,
+              transform 300ms ease;
+          }
+
+
+          /*
+           * Thin reflective highlight along the top edge.
+           */
+          .dashboard-surface::after {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            pointer-events: none;
+
+            top: 0;
+            left: 9%;
+            right: 9%;
+            height: 1px;
+
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.15) 28%,
+                rgba(201, 180, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.10) 72%,
+                transparent
+              );
+
+            opacity: 0.72;
+          }
+
+
+          /*
+           * Preserve StudyA purple interaction on hover.
+           */
+          .dashboard-surface:hover {
+            border-color:
+              rgba(122, 68, 255, 0.46) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.085),
+              inset 0 0 30px rgba(122, 68, 255, 0.045),
+              0 14px 38px rgba(30, 10, 62, 0.30),
+              0 0 24px rgba(122, 68, 255, 0.075);
+          }
+
+
+          /*
+           * Light theme:
+           * same dimensional effect, much more restrained.
+           */
+          [data-theme-mode='light']
+          .dashboard-surface {
+            background:
+              radial-gradient(
+                ellipse 75% 55% at 20% -10%,
+                rgba(255, 255, 255, 0.96),
+                rgba(255, 255, 255, 0.52) 38%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 62% 48% at 88% -10%,
+                rgba(122, 68, 255, 0.055),
+                transparent 67%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(122, 68, 255, 0.018),
+                transparent 48%
+              ),
+              #ffffff !important;
+
+            border-color:
+              rgba(91, 72, 125, 0.14) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 0 20px rgba(122, 68, 255, 0.012),
+              0 10px 28px rgba(61, 44, 92, 0.075);
+          }
+
+
+          [data-theme-mode='light']
+          .dashboard-surface::after {
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(122, 68, 255, 0.075) 28%,
+                rgba(122, 68, 255, 0.12) 50%,
+                rgba(122, 68, 255, 0.06) 72%,
+                transparent
+              );
+
+            opacity: 0.52;
+          }
+
+
+          [data-theme-mode='light']
+          .dashboard-surface:hover {
+            border-color:
+              rgba(122, 68, 255, 0.34) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              0 13px 32px rgba(91, 60, 145, 0.11),
+              0 0 20px rgba(122, 68, 255, 0.045);
+          }
         `}
       </style>
 
@@ -565,76 +987,9 @@ function Dashboard() {
       )}
 
 
-      {/* Quick Actions */}
-      <section className="mt-10">
-        <div className="mb-5">
-          <p className="dashboard-theme-text dashboard-accent mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
-            Shortcuts
-          </p>
-
-          <h2 className="dashboard-theme-text dashboard-heading text-xl font-bold text-[#f3f0ff]">
-            Quick Actions
-          </h2>
-        </div>
-
-
-        <div className="grid gap-5 md:grid-cols-3">
-          {quickActions.map((action) => (
-            <Link
-              key={action.path}
-              to={action.path}
-              className="dashboard-theme-surface dashboard-action-card group rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 hover:-translate-y-1 hover:border-[#7a44ff]/50 hover:bg-[#19103a] hover:shadow-[0_12px_35px_rgba(122,68,255,0.12)]"
-            >
-              <div className="dashboard-accent mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-6 w-6"
-                >
-                  {action.icon}
-                </svg>
-              </div>
-
-              <h3 className="dashboard-theme-text dashboard-heading text-base font-bold text-[#f3f0ff]">
-                {action.title}
-              </h3>
-
-              <p className="dashboard-theme-text dashboard-body mt-2 min-h-10 text-sm leading-6 text-[#898cc0]">
-                {action.description}
-              </p>
-
-              <div className="dashboard-theme-text dashboard-accent mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#a97cff]">
-                {action.action}
-
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m9 18 6-6-6-6"
-                  />
-                </svg>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-
       {/* Quiz Performance Trend */}
-      <section className="mt-8">
-        <div className="dashboard-theme-surface dashboard-surface overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
+      <section className="mt-8 grid gap-5 xl:grid-cols-2">
+        <div className="dashboard-theme-surface dashboard-surface min-w-0 overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
           {/* Header */}
           <div className="dashboard-theme-border dashboard-section-border flex flex-col gap-4 border-b border-[#2a1b4d] px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -919,6 +1274,539 @@ function Dashboard() {
               </Link>
             </div>
           )}
+        </div>
+        {/* Study Resource Mix */}
+        <div className="dashboard-theme-surface dashboard-surface min-w-0 overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
+          {/* Header */}
+          <div className="dashboard-theme-border dashboard-section-border border-b border-[#2a1b4d] px-6 py-5">
+            <p className="dashboard-theme-text dashboard-accent mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+              Resources
+            </p>
+
+            <h2 className="dashboard-theme-text dashboard-heading text-xl font-bold text-[#f3f0ff]">
+              Study Resource Mix
+            </h2>
+
+            <p className="dashboard-theme-text dashboard-body mt-1 text-sm text-[#898cc0]">
+              See how your generated study resources are distributed.
+            </p>
+          </div>
+
+
+          <div className="flex min-h-[360px] flex-col items-center justify-center gap-6 p-6 lg:flex-row">
+            {generatedResourceTotal > 0 ? (
+              <>
+                {/* Donut */}
+                <div className="relative h-[230px] w-full max-w-[260px] shrink-0">
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                  >
+                    <PieChart>
+                      <Pie
+                        data={
+                          resourceMixChartData
+                        }
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={92}
+                        paddingAngle={3}
+                        stroke="none"
+                      >
+                        {resourceMixChartData.map(
+                          (resource) => (
+                            <Cell
+                              key={
+                                resource.name
+                              }
+                              fill={
+                                resource.color
+                              }
+                            />
+                          )
+                        )}
+                      </Pie>
+
+                      <Tooltip
+                        content={({
+                          active,
+                          payload,
+                        }) => {
+                          if (
+                            !active ||
+                            !payload ||
+                            payload.length ===
+                              0
+                          ) {
+                            return null
+                          }
+
+                          const resource =
+                            payload[0]
+                              .payload
+
+                          const percentage =
+                            generatedResourceTotal >
+                            0
+                              ? Math.round(
+                                  (
+                                    resource.value /
+                                    generatedResourceTotal
+                                  ) *
+                                    100
+                                )
+                              : 0
+
+                          return (
+                            <div className="dashboard-theme-surface dashboard-tooltip min-w-[170px] rounded-lg border border-[#3a2860] bg-[#120928] p-4 shadow-xl">
+                              <p className="dashboard-theme-text dashboard-heading text-sm font-semibold text-[#f3f0ff]">
+                                {
+                                  resource.name
+                                }
+                              </p>
+
+                              <div className="mt-3 flex items-center justify-between gap-6">
+                                <span className="dashboard-theme-text dashboard-body text-xs text-[#898cc0]">
+                                  Generated
+                                </span>
+
+                                <span className="dashboard-theme-text dashboard-accent-soft text-sm font-bold text-[#c9b4ff]">
+                                  {
+                                    resource.value
+                                  }
+                                </span>
+                              </div>
+
+                              <div className="mt-2 flex items-center justify-between gap-6">
+                                <span className="dashboard-theme-text dashboard-body text-xs text-[#898cc0]">
+                                  Share
+                                </span>
+
+                                <span className="dashboard-theme-text dashboard-heading text-sm font-semibold text-[#f3f0ff]">
+                                  {
+                                    percentage
+                                  }
+                                  %
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+
+                  {/* Donut Centre */}
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="dashboard-theme-text dashboard-heading text-3xl font-bold text-[#f3f0ff]">
+                      {
+                        generatedResourceTotal
+                      }
+                    </span>
+
+                    <span className="dashboard-theme-text dashboard-muted mt-1 text-xs text-[#727494]">
+                      Generated
+                    </span>
+                  </div>
+                </div>
+
+
+                {/* Resource Legend */}
+                <div className="w-full min-w-0 flex-1 space-y-3">
+                  {resourceMixData.map(
+                    (resource) => {
+                      const percentage =
+                        generatedResourceTotal >
+                        0
+                          ? Math.round(
+                              (
+                                resource.value /
+                                generatedResourceTotal
+                              ) *
+                                100
+                            )
+                          : 0
+
+                      return (
+                        <div
+                          key={
+                            resource.name
+                          }
+                          className="dashboard-theme-border flex items-center gap-3 border-b border-[#2a1b4d] py-3 last:border-b-0"
+                        >
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-full"
+                            style={{
+                              backgroundColor:
+                                resource.color,
+                            }}
+                          />
+
+                          <div className="min-w-0 flex-1">
+                            <p className="dashboard-theme-text dashboard-heading truncate text-sm font-semibold text-[#f3f0ff]">
+                              {
+                                resource.name
+                              }
+                            </p>
+
+                            <p className="dashboard-theme-text dashboard-muted mt-0.5 text-xs text-[#727494]">
+                              {
+                                percentage
+                              }
+                              % of generated resources
+                            </p>
+                          </div>
+
+                          <span className="dashboard-theme-text dashboard-accent-soft shrink-0 text-lg font-bold text-[#c9b4ff]">
+                            {
+                              resource.value
+                            }
+                          </span>
+                        </div>
+                      )
+                    }
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="dashboard-accent mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-6 w-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 3a9 9 0 1 0 9 9h-9V3Zm3 0v6h6A9 9 0 0 0 15 3Z"
+                    />
+                  </svg>
+                </div>
+
+                <h3 className="dashboard-theme-text dashboard-heading font-semibold text-[#f3f0ff]">
+                  No generated resources yet
+                </h3>
+
+                <p className="dashboard-theme-text dashboard-body mt-2 max-w-sm text-sm leading-6 text-[#898cc0]">
+                  Generate summaries, flashcards, quizzes or explanations and their distribution will appear here.
+                </p>
+              </div>
+            )}
+          </div>
+
+
+          {generatedResourceTotal > 0 && (
+            <div className="dashboard-theme-border dashboard-section-border flex justify-end border-t border-[#2a1b4d] px-6 py-4">
+              <Link
+                to="/progress"
+                className="dashboard-theme-text dashboard-accent dashboard-link text-sm font-semibold text-[#a97cff]"
+              >
+                View all resources →
+              </Link>
+            </div>
+          )}
+        </div>
+
+      </section>
+
+      {/* Dashboard Detail Panels */}
+      <section className="mt-5 grid gap-5 xl:grid-cols-2">
+        {/* Recent Activity */}
+        <div className="dashboard-theme-surface dashboard-surface flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
+          <div className="dashboard-theme-border dashboard-section-border border-b border-[#2a1b4d] px-6 py-5">
+            <p className="dashboard-theme-text dashboard-accent mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+              Activity
+            </p>
+
+            <h2 className="dashboard-theme-text dashboard-heading text-xl font-bold text-[#f3f0ff]">
+              Recent Activity
+            </h2>
+
+            <p className="dashboard-theme-text dashboard-body mt-1 text-sm text-[#898cc0]">
+              Your latest StudyA actions.
+            </p>
+          </div>
+
+
+          <div className="flex-1 px-6">
+            {progressLoading && (
+              <div className="flex min-h-[270px] items-center justify-center gap-3">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+                <p className="dashboard-theme-text dashboard-body text-sm text-[#898cc0]">
+                  Loading recent activity...
+                </p>
+              </div>
+            )}
+
+
+            {!progressLoading &&
+              !progressError &&
+              recentDashboardActivity.length ===
+                0 && (
+                <div className="flex min-h-[270px] flex-col items-center justify-center text-center">
+                  <div className="dashboard-accent mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-6 w-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 6v6l4 2M12 3a9 9 0 1 0 9 9"
+                      />
+                    </svg>
+                  </div>
+
+                  <h3 className="dashboard-theme-text dashboard-heading font-semibold text-[#f3f0ff]">
+                    No recent activity
+                  </h3>
+
+                  <p className="dashboard-theme-text dashboard-body mt-2 text-sm text-[#898cc0]">
+                    Your latest study actions will appear here.
+                  </p>
+                </div>
+              )}
+
+
+            {!progressLoading &&
+              !progressError &&
+              recentDashboardActivity.map(
+                (
+                  activity,
+                  index
+                ) => (
+                  <div
+                    key={
+                      activity.activity_id ||
+                      `${activity.activity_type}-${activity.occurred_at}-${index}`
+                    }
+                    className="dashboard-theme-border flex min-h-[78px] items-center gap-4 border-b border-[#2a1b4d] py-4 last:border-b-0"
+                  >
+                    <div className="dashboard-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 12h14M12 5v14"
+                        />
+                      </svg>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="dashboard-theme-text dashboard-heading truncate text-sm font-semibold text-[#f3f0ff]">
+                        {getDashboardActivityLabel(
+                          activity.activity_type
+                        )}
+                      </p>
+
+                      <p className="dashboard-theme-text dashboard-muted mt-1 truncate text-xs text-[#727494]">
+                        {activity.detail ||
+                          'StudyA activity'}
+                      </p>
+                    </div>
+
+                    <p className="dashboard-theme-text dashboard-body shrink-0 text-right text-xs text-[#898cc0]">
+                      {formatDashboardActivityDate(
+                        activity.occurred_at
+                      )}
+                    </p>
+                  </div>
+                )
+              )}
+
+
+            {!progressLoading &&
+              progressError && (
+                <div className="flex min-h-[270px] items-center justify-center text-center">
+                  <p className="dashboard-theme-text dashboard-error-text max-w-sm text-sm text-red-300">
+                    Recent activity is currently unavailable.
+                  </p>
+                </div>
+              )}
+          </div>
+
+
+          <div className="dashboard-theme-border dashboard-section-border flex justify-end border-t border-[#2a1b4d] px-6 py-4">
+            <Link
+              to="/progress"
+              className="dashboard-theme-text dashboard-accent dashboard-link text-sm font-semibold text-[#a97cff]"
+            >
+              View all activity →
+            </Link>
+          </div>
+        </div>
+
+
+        {/* Upcoming Study Plans */}
+        <div className="dashboard-theme-surface dashboard-surface flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
+          <div className="dashboard-theme-border dashboard-section-border border-b border-[#2a1b4d] px-6 py-5">
+            <p className="dashboard-theme-text dashboard-accent mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+              Study Planner
+            </p>
+
+            <h2 className="dashboard-theme-text dashboard-heading text-xl font-bold text-[#f3f0ff]">
+              Upcoming Study Plans
+            </h2>
+
+            <p className="dashboard-theme-text dashboard-body mt-1 text-sm text-[#898cc0]">
+              Keep track of your nearest study deadlines.
+            </p>
+          </div>
+
+
+          <div className="flex-1 px-6">
+            {studyPlansLoading && (
+              <div className="flex min-h-[270px] items-center justify-center gap-3">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+                <p className="dashboard-theme-text dashboard-body text-sm text-[#898cc0]">
+                  Loading study plans...
+                </p>
+              </div>
+            )}
+
+
+            {!studyPlansLoading &&
+              !studyPlansError &&
+              upcomingStudyPlans.length ===
+                0 && (
+                <div className="flex min-h-[270px] flex-col items-center justify-center text-center">
+                  <div className="dashboard-accent mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-6 w-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
+                      />
+                    </svg>
+                  </div>
+
+                  <h3 className="dashboard-theme-text dashboard-heading font-semibold text-[#f3f0ff]">
+                    No upcoming study plans
+                  </h3>
+
+                  <p className="dashboard-theme-text dashboard-body mt-2 max-w-sm text-sm text-[#898cc0]">
+                    Create a study plan and its upcoming deadline will appear here.
+                  </p>
+                </div>
+              )}
+
+
+            {!studyPlansLoading &&
+              !studyPlansError &&
+              upcomingStudyPlans.map(
+                (plan) => (
+                  <Link
+                    key={
+                      plan.plan_id
+                    }
+                    to={`/study-plan/${plan.plan_id}`}
+                    className="dashboard-theme-border dashboard-theme-interactive group flex min-h-[78px] items-center gap-4 border-b border-[#2a1b4d] py-4 last:border-b-0"
+                  >
+                    <div className="dashboard-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
+                      <svg
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
+                        />
+                      </svg>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="dashboard-theme-text dashboard-heading truncate text-sm font-semibold text-[#f3f0ff] group-hover:text-[#c9b4ff]">
+                        {plan.subject}
+                      </p>
+
+                      <p className="dashboard-theme-text dashboard-muted mt-1 truncate text-xs text-[#727494]">
+                        {plan.topic}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="dashboard-theme-text dashboard-body text-xs font-medium text-[#898cc0]">
+                        {formatPlanDeadline(
+                          plan.deadline
+                        )}
+                      </p>
+
+                      <p className="dashboard-theme-text dashboard-accent mt-1 text-xs font-semibold text-[#a97cff]">
+                        {getDeadlineStatus(
+                          plan.deadline
+                        )}
+                      </p>
+
+                      <p className="dashboard-theme-text dashboard-muted mt-1 text-[11px] text-[#727494]">
+                        {Number(
+                          plan.available_hours ??
+                            0
+                        )}
+                        {' '}hrs/week
+                      </p>
+                    </div>
+                  </Link>
+                )
+              )}
+
+
+            {!studyPlansLoading &&
+              studyPlansError && (
+                <div className="flex min-h-[270px] items-center justify-center text-center">
+                  <p className="dashboard-theme-text dashboard-error-text max-w-sm text-sm text-red-300">
+                    Upcoming study plans are currently unavailable.
+                  </p>
+                </div>
+              )}
+          </div>
+
+
+          <div className="dashboard-theme-border dashboard-section-border flex justify-end border-t border-[#2a1b4d] px-6 py-4">
+            <Link
+              to="/study-plan"
+              className="dashboard-theme-text dashboard-accent dashboard-link text-sm font-semibold text-[#a97cff]"
+            >
+              View study planner →
+            </Link>
+          </div>
         </div>
       </section>
     </div>

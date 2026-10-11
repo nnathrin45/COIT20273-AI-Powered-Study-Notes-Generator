@@ -4,11 +4,13 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Upload from './pages/Upload'
+import StudyMaterialDetails from './pages/StudyMaterialDetails'
 import Summary from './pages/Summary'
 import Flashcards from './pages/Flashcards'
 import Quiz from './pages/Quiz'
 import Explanation from './pages/Explanation'
 import StudyPlanner from './pages/StudyPlanner'
+import StudyPlanDetails from './pages/StudyPlanDetails'
 import SavedMaterials from './pages/SavedMaterials'
 import Progress from './pages/Progress'
 import AppLayout from './components/AppLayout'
@@ -70,6 +72,11 @@ function App() {
           />
 
           <Route
+            path="/upload/:fileId"
+            element={<StudyMaterialDetails />}
+          />
+
+          <Route
             path="/summaries"
             element={<Summary />}
           />
@@ -92,6 +99,11 @@ function App() {
           <Route
             path="/study-plan"
             element={<StudyPlanner />}
+          />
+
+          <Route
+            path="/study-plan/:planId"
+            element={<StudyPlanDetails />}
           />
 
           <Route

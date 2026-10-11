@@ -106,11 +106,15 @@ Explain this concept: ${concept}
 Pitch the explanation at ${LEVEL_GUIDANCE[level]}
 
 Rules:
-- Base the explanation on the study material below. Do not add facts from outside it.
-- If the concept does not appear in the material, say so plainly and explain only what the material does cover about it. Do not invent content.
+- Base the explanation only on the source material below. Do not add facts from outside it.
+- The source may contain a PRIMARY STUDY MATERIAL section followed by a SUPPLEMENTARY CHAT MATERIAL section.
+- PRIMARY STUDY MATERIAL is the student's main selected document and remains the main source for the explanation.
+- SUPPLEMENTARY CHAT MATERIAL is supporting context only. Use it when it helps answer the student's question, but do not treat it as replacing or changing the primary study material.
+- If supplementary material conflicts with the primary study material, prefer the primary study material and clearly avoid silently combining conflicting claims.
+- If the concept does not appear in either the primary material or relevant supplementary material, say so plainly instead of inventing content.
 - Write in clear prose with short paragraphs. Do not use markdown headings.
 
-Study material:
+Source material:
 ---
 ${text}
 ---`
@@ -208,6 +212,169 @@ const STRUCTURED = {
 
 // FR9.1 - build the prompt for the requested output type.
 // `options` carries per-type inputs: explanation uses { concept, level }.
+const truncateOnWhitespace = (
+  value,
+  maxChars,
+  truncationNotice
+) => {
+  if (
+    typeof value !== "string" ||
+    value.length <= maxChars
+  ) {
+    return value;
+  }
+
+  const notice =
+    truncationNotice || "";
+
+  const contentBudget =
+    Math.max(
+      0,
+      maxChars - notice.length
+    );
+
+  const cut =
+    value.slice(
+      0,
+      contentBudget
+    );
+
+  const lastBreak =
+    cut.lastIndexOf(" ");
+
+  const truncated =
+    lastBreak > 0
+      ? cut.slice(0, lastBreak)
+      : cut;
+
+  return (
+    truncated +
+    notice
+  );
+};
+
+
+const prepareInputForPrompt = (
+  text,
+  outputType
+) => {
+  /*
+   * Summary, Flashcards and Quiz retain the
+   * original first-50,000-character behaviour.
+   */
+  if (
+    outputType !== "explanation"
+  ) {
+    return truncateOnWhitespace(
+      text,
+      MAX_INPUT_CHARS,
+      "\n\n[Material truncated for length.]"
+    );
+  }
+
+  const supplementaryMarker =
+    "\n\nSUPPLEMENTARY CHAT MATERIAL\n";
+
+  const supplementaryIndex =
+    text.indexOf(
+      supplementaryMarker
+    );
+
+  /*
+   * Explanations without chat attachments use
+   * the same behaviour they had previously.
+   */
+  if (supplementaryIndex < 0) {
+    return truncateOnWhitespace(
+      text,
+      MAX_INPUT_CHARS,
+      "\n\n[Material truncated for length.]"
+    );
+  }
+
+  /*
+   * The controller places PRIMARY STUDY MATERIAL
+   * first, then SUPPLEMENTARY CHAT MATERIAL.
+   *
+   * Reserve up to 30% of the total input budget
+   * for supplementary context so a large primary
+   * document cannot push attachments completely
+   * out of the prompt.
+   *
+   * Unused space automatically flows to the other
+   * section rather than being wasted.
+   */
+  const separator =
+    "\n\n";
+
+  const availableBudget =
+    MAX_INPUT_CHARS -
+    separator.length;
+
+  const primarySection =
+    text.slice(
+      0,
+      supplementaryIndex
+    );
+
+  const supplementarySection =
+    text.slice(
+      supplementaryIndex +
+        separator.length
+    );
+
+  const preferredSupplementaryBudget =
+    Math.floor(
+      MAX_INPUT_CHARS * 0.3
+    );
+
+  let supplementaryBudget =
+    Math.min(
+      preferredSupplementaryBudget,
+      supplementarySection.length
+    );
+
+  let primaryBudget =
+    availableBudget -
+    supplementaryBudget;
+
+  /*
+   * If the primary material is shorter than its
+   * allocation, give all unused room to the
+   * supplementary section.
+   */
+  if (
+    primarySection.length <
+    primaryBudget
+  ) {
+    primaryBudget =
+      primarySection.length;
+
+    supplementaryBudget =
+      availableBudget -
+      primaryBudget;
+  }
+
+  const preparedPrimary =
+    truncateOnWhitespace(
+      primarySection,
+      primaryBudget,
+      "\n\n[Primary study material truncated for length.]"
+    );
+
+  const preparedSupplementary =
+    truncateOnWhitespace(
+      supplementarySection,
+      supplementaryBudget,
+      "\n\n[Supplementary chat material truncated for length.]"
+    );
+
+  return [
+    preparedPrimary,
+    preparedSupplementary
+  ].join(separator);
+};
+
 const buildPrompt = (text, outputType, options = {}) => {
   const template = PROMPTS[outputType];
 
@@ -233,14 +400,16 @@ const buildPrompt = (text, outputType, options = {}) => {
     }
   }
 
-  // Truncate on a whitespace boundary so the prompt does not end mid-word
-  let input = text;
-
-  if (input.length > MAX_INPUT_CHARS) {
-    const cut = input.slice(0, MAX_INPUT_CHARS);
-    const lastBreak = cut.lastIndexOf(" ");
-    input = (lastBreak > 0 ? cut.slice(0, lastBreak) : cut) + "\n\n[Material truncated for length.]";
-  }
+  /*
+   * Apply the shared 50,000-character input ceiling.
+   * Concept Explanation preserves a guaranteed share
+   * for supplementary chat material when present.
+   */
+  const input =
+    prepareInputForPrompt(
+      text,
+      outputType
+    );
 
   return template(input, {
     concept: typeof options.concept === "string" ? options.concept.trim() : "",
@@ -379,6 +548,9 @@ module.exports = {
   LEVELS,
   MAX_INPUT_CHARS,
   MODEL,
+
+  // Exposed for automated testing.
+  prepareInputForPrompt,
 
   // Exposed for automated testing. These are pure functions, so they can be
   // verified without a server, a database or a call to the Gemini API — which

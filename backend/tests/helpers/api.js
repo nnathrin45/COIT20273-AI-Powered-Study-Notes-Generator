@@ -28,6 +28,26 @@ require("dotenv").config({
 
 // Deliberately not 5000 (macOS AirPlay) or 5099 (used for manual testing), so a
 // test run cannot interfere with a server someone is using by hand.
+const developmentDbName =
+  String(process.env.DB_NAME || "").trim();
+
+const testDbName =
+  String(process.env.TEST_DB_NAME || "").trim();
+
+if (
+  !developmentDbName ||
+  !testDbName ||
+  !/^[A-Za-z][A-Za-z0-9_]*$/.test(testDbName) ||
+  developmentDbName.toLowerCase() === testDbName.toLowerCase()
+) {
+  throw new Error(
+    "Integration tests require TEST_DB_NAME to be a valid, separate database name different from DB_NAME."
+  );
+}
+
+// Apply the test database to both direct test connections
+// and the backend child process launched by startServer().
+process.env.DB_NAME = testDbName;
 const PORT =
   process.env.TEST_PORT || 5098;
 
@@ -39,6 +59,7 @@ const TEST_EMAIL_PREFIX =
   "autotest-";
 
 let serverProcess = null;
+const createdTestUserIds = new Set();
 
 const wait = (ms) =>
   new Promise((resolve) =>
@@ -53,7 +74,8 @@ const startServer = async () => {
       cwd: BACKEND,
       env: {
         ...process.env,
-        PORT: String(PORT)
+        PORT: String(PORT),
+        STUDY_REMINDER_WORKER_ENABLED: "false"
       },
       stdio: "ignore"
     }
@@ -206,6 +228,8 @@ const createUser = async () => {
 
     userId =
       result.insertId;
+
+    createdTestUserIds.add(userId);
   } finally {
     await conn.end();
   }
@@ -257,49 +281,99 @@ const uploadBuffer = async (
 // outputs and quiz attempts follow through ON DELETE CASCADE; the uploaded
 // files are removed from disk first, since the database does not track them.
 const cleanup = async () => {
-  const conn =
-    await connect();
+  const userIds = Array.from(createdTestUserIds);
 
-  const [rows] =
-    await conn.execute(
+  if (userIds.length === 0) {
+    return {
+      usersRemoved: 0,
+      filesRemoved: 0
+    };
+  }
+
+  const placeholders =
+    userIds.map(() => "?").join(", ");
+
+  const values = [
+    ...userIds,
+    `${TEST_EMAIL_PREFIX}%`
+  ];
+
+  const conn = await connect();
+
+  let rows;
+  let usersRemoved;
+
+  try {
+    [rows] = await conn.execute(
       `SELECT f.file_path
        FROM uploaded_files f
        JOIN users u
          ON u.user_id = f.user_id
-       WHERE u.email LIKE ?`,
-      [
-        `${TEST_EMAIL_PREFIX}%`
-      ]
+       WHERE u.user_id IN (${placeholders})
+         AND u.email LIKE ?`,
+      values
     );
 
-  const [result] =
-    await conn.execute(
+    const [result] = await conn.execute(
       `DELETE FROM users
-       WHERE email LIKE ?`,
-      [
-        `${TEST_EMAIL_PREFIX}%`
-      ]
+       WHERE user_id IN (${placeholders})
+         AND email LIKE ?`,
+      values
     );
 
-  await conn.end();
+    usersRemoved = result.affectedRows;
+  } finally {
+    await conn.end();
+  }
+
+  const uploadsDirectory =
+    path.resolve(BACKEND, "src", "uploads");
+
+  let filesRemoved = 0;
 
   for (const row of rows) {
-    const full =
-      path.join(
-        BACKEND,
+    const fullPath = path.resolve(
+      BACKEND,
+      String(row.file_path || "")
+    );
+
+    const relativePath = path.relative(
+      uploadsDirectory,
+      fullPath
+    );
+
+    const isSafePath =
+      relativePath !== "" &&
+      relativePath !== ".." &&
+      !relativePath.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relativePath);
+
+    if (!isSafePath) {
+      console.warn(
+        "Skipping unsafe test upload path:",
         row.file_path
       );
+      continue;
+    }
 
-    if (fs.existsSync(full)) {
-      fs.unlinkSync(full);
+    try {
+      fs.unlinkSync(fullPath);
+      filesRemoved += 1;
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        console.warn(
+          "Unable to remove test upload:",
+          error.message
+        );
+      }
     }
   }
 
+  createdTestUserIds.clear();
+
   return {
-    usersRemoved:
-      result.affectedRows,
-    filesRemoved:
-      rows.length
+    usersRemoved,
+    filesRemoved
   };
 };
 

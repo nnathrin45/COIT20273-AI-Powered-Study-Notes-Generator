@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 import {
   createStudyPlan,
   getStudyPlans,
@@ -7,6 +8,7 @@ import {
 
 
 function StudyPlanner() {
+  const navigate = useNavigate()
   const [subject, setSubject] = useState('')
   const [topic, setTopic] = useState('')
   const [deadline, setDeadline] = useState('')
@@ -22,12 +24,56 @@ function StudyPlanner() {
   const [plansError, setPlansError] = useState('')
   const [plansSuccess, setPlansSuccess] = useState('')
   const [deletingPlanId, setDeletingPlanId] = useState(null)
-  const [expandedPlanId, setExpandedPlanId] = useState(null)
+
+  const [
+    plansPage,
+    setPlansPage,
+  ] = useState(1)
   const [generatedPlan, setGeneratedPlan] = useState(null)
 
-  const [savedPlansOpen, setSavedPlansOpen] =
-    useState(false)
 
+
+  /*
+   * Keep the successful creation message visible
+   * briefly, then remove it automatically.
+   */
+  useEffect(() => {
+    if (!success) {
+      return undefined
+    }
+
+    const studyPlanSuccessTimer =
+      window.setTimeout(() => {
+        setSuccess('')
+      }, 5000)
+
+    return () => {
+      window.clearTimeout(
+        studyPlanSuccessTimer
+      )
+    }
+  }, [success])
+
+  /*
+   * Saved Study Plans success messages, such as
+   * successful deletion, disappear after 5 seconds.
+   */
+  useEffect(() => {
+    if (!plansSuccess) {
+      return undefined
+    }
+
+    const studyPlansSuccessTimer =
+      window.setTimeout(() => {
+        setPlansSuccess('')
+      }, 5000)
+
+    return () => {
+      window.clearTimeout(
+        studyPlansSuccessTimer
+      )
+    }
+  }, [plansSuccess])
 
   const loadStudyPlans = async () => {
     setPlansLoading(true)
@@ -67,6 +113,29 @@ function StudyPlanner() {
   useEffect(() => {
     loadStudyPlans()
   }, [])
+
+
+  /*
+   * Keep the current pagination page valid after
+   * a study plan is created or deleted.
+   */
+  useEffect(() => {
+    const totalPages =
+      Math.max(
+        1,
+        Math.ceil(
+          savedPlans.length / 4
+        )
+      )
+
+    setPlansPage(
+      (currentPage) =>
+        Math.min(
+          currentPage,
+          totalPages
+        )
+    )
+  }, [savedPlans.length])
 
 
   const days = [
@@ -552,14 +621,6 @@ function StudyPlanner() {
           setGenerated(false)
         }
 
-        if (
-          expandedPlanId ===
-          planId
-        ) {
-          setExpandedPlanId(
-            null
-          )
-        }
 
         setPlansSuccess(
           'Study plan deleted successfully.'
@@ -611,9 +672,59 @@ function StudyPlanner() {
       return ''
     }
 
-    return new Date(
-      storedDeadline
-    ).toLocaleDateString()
+    const value =
+      String(
+        storedDeadline
+      ).trim()
+
+    let parsedDate
+
+    /*
+     * A database DATE has no timezone.
+     * Construct YYYY-MM-DD values from their
+     * calendar components so JavaScript cannot
+     * shift them into another day.
+     */
+    if (
+      /^\d{4}-\d{2}-\d{2}$/.test(
+        value
+      )
+    ) {
+      const [
+        year,
+        month,
+        day,
+      ] =
+        value
+          .split('-')
+          .map(Number)
+
+      parsedDate =
+        new Date(
+          year,
+          month - 1,
+          day
+        )
+    } else {
+      /*
+       * Some MySQL configurations return DATE
+       * values as ISO timestamps. In that case,
+       * preserve the instant and display its
+       * correct local calendar date.
+       */
+      parsedDate =
+        new Date(value)
+    }
+
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return ''
+    }
+
+    return parsedDate.toLocaleDateString()
   }
 
 
@@ -646,8 +757,49 @@ function StudyPlanner() {
   }
 
 
+  const PLANS_PER_PAGE = 4
+
+  const totalPlanPages =
+    Math.max(
+      1,
+      Math.ceil(
+        savedPlans.length /
+          PLANS_PER_PAGE
+      )
+    )
+
+  const currentPlanPage =
+    Math.min(
+      plansPage,
+      totalPlanPages
+    )
+
+  const firstPlanIndex =
+    (
+      currentPlanPage - 1
+    ) * PLANS_PER_PAGE
+
+  const paginatedPlans =
+    savedPlans.slice(
+      firstPlanIndex,
+      firstPlanIndex +
+        PLANS_PER_PAGE
+    )
+
+  const firstPlanNumber =
+    savedPlans.length === 0
+      ? 0
+      : firstPlanIndex + 1
+
+  const lastPlanNumber =
+    Math.min(
+      firstPlanIndex +
+        PLANS_PER_PAGE,
+      savedPlans.length
+    )
+
   return (
-    <div className="study-planner-theme mx-auto max-w-5xl">
+    <div className="study-planner-theme mx-auto w-full max-w-[1660px]">
       <style>
         {`
           .study-planner-theme-text {
@@ -1215,7 +1367,246 @@ function StudyPlanner() {
             border-color:
               #dfdfdf !important;
           }
-        `}
+
+          /*
+           * Saved Study Plans table
+           */
+          [data-theme-mode='light']
+          .study-planner-plan-table-header {
+            background-color:
+              #f7f7fb !important;
+
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-plan-table-header th {
+            color:
+              #77717e !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-plan-row {
+            border-color:
+              #e7e5eb !important;
+
+            transition:
+              background-color 300ms ease;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-plan-row:hover {
+            background-color:
+              #faf8ff !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-plan-icon,
+          [data-theme-mode='light']
+          .study-planner-hours-badge {
+            background-color:
+              #f2edff !important;
+
+            border-color:
+              #d8caff !important;
+
+            color:
+              #6f42c1 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-pagination {
+            border-color:
+              #dfdfdf !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-pagination-button {
+            background-color:
+              #ffffff !important;
+
+            border-color:
+              #d7d3df !important;
+
+            color:
+              #6f42c1 !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-pagination-button:hover:not(:disabled) {
+            background-color:
+              #f2edff !important;
+
+            border-color:
+              #9d7cff !important;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-pagination-button[aria-current='page'] {
+            background-color:
+              #7a44ff !important;
+
+            border-color:
+              #7a44ff !important;
+
+            color:
+              #ffffff !important;
+          }
+
+
+          /*
+           * STUDYA STUDY PLANNER ILLUMINATED SURFACE
+           *
+           * Visual enhancement only.
+           * Plan creation, validation, saved plans,
+           * pagination, deletion and reminders are unchanged.
+           */
+          .study-planner-surface {
+            position: relative;
+
+            background:
+              radial-gradient(
+                ellipse 75% 52% at 22% -8%,
+                rgba(255, 255, 255, 0.075),
+                rgba(255, 255, 255, 0.025) 34%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 65% 48% at 88% -12%,
+                rgba(122, 68, 255, 0.10),
+                transparent 66%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.018),
+                transparent 48%
+              ),
+              #160b32 !important;
+
+            border-color:
+              rgba(169, 124, 255, 0.16) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.065),
+              inset 0 0 26px rgba(122, 68, 255, 0.025),
+              0 12px 34px rgba(3, 0, 15, 0.24);
+
+            transition:
+              background-color 500ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease;
+          }
+
+
+          /*
+           * Reflective upper edge.
+           */
+          .study-planner-surface::after {
+            content: '';
+            position: absolute;
+            pointer-events: none;
+
+            top: 0;
+            left: 9%;
+            right: 9%;
+            height: 1px;
+
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.15) 28%,
+                rgba(201, 180, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.10) 72%,
+                transparent
+              );
+
+            opacity: 0.72;
+          }
+
+
+          .study-planner-surface:hover {
+            border-color:
+              rgba(122, 68, 255, 0.34) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.085),
+              inset 0 0 30px rgba(122, 68, 255, 0.04),
+              0 14px 38px rgba(30, 10, 62, 0.28),
+              0 0 22px rgba(122, 68, 255, 0.06);
+          }
+
+
+          /*
+           * Light mode
+           */
+          [data-theme-mode='light']
+          .study-planner-surface {
+            background:
+              radial-gradient(
+                ellipse 75% 55% at 20% -10%,
+                rgba(255, 255, 255, 0.96),
+                rgba(255, 255, 255, 0.52) 38%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 62% 48% at 88% -10%,
+                rgba(122, 68, 255, 0.055),
+                transparent 67%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(122, 68, 255, 0.018),
+                transparent 48%
+              ),
+              #ffffff !important;
+
+            border-color:
+              rgba(91, 72, 125, 0.14) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 0 20px rgba(122, 68, 255, 0.012),
+              0 10px 28px rgba(61, 44, 92, 0.075);
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-surface::after {
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(122, 68, 255, 0.075) 28%,
+                rgba(122, 68, 255, 0.12) 50%,
+                rgba(122, 68, 255, 0.06) 72%,
+                transparent
+              );
+
+            opacity: 0.52;
+          }
+
+
+          [data-theme-mode='light']
+          .study-planner-surface:hover {
+            border-color:
+              rgba(122, 68, 255, 0.28) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              0 13px 32px rgba(91, 60, 145, 0.10),
+              0 0 18px rgba(122, 68, 255, 0.04);
+          }
+`}
       </style>
 
 
@@ -1531,641 +1922,403 @@ function StudyPlanner() {
       </form>
 
 
-      {/* Newly Created Study Plan */}
-      {generated && (
-        <div className="study-planner-theme-surface study-planner-surface mt-8 overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
-          <div className="study-planner-theme-border border-b border-[#2a1b4d] px-6 py-5 sm:px-7">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="study-planner-theme-text study-planner-heading text-2xl font-semibold text-[#f3f0ff]">
-                Your Saved Study Plan
-              </h2>
-
-              <span className="study-planner-theme-interactive study-planner-saved-badge rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
-                Saved
-              </span>
-            </div>
-
-
-            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-              <div className="study-planner-theme-surface study-planner-detail-card rounded-lg border border-[#2a1b4d] bg-[#120928]/45 px-4 py-3">
-                <p className="study-planner-theme-text study-planner-muted text-xs uppercase tracking-wide text-[#727494]">
-                  Subject
-                </p>
-
-                <p className="study-planner-theme-text study-planner-heading mt-1 font-medium text-[#d9d4eb]">
-                  {subject}
-                </p>
-              </div>
-
-
-              <div className="study-planner-theme-surface study-planner-detail-card rounded-lg border border-[#2a1b4d] bg-[#120928]/45 px-4 py-3">
-                <p className="study-planner-theme-text study-planner-muted text-xs uppercase tracking-wide text-[#727494]">
-                  Topic
-                </p>
-
-                <p className="study-planner-theme-text study-planner-heading mt-1 font-medium text-[#d9d4eb]">
-                  {topic}
-                </p>
-              </div>
-
-
-              <div className="study-planner-theme-surface study-planner-detail-card rounded-lg border border-[#2a1b4d] bg-[#120928]/45 px-4 py-3">
-                <p className="study-planner-theme-text study-planner-muted text-xs uppercase tracking-wide text-[#727494]">
-                  Deadline
-                </p>
-
-                <p className="study-planner-theme-text study-planner-heading mt-1 font-medium text-[#d9d4eb]">
-                  {formatDeadline()}
-                </p>
-              </div>
-
-
-              <div className="study-planner-theme-surface study-planner-detail-card rounded-lg border border-[#2a1b4d] bg-[#120928]/45 px-4 py-3">
-                <p className="study-planner-theme-text study-planner-muted text-xs uppercase tracking-wide text-[#727494]">
-                  Available Time
-                </p>
-
-                <p className="study-planner-theme-text study-planner-heading mt-1 font-medium text-[#d9d4eb]">
-                  {availableHours}{' '}
-                  hours per week
-                </p>
-              </div>
-            </div>
-          </div>
-
-
-          <div className="px-6 py-7 sm:px-7">
-            {/* Selected Days */}
-            <div>
-              <h3 className="study-planner-theme-text study-planner-heading font-semibold text-[#f3f0ff]">
-                Available Study Days
-              </h3>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {studyDays.map(
-                  (day) => (
-                    <span
-                      key={day}
-                      className="study-planner-theme-interactive study-planner-day-badge rounded-full border border-[#7a44ff]/25 bg-[#7a44ff]/10 px-3 py-1 text-sm font-medium text-[#c9b4ff]"
-                    >
-                      {day}
-                    </span>
-                  )
-                )}
-              </div>
-            </div>
-
-
-            {/* Suggested Schedule */}
-            <div className="mt-7">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="study-planner-theme-text study-planner-heading text-lg font-semibold text-[#f3f0ff]">
-                  Suggested Sessions
-                </h3>
-
-                <span className="study-planner-theme-surface study-planner-count-badge rounded-full border border-[#2a1b4d] bg-[#120928]/45 px-3 py-1 text-xs font-medium text-[#898cc0]">
-                  {generatedPlan
-                    ?.sessions
-                    ?.length || 0}{' '}
-                  sessions
-                </span>
-              </div>
-
-
-              <div className="mt-4 space-y-4">
-                {generatedPlan?.sessions?.map(
-                  (session) => (
-                    <div
-                      key={
-                        session.id
-                      }
-                      className="study-planner-theme-interactive study-planner-session-card rounded-xl border border-[#2a1b4d] bg-[#120928]/45 p-5 hover:border-[#7a44ff]/40"
-                    >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="study-planner-theme-text study-planner-heading font-semibold text-[#f3f0ff]">
-                              {
-                                session.session
-                              }
-                            </p>
-
-                            <span className="study-planner-theme-interactive study-planner-day-badge rounded-full bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-medium text-[#c9b4ff]">
-                              {
-                                session.day
-                              }
-                            </span>
-                          </div>
-
-                          <p className="study-planner-theme-text study-planner-muted mt-2 text-xs text-[#727494]">
-                            {new Date(
-                              `${session.date}T00:00:00`
-                            ).toLocaleDateString()}
-                          </p>
-
-                          <p className="study-planner-theme-text study-planner-body mt-3 text-sm leading-6 text-[#a6a8c7]">
-                            {
-                              session.activity
-                            }
-                          </p>
-                        </div>
-
-                        <span className="study-planner-theme-surface study-planner-duration w-fit shrink-0 rounded-full border border-[#3a2860] bg-[#160b32] px-3 py-1.5 text-sm font-medium text-[#c9b4ff]">
-                          {
-                            session.duration
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-
-            {/* Study Advice */}
-            <div className="study-planner-theme-surface study-planner-recommendation mt-7 rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
-              <div className="flex items-start gap-3">
-                <div className="study-planner-accent mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#7a44ff]/15 text-[#a97cff]">
-                  <svg
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.5 18h5M10 22h4M8.5 14.5A7 7 0 1 1 15.5 14.5C14.6 15.2 14 16 14 17h-4c0-1-.6-1.8-1.5-2.5Z"
-                    />
-                  </svg>
-                </div>
-
-                <div>
-                  <h3 className="study-planner-theme-text study-planner-recommendation-heading font-semibold text-[#d9c9ff]">
-                    Study Recommendation
-                  </h3>
-
-                  <p className="study-planner-theme-text study-planner-recommendation-body mt-2 text-sm leading-6 text-[#b9acd5]">
-                    {
-                      generatedPlan
-                        ?.recommendation
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-
       {/* Saved Study Plans */}
-      <div className="study-planner-theme-surface study-planner-library group mt-8 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 transition-all duration-300 hover:border-[#7a44ff] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)] sm:p-7">
-        <button
-          type="button"
-          onClick={() =>
-            setSavedPlansOpen(
-              (current) =>
-                !current
-            )
-          }
-          aria-expanded={
-            savedPlansOpen
-          }
-          aria-controls="saved-study-plans-content"
-          className="flex w-full flex-col gap-3 text-left focus:outline-none sm:flex-row sm:items-start sm:justify-between"
-        >
+      <section className="study-planner-theme-surface study-planner-surface study-planner-library mt-8 overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#160b32]">
+        {/* Header */}
+        <div className="flex flex-col gap-3 border-b border-[#2a1b4d] px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <div>
-            <p className="study-planner-theme-text study-planner-accent mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+            <p className="study-planner-theme-text study-planner-accent mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
               Your Library
             </p>
 
-            <h2 className="study-planner-theme-text study-planner-heading text-2xl font-semibold text-[#f3f0ff]">
+            <h2 className="study-planner-theme-text study-planner-heading text-xl font-semibold text-[#f3f0ff]">
               Saved Study Plans
             </h2>
 
-            <p className="study-planner-theme-text study-planner-body mt-2 text-sm text-[#898cc0]">
-              Review study plans saved to your account.
+            <p className="study-planner-theme-text study-planner-body mt-1 text-sm text-[#898cc0]">
+              Review and manage study plans saved to your account.
             </p>
           </div>
 
-
-          <div className="flex items-center gap-2">
-            {!plansLoading &&
-              savedPlans.length >
-                0 && (
-                <span className="study-planner-theme-surface study-planner-count-badge w-fit rounded-full border border-[#2a1b4d] bg-[#120928]/45 px-3 py-1.5 text-xs font-medium text-[#898cc0]">
-                  {
-                    savedPlans.length
-                  }{' '}
-                  {savedPlans.length ===
-                  1
-                    ? 'plan'
-                    : 'plans'}
-                </span>
-              )}
+          {!plansLoading && (
+            <span className="study-planner-theme-surface study-planner-count-badge w-fit rounded-full border border-[#2a1b4d] bg-[#120928]/45 px-3 py-1.5 text-xs font-medium text-[#898cc0]">
+              {savedPlans.length}{' '}
+              {savedPlans.length === 1
+                ? 'plan'
+                : 'plans'}
+            </span>
+          )}
+        </div>
 
 
-            <div className="study-planner-theme-interactive study-planner-chevron flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#a97cff]">
-              <svg
-                viewBox="0 0 20 20"
-                fill="none"
-                aria-hidden="true"
-                className={`h-4 w-4 transition-transform duration-300 ${
-                  savedPlansOpen
-                    ? 'rotate-180'
-                    : ''
-                }`}
-              >
-                <path
-                  d="M5 7.5L10 12.5L15 7.5"
+        {/* Loading */}
+        {plansLoading && (
+          <div
+            className="m-6 flex items-center gap-3 rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 p-4"
+            role="status"
+          >
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+
+            <p className="study-planner-theme-text study-planner-accent-soft text-sm text-[#c9b4ff]">
+              Loading saved study plans...
+            </p>
+          </div>
+        )}
+
+
+        {/* Error */}
+        {plansError && (
+          <div
+            className="m-6 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+            role="alert"
+          >
+            <p className="study-planner-theme-text study-planner-error-text text-sm leading-6 text-red-300">
+              {plansError}
+            </p>
+          </div>
+        )}
+
+
+        {/* Success */}
+        {plansSuccess && (
+          <div
+            className="m-6 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
+            role="status"
+          >
+            <p className="study-planner-theme-text study-planner-success-text text-sm text-emerald-300">
+              {plansSuccess}
+            </p>
+          </div>
+        )}
+
+
+        {/* Empty */}
+        {!plansLoading &&
+          !plansError &&
+          savedPlans.length === 0 && (
+            <div className="study-planner-empty m-6 rounded-xl border border-dashed border-[#3a2860] bg-[#120928]/35 p-8 text-center">
+              <div className="study-planner-accent mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+                  className="h-5 w-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
+                  />
+                </svg>
+              </div>
+
+              <p className="study-planner-theme-text study-planner-heading mt-4 font-medium text-[#d9d4eb]">
+                No saved study plans yet
+              </p>
+
+              <p className="study-planner-theme-text study-planner-muted mx-auto mt-2 max-w-md text-sm leading-6 text-[#727494]">
+                Create your first plan above and it will appear here for future reference.
+              </p>
             </div>
-          </div>
-        </button>
+          )}
 
 
-        <div
-          id="saved-study-plans-content"
-          aria-hidden={
-            !savedPlansOpen
-          }
-          className={`grid transition-all duration-300 ease-in-out ${
-            savedPlansOpen
-              ? 'visible grid-rows-[1fr] opacity-100'
-              : 'invisible grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="min-h-0 overflow-hidden">
-            {plansLoading && (
-              <div
-                className="study-planner-theme-surface mt-5 flex items-center gap-3 rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 p-4"
-                role="status"
-              >
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#a97cff]/30 border-t-[#a97cff]" />
+        {/* Table */}
+        {!plansLoading &&
+          !plansError &&
+          savedPlans.length > 0 && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="study-planner-plan-table w-full min-w-[1000px] border-collapse text-left">
+                  <thead>
+                    <tr className="study-planner-plan-table-header border-b border-[#2a1b4d] bg-[#120928]/55">
+                      <th className="px-6 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#727494]">
+                        Subject
+                      </th>
 
-                <p className="study-planner-theme-text study-planner-accent-soft text-sm text-[#c9b4ff]">
-                  Loading saved study plans...
-                </p>
-              </div>
-            )}
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#727494]">
+                        Topic / Goal
+                      </th>
 
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#727494]">
+                        Deadline
+                      </th>
 
-            {plansError && (
-              <div
-                className="study-planner-theme-surface mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
-                role="alert"
-              >
-                <p className="study-planner-theme-text study-planner-error-text text-sm leading-6 text-red-300">
-                  {
-                    plansError
-                  }
-                </p>
-              </div>
-            )}
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#727494]">
+                        Hours / Week
+                      </th>
 
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#727494]">
+                        Created
+                      </th>
 
-            {plansSuccess && (
-              <div
-                className="study-planner-theme-surface mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
-                role="status"
-              >
-                <p className="study-planner-theme-text study-planner-success-text text-sm text-emerald-300">
-                  {
-                    plansSuccess
-                  }
-                </p>
-              </div>
-            )}
+                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#727494]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
 
-
-            {!plansLoading &&
-              !plansError &&
-              savedPlans.length ===
-                0 && (
-                <div className="study-planner-theme-surface study-planner-empty mt-5 rounded-xl border border-dashed border-[#3a2860] bg-[#120928]/35 p-8 text-center">
-                  <div className="study-planner-accent mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#7a44ff]/10 text-[#a97cff]">
-                    <svg
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      className="h-5 w-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
-                      />
-                    </svg>
-                  </div>
-
-                  <p className="study-planner-theme-text study-planner-heading mt-4 font-medium text-[#d9d4eb]">
-                    No saved study plans yet
-                  </p>
-
-                  <p className="study-planner-theme-text study-planner-muted mx-auto mt-2 max-w-md text-sm leading-6 text-[#727494]">
-                    Create your first plan above and it will appear
-                    here for future reference.
-                  </p>
-                </div>
-              )}
-
-
-            {!plansLoading &&
-              savedPlans.length >
-                0 && (
-                <div className="mt-6 space-y-4">
-                  {savedPlans.map(
-                    (plan) => {
-                      const savedPlanData =
-                        parsePlanData(
-                          plan.plan_data
-                        )
-
-                      const isExpanded =
-                        expandedPlanId ===
-                        plan.plan_id
-
-                      return (
-                        <div
-                          key={
-                            plan.plan_id
+                  <tbody>
+                    {paginatedPlans.map(
+                      (plan) => (
+                        <tr
+                          key={plan.plan_id}
+                                                    onClick={() =>
+                            navigate(
+                              `/study-plan/${plan.plan_id}`
+                            )
                           }
-                          className="study-planner-theme-surface study-planner-stored-plan overflow-hidden rounded-xl border border-[#2a1b4d] bg-[#120928]/35"
-                        >
-                          <div className="p-5">
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h3 className="study-planner-theme-text study-planner-heading font-semibold text-[#f3f0ff]">
-                                    {
-                                      plan.subject
-                                    }
-                                  </h3>
-
-                                  <span className="study-planner-theme-interactive study-planner-saved-badge rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-                                    Saved
-                                  </span>
-                                </div>
-
-                                <p className="study-planner-theme-text study-planner-body mt-2 text-sm text-[#898cc0]">
-                                  {
-                                    plan.topic
-                                  }
-                                </p>
-                              </div>
-
-
-                              <div className="flex flex-wrap items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setExpandedPlanId(
-                                      (
-                                        currentId
-                                      ) =>
-                                        currentId ===
-                                        plan.plan_id
-                                          ? null
-                                          : plan.plan_id
-                                    )
-                                  }
-                                  aria-expanded={
-                                    isExpanded
-                                  }
-                                  className="study-planner-theme-interactive study-planner-view-button inline-flex items-center gap-2 rounded-lg border border-[#3a2860] bg-[#160b32] px-4 py-2 text-sm font-medium text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10"
-                                >
-                                  {isExpanded
-                                    ? 'Hide Plan'
-                                    : 'View Plan'}
-
-                                  <svg
-                                    aria-hidden="true"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    className={`h-4 w-4 transition-transform duration-300 ${
-                                      isExpanded
-                                        ? 'rotate-180'
-                                        : ''
-                                    }`}
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="m6 9 6 6 6-6"
-                                    />
-                                  </svg>
-                                </button>
-
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDeletePlan(
-                                      plan.plan_id
-                                    )
-                                  }
-                                  disabled={
-                                    deletingPlanId ===
-                                    plan.plan_id
-                                  }
-                                  className="study-planner-theme-interactive study-planner-delete-button inline-flex min-w-[104px] items-center justify-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 hover:border-red-400/50 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
-                                >
-                                  {deletingPlanId ===
-                                    plan.plan_id && (
-                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#77718d]/40 border-t-[#c2c4e4]" />
-                                  )}
-
-                                  {deletingPlanId ===
-                                  plan.plan_id
-                                    ? 'Deleting...'
-                                    : 'Delete'}
-                                </button>
-                              </div>
-                            </div>
-
-
-                            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                              <div className="study-planner-theme-surface study-planner-detail-card rounded-lg border border-[#2a1b4d] bg-[#160b32]/60 px-4 py-3">
-                                <p className="study-planner-theme-text study-planner-muted text-xs uppercase tracking-wide text-[#727494]">
-                                  Deadline
-                                </p>
-
-                                <p className="study-planner-theme-text study-planner-heading mt-1 font-medium text-[#d9d4eb]">
-                                  {formatStoredDeadline(
-                                    plan.deadline
-                                  )}
-                                </p>
-                              </div>
-
-                              <div className="study-planner-theme-surface study-planner-detail-card rounded-lg border border-[#2a1b4d] bg-[#160b32]/60 px-4 py-3">
-                                <p className="study-planner-theme-text study-planner-muted text-xs uppercase tracking-wide text-[#727494]">
-                                  Available Time
-                                </p>
-
-                                <p className="study-planner-theme-text study-planner-heading mt-1 font-medium text-[#d9d4eb]">
-                                  {
-                                    plan.available_hours
-                                  }{' '}
-                                  hours per week
-                                </p>
-                              </div>
-                            </div>
-
-
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {(
-                                plan.study_days ||
-                                []
-                              ).map(
-                                (day) => (
-                                  <span
-                                    key={`${plan.plan_id}-${day}`}
-                                    className="study-planner-theme-interactive study-planner-day-badge rounded-full border border-[#7a44ff]/20 bg-[#7a44ff]/10 px-3 py-1 text-sm font-medium text-[#c9b4ff]"
-                                  >
-                                    {
-                                      day
-                                    }
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          </div>
-
-
-                          <div
-                            aria-hidden={
-                              !isExpanded
+                          onKeyDown={(event) => {
+                            if (
+                              event.target !==
+                              event.currentTarget
+                            ) {
+                              return
                             }
-                            className={`grid transition-all duration-300 ease-in-out ${
-                              isExpanded
-                                ? 'visible grid-rows-[1fr] opacity-100'
-                                : 'invisible grid-rows-[0fr] opacity-0'
-                            }`}
-                          >
-                            <div className="min-h-0 overflow-hidden">
-                              <div className="study-planner-theme-surface study-planner-expanded border-t border-[#2a1b4d] bg-[#160b32]/40 p-5 sm:p-6">
-                                {savedPlanData
-                                  ?.sessions
-                                  ?.length >
-                                0 ? (
+
+                            if (
+                              event.key ===
+                                'Enter' ||
+                              event.key ===
+                                ' '
+                            ) {
+                              event.preventDefault()
+
+                              navigate(
+                                `/study-plan/${plan.plan_id}`
+                              )
+                            }
+                          }}
+                          role="link"
+                          tabIndex={0}
+                          aria-label={`Open ${plan.subject} study plan`}
+                          className="study-planner-plan-row cursor-pointer border-b border-[#2a1b4d]/70 outline-none last:border-b-0 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7a44ff]/60"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="study-planner-plan-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
+                                <svg
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  className="h-4 w-4"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
+                                  />
+                                </svg>
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="study-planner-theme-text study-planner-heading max-w-[220px] truncate text-sm font-semibold text-[#f3f0ff]">
+                                  {plan.subject}
+                                </p>
+
+                                <p className="study-planner-theme-text study-planner-muted mt-0.5 text-xs text-[#727494]">
+                                  Plan #{plan.plan_id}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <p
+                              title={plan.topic}
+                              className="study-planner-theme-text study-planner-body max-w-[280px] truncate text-sm text-[#a6a8c7]"
+                            >
+                              {plan.topic}
+                            </p>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span className="study-planner-theme-text study-planner-heading whitespace-nowrap text-sm text-[#d9d4eb]">
+                              {formatStoredDeadline(
+                                plan.deadline
+                              ) || '—'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span className="study-planner-hours-badge inline-flex rounded-full border border-[#7a44ff]/20 bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-semibold text-[#c9b4ff]">
+                              {plan.available_hours ??
+                                '—'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span className="study-planner-theme-text study-planner-body whitespace-nowrap text-sm text-[#a6a8c7]">
+                              {plan.created_at
+                                ? new Date(
+                                    plan.created_at
+                                  ).toLocaleDateString()
+                                : '—'}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+
+                                  handleDeletePlan(
+                                    plan.plan_id
+                                  )
+                                }}
+                                disabled={
+                                  deletingPlanId ===
+                                  plan.plan_id
+                                }
+                                title={`Delete ${plan.subject}`}
+                                aria-label={`Delete ${plan.subject} study plan`}
+                                className="study-planner-theme-interactive study-planner-delete-button inline-flex h-9 min-w-[96px] items-center justify-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-3 text-sm font-medium text-red-300 hover:border-red-400/50 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
+                              >
+                                {deletingPlanId ===
+                                plan.plan_id ? (
                                   <>
-                                    <div className="flex items-center justify-between gap-3">
-                                      <h4 className="study-planner-theme-text study-planner-heading text-lg font-semibold text-[#f3f0ff]">
-                                        Suggested Sessions
-                                      </h4>
+                                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
 
-                                      <span className="study-planner-theme-surface study-planner-count-badge rounded-full border border-[#2a1b4d] bg-[#120928]/50 px-3 py-1 text-xs text-[#898cc0]">
-                                        {
-                                          savedPlanData.sessions
-                                            .length
-                                        }{' '}
-                                        sessions
-                                      </span>
-                                    </div>
-
-
-                                    <div className="mt-4 space-y-4">
-                                      {savedPlanData.sessions.map(
-                                        (
-                                          session
-                                        ) => (
-                                          <div
-                                            key={`${plan.plan_id}-${session.id}`}
-                                            className="study-planner-theme-surface study-planner-expanded-session rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-5"
-                                          >
-                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                              <div>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                  <p className="study-planner-theme-text study-planner-heading font-semibold text-[#f3f0ff]">
-                                                    {
-                                                      session.session
-                                                    }
-                                                  </p>
-
-                                                  {session.day && (
-                                                    <span className="study-planner-theme-interactive study-planner-day-badge rounded-full bg-[#7a44ff]/10 px-2.5 py-1 text-xs font-medium text-[#c9b4ff]">
-                                                      {
-                                                        session.day
-                                                      }
-                                                    </span>
-                                                  )}
-                                                </div>
-
-                                                {session.date && (
-                                                  <p className="study-planner-theme-text study-planner-muted mt-2 text-xs text-[#727494]">
-                                                    {new Date(
-                                                      `${session.date}T00:00:00`
-                                                    ).toLocaleDateString()}
-                                                  </p>
-                                                )}
-
-                                                <p className="study-planner-theme-text study-planner-body mt-3 text-sm leading-6 text-[#a6a8c7]">
-                                                  {
-                                                    session.activity
-                                                  }
-                                                </p>
-                                              </div>
-
-                                              <span className="study-planner-theme-surface study-planner-duration w-fit shrink-0 rounded-full border border-[#3a2860] bg-[#160b32] px-3 py-1.5 text-sm font-medium text-[#c9b4ff]">
-                                                {
-                                                  session.duration
-                                                }
-                                              </span>
-                                            </div>
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-
-
-                                    {savedPlanData.recommendation && (
-                                      <div className="study-planner-theme-surface study-planner-recommendation mt-5 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
-                                        <h4 className="study-planner-theme-text study-planner-recommendation-heading font-semibold text-[#d9c9ff]">
-                                          Study Recommendation
-                                        </h4>
-
-                                        <p className="study-planner-theme-text study-planner-recommendation-body mt-2 text-sm leading-6 text-[#b9acd5]">
-                                          {
-                                            savedPlanData.recommendation
-                                          }
-                                        </p>
-                                      </div>
-                                    )}
+                                    Deleting
                                   </>
                                 ) : (
-                                  <p className="study-planner-theme-text study-planner-body text-sm leading-6 text-[#898cc0]">
-                                    Detailed session information is not
-                                    available for this saved plan.
-                                  </p>
+                                  <>
+                                    <svg
+                                      aria-hidden="true"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="1.8"
+                                      className="h-4 w-4"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6 7h12M9 7V5h6v2M8 7l1 13h6l1-13M10.5 11v5M13.5 11v5"
+                                      />
+                                    </svg>
+
+                                    Delete
+                                  </>
                                 )}
-                              </div>
+                              </button>
                             </div>
-                          </div>
-                        </div>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+
+              {/* Pagination */}
+              <div className="study-planner-pagination flex flex-col gap-3 border-t border-[#2a1b4d] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="study-planner-theme-text study-planner-body text-sm text-[#898cc0]">
+                  Showing{' '}
+                  <span className="study-planner-theme-text study-planner-heading font-semibold text-[#d9d4eb]">
+                    {firstPlanNumber}
+                  </span>{' '}
+                  to{' '}
+                  <span className="study-planner-theme-text study-planner-heading font-semibold text-[#d9d4eb]">
+                    {lastPlanNumber}
+                  </span>{' '}
+                  of{' '}
+                  <span className="study-planner-theme-text study-planner-heading font-semibold text-[#d9d4eb]">
+                    {savedPlans.length}
+                  </span>{' '}
+                  plans
+                </p>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPlansPage(
+                        (currentPage) =>
+                          Math.max(
+                            1,
+                            currentPage - 1
+                          )
                       )
                     }
+                    disabled={
+                      currentPlanPage === 1
+                    }
+                    className="study-planner-pagination-button rounded-lg border border-[#3a2860] bg-[#120928]/60 px-3 py-2 text-xs font-medium text-[#c9b4ff] transition duration-300 hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from(
+                    {
+                      length:
+                        totalPlanPages,
+                    },
+                    (_, index) =>
+                      index + 1
+                  ).map(
+                    (pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        onClick={() =>
+                          setPlansPage(
+                            pageNumber
+                          )
+                        }
+                        aria-current={
+                          currentPlanPage ===
+                          pageNumber
+                            ? 'page'
+                            : undefined
+                        }
+                        className={`study-planner-pagination-button flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-xs font-semibold transition duration-300 ${
+                          currentPlanPage ===
+                          pageNumber
+                            ? 'border-[#7a44ff] bg-[#7a44ff] text-white'
+                            : 'border-[#3a2860] bg-[#120928]/60 text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPlansPage(
+                        (currentPage) =>
+                          Math.min(
+                            totalPlanPages,
+                            currentPage + 1
+                          )
+                      )
+                    }
+                    disabled={
+                      currentPlanPage ===
+                      totalPlanPages
+                    }
+                    className="study-planner-pagination-button rounded-lg border border-[#3a2860] bg-[#120928]/60 px-3 py-2 text-xs font-medium text-[#c9b4ff] transition duration-300 hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                  </button>
                 </div>
-              )}
-          </div>
-        </div>
-      </div>
+              </div>
+            </>
+          )}
+      </section>
+
     </div>
   )
 }

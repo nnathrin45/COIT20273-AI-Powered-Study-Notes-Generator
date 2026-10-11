@@ -21,6 +21,10 @@ const uploadedRoutes = require("./routes/uploaded.routes");
 const consentRoutes = require("./routes/consent.routes");
 const aiRoutes = require("./routes/ai.routes");
 const studyPlanRoutes = require("./routes/studyPlan.routes");
+const notificationRoutes = require("./routes/notification.routes");
+const {
+  runStudySessionReminderCheck
+} = require("./services/studySessionReminder.service");
 const progressRoutes = require("./routes/progress.routes");
 
 const app = express();
@@ -47,6 +51,7 @@ app.use("/api/uploaded", uploadedRoutes);
 app.use("/api/consent", consentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/progress", progressRoutes);
 
 // Protected profile route
@@ -62,6 +67,72 @@ app.get("/test", (req, res) => {
   res.send("Server is updated");
 });
 
+const startStudySessionReminderWorker = () => {
+  const configuredMinutes =
+    Number(
+      process.env
+        .STUDY_REMINDER_CHECK_INTERVAL_MINUTES ||
+      60
+    );
+
+  const intervalMinutes =
+    Number.isFinite(
+      configuredMinutes
+    ) &&
+    configuredMinutes >= 1
+      ? configuredMinutes
+      : 60;
+
+  const runReminderCheck =
+    async () => {
+      try {
+        const result =
+          await runStudySessionReminderCheck();
+
+        console.log(
+          "Study session reminder check:",
+          result
+        );
+      } catch (error) {
+        console.error(
+          "Study session reminder worker error:",
+          error
+        );
+      }
+    };
+
+  /*
+   * Run once at server startup so a restart does
+   * not have to wait for the first interval.
+   */
+  runReminderCheck();
+
+  const timer =
+    setInterval(
+      runReminderCheck,
+      intervalMinutes *
+        60 *
+        1000
+    );
+
+  /*
+   * The HTTP server remains the process owner.
+   * The timer itself should not keep Node alive.
+   */
+  if (
+    typeof timer.unref === "function"
+  ) {
+    timer.unref();
+  }
+};
+
+
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(
+    `Server running on http://localhost:${PORT}`
+  );
+
+  if (process.env.STUDY_REMINDER_WORKER_ENABLED !== "false") {
+    startStudySessionReminderWorker();
+  }
 });

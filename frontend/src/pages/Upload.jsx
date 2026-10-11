@@ -3,7 +3,9 @@ import {
   useEffect,
   useState,
 } from 'react'
+import { useNavigate } from 'react-router'
 
+import AnimatedSelect from '../components/AnimatedSelect'
 import { uploadStudyMaterial } from '../services/uploadService'
 import {
   deleteUploadedFile,
@@ -11,8 +13,24 @@ import {
 } from '../services/uploadedService'
 
 
+const FILE_TYPE_OPTIONS = [
+  { value: 'all', label: 'All file types' },
+  { value: 'pdf', label: 'PDF' },
+  { value: 'docx', label: 'DOCX' },
+  { value: 'txt', label: 'TXT' },
+]
+
+const FILE_SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name-asc', label: 'Name A–Z' },
+  { value: 'name-desc', label: 'Name Z–A' },
+]
+
+
 function Upload() {
-  const [selectedFile, setSelectedFile] = useState(null)
+  const navigate = useNavigate()
+
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -23,11 +41,17 @@ function Upload() {
   const [filesError, setFilesError] = useState('')
   const [filesStatus, setFilesStatus] = useState('')
 
-  const [
-    uploadedMaterialsOpen,
-    setUploadedMaterialsOpen,
-  ] = useState(false)
+  const [fileSearch, setFileSearch] = useState('')
+  const [fileTypeFilter, setFileTypeFilter] = useState('all')
+  const [fileSortOrder, setFileSortOrder] = useState('newest')
 
+  const [
+    uploadedFilesPage,
+    setUploadedFilesPage,
+  ] = useState(1)
+
+  const UPLOADED_FILES_PER_PAGE =
+    5
   const MAX_FILE_SIZE = 15 * 1024 * 1024
   const ALLOWED_EXTENSIONS = [
     'pdf',
@@ -132,12 +156,20 @@ function Upload() {
   }, [filesStatus])
 
 
-  const handleFileChange = (event) => {
+  const resetFileInput = () => {
+    const fileInput = document.getElementById('study-file')
+
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
+
+
+  const handleFileChange = async (event) => {
     const file = event.target.files[0]
 
     setError('')
     setStatus('')
-    setSelectedFile(null)
 
     if (!file) {
       return
@@ -172,34 +204,12 @@ function Upload() {
       return
     }
 
-    setSelectedFile(file)
+    await uploadFile(file)
   }
 
 
-  const handleRemoveFile = () => {
-    setSelectedFile(null)
-    setError('')
-    setStatus('')
-
-    const fileInput =
-      document.getElementById(
-        'study-file'
-      )
-
-    if (fileInput) {
-      fileInput.value = ''
-    }
-  }
-
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-
-    if (!selectedFile) {
-      setError(
-        'Please select a study material before continuing.'
-      )
-
+  const uploadFile = async (file) => {
+    if (!file) {
       return
     }
 
@@ -212,7 +222,7 @@ function Upload() {
     try {
       const response =
         await uploadStudyMaterial(
-          selectedFile
+          file
         )
 
       if (!response.ok) {
@@ -269,12 +279,13 @@ function Upload() {
             }
         }
 
+        resetFileInput()
         return
       }
 
       const uploadedFileName =
         response.data?.file?.file_name ||
-        selectedFile.name
+        file.name
 
       const textLength =
         response.data?.text_length
@@ -284,16 +295,7 @@ function Upload() {
           ? `${uploadedFileName} uploaded successfully. ${textLength.toLocaleString()} characters of readable text were extracted.`
           : `${uploadedFileName} uploaded successfully.`
 
-      setSelectedFile(null)
-
-      const fileInput =
-        document.getElementById(
-          'study-file'
-        )
-
-      if (fileInput) {
-        fileInput.value = ''
-      }
+      resetFileInput()
 
       await loadUploadedFiles()
 
@@ -326,6 +328,7 @@ function Upload() {
       setError(
         'Unable to connect to the server. Please check that the backend is running and try again.'
       )
+      resetFileInput()
     } finally {
       const elapsedTime =
         Date.now() - actionStartedAt
@@ -458,23 +461,6 @@ function Upload() {
     }
 
 
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) {
-      return `${bytes} bytes`
-    }
-
-    if (bytes < 1024 * 1024) {
-      return `${(
-        bytes / 1024
-      ).toFixed(1)} KB`
-    }
-
-    return `${(
-      bytes /
-      (1024 * 1024)
-    ).toFixed(1)} MB`
-  }
-
 
   const formatUploadedDate = (
     value
@@ -498,8 +484,121 @@ function Upload() {
   }
 
 
+  useEffect(() => {
+    setUploadedFilesPage(1)
+  }, [
+    fileSearch,
+    fileTypeFilter,
+    fileSortOrder,
+  ])
+
+  const getFileExtension = (fileName = '') =>
+    fileName.split('.').pop()?.toLowerCase() || ''
+
+  const fileStatistics = {
+    total: uploadedFiles.length,
+    pdf: uploadedFiles.filter(
+      (file) => getFileExtension(file.file_name) === 'pdf'
+    ).length,
+    docx: uploadedFiles.filter(
+      (file) => getFileExtension(file.file_name) === 'docx'
+    ).length,
+    txt: uploadedFiles.filter(
+      (file) => getFileExtension(file.file_name) === 'txt'
+    ).length,
+  }
+
+  const filteredUploadedFiles = uploadedFiles
+    .filter((file) => {
+      const matchesSearch = file.file_name
+        .toLowerCase()
+        .includes(fileSearch.trim().toLowerCase())
+
+      const matchesType =
+        fileTypeFilter === 'all' ||
+        getFileExtension(file.file_name) === fileTypeFilter
+
+      return matchesSearch && matchesType
+    })
+    .sort((firstFile, secondFile) => {
+      if (fileSortOrder === 'oldest') {
+        return (
+          new Date(firstFile.uploaded_at).getTime() -
+          new Date(secondFile.uploaded_at).getTime()
+        )
+      }
+
+      if (fileSortOrder === 'name-asc') {
+        return firstFile.file_name.localeCompare(
+          secondFile.file_name
+        )
+      }
+
+      if (fileSortOrder === 'name-desc') {
+        return secondFile.file_name.localeCompare(
+          firstFile.file_name
+        )
+      }
+
+      return (
+        new Date(secondFile.uploaded_at).getTime() -
+        new Date(firstFile.uploaded_at).getTime()
+      )
+    })
+
+  const totalUploadedFilePages =
+    Math.max(
+      1,
+      Math.ceil(
+        filteredUploadedFiles.length /
+          UPLOADED_FILES_PER_PAGE
+      )
+    )
+
+
+  const currentUploadedFilesPage =
+    Math.min(
+      uploadedFilesPage,
+      totalUploadedFilePages
+    )
+
+
+  const firstUploadedFileIndex =
+    (
+      currentUploadedFilesPage - 1
+    ) * UPLOADED_FILES_PER_PAGE
+
+
+  const paginatedUploadedFiles =
+    filteredUploadedFiles.slice(
+      firstUploadedFileIndex,
+      firstUploadedFileIndex +
+        UPLOADED_FILES_PER_PAGE
+    )
+
+
+  const firstVisibleUploadedFile =
+    filteredUploadedFiles.length === 0
+      ? 0
+      : firstUploadedFileIndex + 1
+
+
+  const lastVisibleUploadedFile =
+    Math.min(
+      firstUploadedFileIndex +
+        UPLOADED_FILES_PER_PAGE,
+      filteredUploadedFiles.length
+    )
+
+  const resetFileFilters = () => {
+    setFileSearch('')
+    setFileTypeFilter('all')
+    setFileSortOrder('newest')
+  }
+
+
   return (
-    <div className="upload-theme mx-auto max-w-5xl">
+    <div className="upload-theme mx-auto w-full max-w-[1660px]">
       <style>
         {`
           .upload-theme-text {
@@ -631,6 +730,48 @@ function Upload() {
 
 
           [data-theme-mode='light']
+          .upload-filter-control {
+            background-color: #ffffff !important;
+            border-color: #d7d3df !important;
+            color: #2b2b33 !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-filter-control::placeholder {
+            color: #8a8793 !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-filter-control:hover {
+            border-color:
+              rgba(122, 68, 255, 0.55) !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-filter-control:focus {
+            border-color: #7a44ff !important;
+            box-shadow:
+              0 0 0 2px rgba(122, 68, 255, 0.18) !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-filter-reset {
+            background-color: #ffffff !important;
+            border-color: #d7d3df !important;
+            color: #6f42c1 !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-filter-reset:hover {
+            background-color:
+              rgba(122, 68, 255, 0.08) !important;
+            border-color:
+              rgba(122, 68, 255, 0.6) !important;
+            color: #7a44ff !important;
+          }
+
+
+          [data-theme-mode='light']
           .upload-refresh-button {
             background-color: #f7f7fb !important;
             border-color: #d7d3df !important;
@@ -708,80 +849,255 @@ function Upload() {
             color: #9a96a6 !important;
             box-shadow: none !important;
           }
+
+          [data-theme-mode='light']
+          .upload-pagination {
+            border-color: #e5e1ec !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-pagination-nav,
+          [data-theme-mode='light']
+          .upload-pagination-page {
+            background-color: #ffffff !important;
+            border-color: #d7d3df !important;
+            color: #6f42c1 !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-pagination-nav:hover:not(:disabled),
+          [data-theme-mode='light']
+          .upload-pagination-page:hover {
+            background-color:
+              rgba(122, 68, 255, 0.08) !important;
+
+            border-color:
+              rgba(122, 68, 255, 0.55) !important;
+
+            color: #5f30d4 !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-pagination-page[aria-current='page'] {
+            background-color: #7a44ff !important;
+            border-color: #7a44ff !important;
+            color: #ffffff !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-pagination-nav:disabled {
+            background-color: #f3f2f6 !important;
+            border-color: #e2dfe8 !important;
+            color: #aaa5b2 !important;
+            opacity: 1 !important;
+          }
+
+          /*
+           * Top Upload File button — light mode loading state
+           */
+          [data-theme-mode='light']
+          .upload-picker-button:disabled {
+            background-image: none !important;
+            background-color: #eee7ff !important;
+            border: 1px solid rgba(122, 68, 255, 0.28) !important;
+            color: #6530d6 !important;
+            box-shadow:
+              0 4px 14px rgba(122, 68, 255, 0.08) !important;
+            opacity: 1 !important;
+          }
+
+          [data-theme-mode='light']
+          .upload-picker-spinner {
+            border-color:
+              rgba(101, 48, 214, 0.22) !important;
+            border-top-color:
+              #6530d6 !important;
+          }
+
+          /*
+           * STUDYA UPLOAD ILLUMINATED SURFACE
+           *
+           * Styling only.
+           * Upload, delete, search, filter, pagination
+           * and navigation behaviour are unchanged.
+           */
+          .upload-surface {
+            position: relative;
+
+            background:
+              radial-gradient(
+                ellipse 75% 52% at 22% -8%,
+                rgba(255, 255, 255, 0.075),
+                rgba(255, 255, 255, 0.025) 34%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 65% 48% at 88% -12%,
+                rgba(122, 68, 255, 0.10),
+                transparent 66%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.018),
+                transparent 48%
+              ),
+              #160b32 !important;
+
+            border-color:
+              rgba(169, 124, 255, 0.16) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.065),
+              inset 0 0 26px rgba(122, 68, 255, 0.025),
+              0 12px 34px rgba(3, 0, 15, 0.24);
+
+            transition:
+              background-color 500ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease,
+              transform 300ms ease;
+          }
+
+
+          /*
+           * Soft reflective line across the upper surface.
+           */
+          .upload-surface::after {
+            content: '';
+            position: absolute;
+            pointer-events: none;
+
+            top: 0;
+            left: 9%;
+            right: 9%;
+            height: 1px;
+
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.15) 28%,
+                rgba(201, 180, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.10) 72%,
+                transparent
+              );
+
+            opacity: 0.72;
+          }
+
+
+          .upload-surface:hover {
+            border-color:
+              rgba(122, 68, 255, 0.38) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.085),
+              inset 0 0 30px rgba(122, 68, 255, 0.04),
+              0 14px 38px rgba(30, 10, 62, 0.28),
+              0 0 22px rgba(122, 68, 255, 0.065);
+          }
+
+
+          /*
+           * Light mode:
+           * same StudyA depth with softer lavender illumination.
+           */
+          [data-theme-mode='light']
+          .upload-surface {
+            background:
+              radial-gradient(
+                ellipse 75% 55% at 20% -10%,
+                rgba(255, 255, 255, 0.96),
+                rgba(255, 255, 255, 0.52) 38%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 62% 48% at 88% -10%,
+                rgba(122, 68, 255, 0.055),
+                transparent 67%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(122, 68, 255, 0.018),
+                transparent 48%
+              ),
+              #ffffff !important;
+
+            border-color:
+              rgba(91, 72, 125, 0.14) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 0 20px rgba(122, 68, 255, 0.012),
+              0 10px 28px rgba(61, 44, 92, 0.075);
+          }
+
+
+          [data-theme-mode='light']
+          .upload-surface::after {
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(122, 68, 255, 0.075) 28%,
+                rgba(122, 68, 255, 0.12) 50%,
+                rgba(122, 68, 255, 0.06) 72%,
+                transparent
+              );
+
+            opacity: 0.52;
+          }
+
+
+          [data-theme-mode='light']
+          .upload-surface:hover {
+            border-color:
+              rgba(122, 68, 255, 0.30) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              0 13px 32px rgba(91, 60, 145, 0.10),
+              0 0 18px rgba(122, 68, 255, 0.04);
+          }
         `}
       </style>
 
 
       {/* Page Heading */}
-      <div className="mb-8">
-        <p className="upload-theme-text upload-accent mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
-          Study Materials
-        </p>
-
-        <h1 className="upload-theme-text upload-heading text-3xl font-bold tracking-tight text-[#f3f0ff]">
-          Upload Study Material
-        </h1>
-
-        <p className="upload-theme-text upload-body mt-2 max-w-3xl text-sm leading-6 text-[#898cc0]">
-          Upload your study material so it can later be used
-          to generate summaries, flashcards, quizzes and
-          concept explanations.
-        </p>
-      </div>
-
-
-      {/* Upload Card */}
-      <form
-        onSubmit={handleSubmit}
-        className="upload-theme-surface upload-surface rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 sm:p-7"
-      >
-        {/* File Selection */}
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <label
-            htmlFor="study-file"
-            className="upload-theme-text upload-heading block text-sm font-semibold text-[#f3f0ff]"
-          >
-            Study Material
-          </label>
-
-          <p className="upload-theme-text upload-body mt-1 text-sm text-[#898cc0]">
-            Supported formats: PDF, DOCX and TXT. Maximum
-            file size: 15 MB.
+          <p className="upload-theme-text upload-accent mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
+            Study Materials
           </p>
 
+          <h1 className="upload-theme-text upload-heading text-3xl font-bold tracking-tight text-[#f3f0ff]">
+            Upload Study Material
+          </h1>
 
-          {/* Drop Area */}
-          <div className="upload-theme-surface upload-drop-area mt-5 rounded-xl border-2 border-dashed border-[#3a2860] bg-[#120928]/60 px-6 py-10 text-center hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/5">
-            <div className="upload-accent mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-[#7a44ff]/25 bg-[#7a44ff]/10 text-[#a97cff]">
-              <svg
+          <p className="upload-theme-text upload-body mt-2 max-w-3xl text-sm leading-6 text-[#898cc0]">
+            Upload your study material so it can later be used
+            to generate summaries, flashcards, quizzes and
+            concept explanations.
+          </p>
+        </div>
+
+        <div className="shrink-0 self-start">
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={() => {
+              setError('')
+              setStatus('')
+              document.getElementById('study-file')?.click()
+            }}
+            className="upload-theme-interactive upload-picker-button inline-flex min-w-[132px] items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#a9a3ba] disabled:shadow-none"
+          >
+            {isUploading ? (
+              <span
                 aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="h-7 w-7"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 16V4m0 0L7 9m5-5 5 5M5 15v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"
-                />
-              </svg>
-            </div>
-
-            <p className="upload-theme-text upload-heading mt-4 font-medium text-[#d9d4eb]">
-              Select a study document from your computer
-            </p>
-
-            <p className="upload-theme-text upload-muted mt-1 text-sm text-[#727494]">
-              PDF, DOCX or TXT up to 15 MB
-            </p>
-
-            <label
-              htmlFor="study-file"
-              className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition duration-300 hover:brightness-110"
-            >
+                className="upload-picker-spinner h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              />
+            ) : (
               <svg
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
@@ -794,241 +1110,195 @@ function Upload() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M12 16V4m0 0L7 9m5-5 5 5"
+                  d="M12 5v14M5 12h14"
                 />
               </svg>
-
-              Choose File
-            </label>
-
-            <input
-              id="study-file"
-              type="file"
-              accept=".pdf,.docx,.txt"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
-        </div>
-
-
-        {/* Selected File */}
-        {selectedFile && (
-          <div className="upload-theme-surface upload-selected-file mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
-                  <svg
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 3h9l3 3v15H6V3Zm9 0v4h4"
-                    />
-                  </svg>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="upload-theme-text upload-selected-name break-words font-medium text-emerald-200">
-                    {selectedFile.name}
-                  </p>
-
-                  <p className="upload-theme-text upload-selected-meta mt-1 text-sm text-emerald-300/70">
-                    {formatFileSize(
-                      selectedFile.size
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleRemoveFile}
-                className="upload-theme-interactive shrink-0 text-sm font-medium text-red-300 hover:text-red-200 hover:underline"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        )}
-
-
-        {/* Error */}
-        {error && (
-          <div
-            className="upload-theme-surface mt-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
-            role="alert"
-          >
-            <p className="upload-theme-text upload-error-text text-sm leading-6 text-red-300">
-              {error}
-            </p>
-          </div>
-        )}
-
-
-        {/* AI Information */}
-        <div className="upload-theme-surface mt-6 rounded-lg border border-[#7a44ff]/25 bg-[#7a44ff]/10 p-5">
-          <div className="flex items-start gap-3">
-            <div className="upload-accent mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#7a44ff]/15 text-[#a97cff]">
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 8h.01M11 12h1v4h1m8-4a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-            </div>
-
-            <div>
-              <h2 className="upload-theme-text upload-ai-heading font-semibold text-[#e6ddff]">
-                About AI Processing
-              </h2>
-
-              <p className="upload-theme-text upload-ai-body mt-2 text-sm leading-6 text-[#a6a8c7]">
-                Uploading a document does not automatically send
-                it to the Generative AI service. Your consent will
-                be requested separately before your study material
-                is used to generate AI content.
-              </p>
-            </div>
-          </div>
-        </div>
-
-
-        {/* Privacy Notice */}
-        <div className="upload-theme-surface mt-4 rounded-lg border border-amber-400/20 bg-amber-500/[0.07] p-5">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-300">
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 3 4 7v5c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V7l-8-4Z"
-                />
-              </svg>
-            </div>
-
-            <div>
-              <h2 className="upload-theme-text upload-privacy-heading font-semibold text-amber-200">
-                Document Privacy
-              </h2>
-
-              <p className="upload-theme-text upload-privacy-body mt-2 text-sm leading-6 text-amber-100/70">
-                Only upload study materials that you are authorised
-                to use. Avoid uploading sensitive, confidential or
-                private information.
-              </p>
-            </div>
-          </div>
-        </div>
-
-
-        {/* Success */}
-        {status && (
-          <div
-            className="upload-theme-surface mt-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
-            role="status"
-          >
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m5 12 4 4L19 6"
-                  />
-                </svg>
-              </div>
-
-              <p className="upload-theme-text upload-success-text text-sm leading-6 text-emerald-300">
-                {status}
-              </p>
-            </div>
-          </div>
-        )}
-
-
-        {/* Upload Button */}
-        <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={
-              !selectedFile ||
-              isUploading
-            }
-            className="upload-submit-button inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#7a44ff] to-[#9c46ff] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(122,68,255,0.18)] transition duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:from-[#3a3150] disabled:to-[#3a3150] disabled:text-[#77718d] disabled:shadow-none"
-          >
-            {isUploading && (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             )}
 
-            {isUploading
-              ? 'Uploading...'
-              : 'Upload Material'}
+            {isUploading ? 'Uploading...' : 'Upload File'}
           </button>
+
+          <input
+            id="study-file"
+            type="file"
+            accept=".pdf,.docx,.txt"
+            onChange={handleFileChange}
+            disabled={isUploading}
+            className="hidden"
+          />
         </div>
-      </form>
+      </div>
+
+
+      {/* File Statistics */}
+      <section
+        aria-label="Uploaded file statistics"
+        className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {[
+          {
+            label: 'Total Files',
+            value: fileStatistics.total,
+            type: 'ALL',
+          },
+          {
+            label: 'PDF Files',
+            value: fileStatistics.pdf,
+            type: 'PDF',
+          },
+          {
+            label: 'DOCX Files',
+            value: fileStatistics.docx,
+            type: 'DOCX',
+          },
+          {
+            label: 'TXT Files',
+            value: fileStatistics.txt,
+            type: 'TXT',
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="upload-theme-surface upload-surface rounded-xl border border-[#2a1b4d] bg-[#160b32] p-5 hover:-translate-y-0.5 hover:shadow-[0_8px_26px_rgba(122,68,255,0.12)]"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="upload-theme-text upload-body text-sm font-medium text-[#898cc0]">
+                  {stat.label}
+                </p>
+
+                <p className="upload-theme-text upload-heading mt-3 text-3xl font-bold tracking-tight text-[#f3f0ff]">
+                  {isLoadingFiles ? '—' : stat.value}
+                </p>
+              </div>
+
+              <div className="upload-theme-surface upload-accent flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 px-2 text-[11px] font-bold tracking-wide text-[#a97cff]">
+                {stat.type}
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+
+      {/* Upload Feedback */}
+      {error && (
+        <div
+          className="upload-theme-surface mb-5 rounded-lg border border-red-400/25 bg-red-500/10 p-4"
+          role="alert"
+        >
+          <p className="upload-theme-text upload-error-text text-sm leading-6 text-red-300">
+            {error}
+          </p>
+        </div>
+      )}
+
+      {status && (
+        <div
+          className="upload-theme-surface mb-5 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4"
+          role="status"
+        >
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m5 12 4 4L19 6"
+                />
+              </svg>
+            </div>
+
+            <p className="upload-theme-text upload-success-text text-sm leading-6 text-emerald-300">
+              {status}
+            </p>
+          </div>
+        </div>
+      )}
+
+
+      {/* File Filters */}
+      {!isLoadingFiles && uploadedFiles.length > 0 && (
+        <section
+          aria-label="Uploaded file filters"
+          className="upload-theme-surface upload-surface rounded-xl border border-[#2a1b4d] bg-[#160b32] p-5 sm:p-6"
+        >
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_190px_200px_auto] lg:items-end">
+            <div>
+              <label
+                className="upload-theme-text upload-heading mb-2 block text-xs font-semibold text-[#d9d4eb]"
+                htmlFor="uploaded-file-search"
+              >
+                Search
+              </label>
+
+              <input
+                id="uploaded-file-search"
+                type="search"
+                value={fileSearch}
+                onChange={(event) =>
+                  setFileSearch(event.target.value)
+                }
+                placeholder="Search files..."
+                className="upload-theme-interactive upload-filter-control w-full min-w-0 rounded-lg border border-[#3a2860] bg-[#120928] px-4 py-3 text-sm text-[#e7e2f5] outline-none placeholder:text-[#727494] focus:border-[#7a44ff]/70 focus:shadow-[0_0_0_3px_rgba(122,68,255,0.12)]"
+              />
+            </div>
+
+            <div>
+              <label
+                className="upload-theme-text upload-heading mb-2 block text-xs font-semibold text-[#d9d4eb]"
+                htmlFor="uploaded-file-type"
+              >
+                File Type
+              </label>
+
+              <AnimatedSelect
+                id="uploaded-file-type"
+                value={fileTypeFilter}
+                onChange={setFileTypeFilter}
+                options={FILE_TYPE_OPTIONS}
+              />
+            </div>
+
+            <div>
+              <label
+                className="upload-theme-text upload-heading mb-2 block text-xs font-semibold text-[#d9d4eb]"
+                htmlFor="uploaded-file-sort"
+              >
+                Order
+              </label>
+
+              <AnimatedSelect
+                id="uploaded-file-sort"
+                value={fileSortOrder}
+                onChange={setFileSortOrder}
+                options={FILE_SORT_OPTIONS}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={resetFileFilters}
+              className="upload-theme-interactive upload-filter-reset rounded-lg border border-[#3a2860] bg-[#19103a] px-4 py-3 text-sm font-medium text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10"
+            >
+              Reset
+            </button>
+          </div>
+        </section>
+      )}
 
 
       {/* Uploaded Materials */}
       <section className="upload-theme-surface upload-surface group mt-8 rounded-xl border border-[#2a1b4d] bg-[#160b32] p-6 hover:border-[#7a44ff] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)] sm:p-7">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() =>
-            setUploadedMaterialsOpen(
-              (current) => !current
-            )
-          }
-          onKeyDown={(event) => {
-            if (
-              event.key === 'Enter' ||
-              event.key === ' '
-            ) {
-              event.preventDefault()
-
-              setUploadedMaterialsOpen(
-                (current) => !current
-              )
-            }
-          }}
-          aria-expanded={
-            uploadedMaterialsOpen
-          }
-          aria-controls="uploaded-materials-content"
-          className="flex cursor-pointer flex-wrap items-center justify-between gap-4 text-left focus:outline-none"
-        >
+        <div className="flex flex-wrap items-center justify-between gap-4 text-left">
           <div>
             <p className="upload-theme-text upload-accent mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#a97cff]">
               Library
@@ -1088,40 +1358,13 @@ function Upload() {
             </button>
 
 
-            <div className="upload-theme-surface upload-chevron flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#a97cff]">
-              <svg
-                viewBox="0 0 20 20"
-                fill="none"
-                aria-hidden="true"
-                className={`h-4 w-4 transition-transform duration-300 ${uploadedMaterialsOpen
-                  ? 'rotate-180'
-                  : ''
-                  }`}
-              >
-                <path
-                  d="M5 7.5L10 12.5L15 7.5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
+
           </div>
         </div>
 
 
-        <div
-          id="uploaded-materials-content"
-          aria-hidden={
-            !uploadedMaterialsOpen
-          }
-          className={`grid transition-all duration-300 ease-in-out ${uploadedMaterialsOpen
-            ? 'visible grid-rows-[1fr] opacity-100'
-            : 'invisible grid-rows-[0fr] opacity-0'
-            }`}
-        >
-          <div className="min-h-0 overflow-hidden">
+        <div>
+          <div>
             {/* Uploaded Files Error */}
             {filesError && (
               <div
@@ -1182,16 +1425,29 @@ function Upload() {
                   You have not uploaded any study materials yet.
                 </p>
               </div>
+            ) : filteredUploadedFiles.length === 0 ? (
+              <div className="upload-theme-surface upload-empty mt-6 rounded-lg border border-[#2a1b4d] bg-[#120928]/50 p-6 text-center">
+                <p className="upload-theme-text upload-body text-sm text-[#898cc0]">
+                  No uploaded files match the current filters.
+                </p>
+              </div>
             ) : (
               /* File List */
               <div className="mt-6 space-y-3">
-                {uploadedFiles.map(
+                {paginatedUploadedFiles.map(
                   (file) => (
                     <div
                       key={file.file_id}
                       className="upload-theme-surface upload-file-row group flex flex-col gap-4 rounded-lg border border-[#2a1b4d] bg-[#120928]/40 p-4 hover:border-[#7a44ff]/40 hover:bg-[#19103a] sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex min-w-0 items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/upload/${file.file_id}`)
+                        }
+                        aria-label={`Open details for ${file.file_name}`}
+                        className="upload-theme-interactive flex min-w-0 flex-1 items-start gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a44ff]/60"
+                      >
                         <div className="upload-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#7a44ff]/20 bg-[#7a44ff]/10 text-[#a97cff]">
                           <svg
                             aria-hidden="true"
@@ -1224,7 +1480,7 @@ function Upload() {
                             )}
                           </p>
                         </div>
-                      </div>
+                      </button>
 
                       <button
                         type="button"
@@ -1254,6 +1510,122 @@ function Upload() {
                       </button>
                     </div>
                   )
+                )}
+
+                {/* Uploaded Material Pagination */}
+                {filteredUploadedFiles.length >
+                  0 && (
+                  <div className="upload-pagination mt-5 flex flex-col gap-3 border-t border-[#2a1b4d] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="upload-theme-text upload-muted text-xs text-[#727494]">
+                      Showing{' '}
+                      {
+                        firstVisibleUploadedFile
+                      }{' '}
+                      to{' '}
+                      {
+                        lastVisibleUploadedFile
+                      }{' '}
+                      of{' '}
+                      {
+                        filteredUploadedFiles.length
+                      }{' '}
+                      uploaded materials
+                    </p>
+
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUploadedFilesPage(
+                            (
+                              current
+                            ) =>
+                              Math.max(
+                                1,
+                                current - 1
+                              )
+                          )
+                        }
+                        disabled={
+                          currentUploadedFilesPage ===
+                          1
+                        }
+                        className="upload-theme-interactive upload-pagination-nav rounded-lg border border-[#392461] bg-[#251149] px-3 py-2 text-xs font-medium text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
+
+
+                      {Array.from(
+                        {
+                          length:
+                            totalUploadedFilePages,
+                        },
+                        (
+                          _,
+                          index
+                        ) =>
+                          index + 1
+                      ).map(
+                        (
+                          pageNumber
+                        ) => (
+                          <button
+                            key={
+                              pageNumber
+                            }
+                            type="button"
+                            onClick={() =>
+                              setUploadedFilesPage(
+                                pageNumber
+                              )
+                            }
+                            aria-label={`Go to uploaded materials page ${pageNumber}`}
+                            aria-current={
+                              currentUploadedFilesPage ===
+                              pageNumber
+                                ? 'page'
+                                : undefined
+                            }
+                            className={`upload-theme-interactive upload-pagination-page flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-xs font-semibold ${
+                              currentUploadedFilesPage ===
+                              pageNumber
+                                ? 'border-[#7a44ff] bg-[#7a44ff] text-white'
+                                : 'border-[#392461] bg-[#251149] text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10'
+                            }`}
+                          >
+                            {
+                              pageNumber
+                            }
+                          </button>
+                        )
+                      )}
+
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUploadedFilesPage(
+                            (
+                              current
+                            ) =>
+                              Math.min(
+                                totalUploadedFilePages,
+                                current + 1
+                              )
+                          )
+                        }
+                        disabled={
+                          currentUploadedFilesPage ===
+                          totalUploadedFilePages
+                        }
+                        className="upload-theme-interactive upload-pagination-nav rounded-lg border border-[#392461] bg-[#251149] px-3 py-2 text-xs font-medium text-[#c9b4ff] hover:border-[#7a44ff]/60 hover:bg-[#7a44ff]/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

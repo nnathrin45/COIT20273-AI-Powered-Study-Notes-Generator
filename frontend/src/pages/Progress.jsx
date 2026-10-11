@@ -57,9 +57,12 @@ function Progress() {
   ] = useState('')
 
   const [
-    quizPerformanceOpen,
-    setQuizPerformanceOpen,
-  ] = useState(false)
+    quizHistoryPage,
+    setQuizHistoryPage,
+  ] = useState(1)
+
+  const QUIZ_HISTORY_PER_PAGE =
+    3
 
   const [
     recentActivityOpen,
@@ -170,6 +173,7 @@ function Progress() {
     }
 
     setContentVisible(false)
+    setQuizHistoryPage(1)
 
     window.setTimeout(
       () => {
@@ -225,6 +229,51 @@ function Progress() {
   const quizHistory =
     progress?.recent_attempts ??
     []
+
+
+  const totalQuizHistoryPages =
+    Math.max(
+      1,
+      Math.ceil(
+        quizHistory.length /
+          QUIZ_HISTORY_PER_PAGE
+      )
+    )
+
+
+  const currentQuizHistoryPage =
+    Math.min(
+      quizHistoryPage,
+      totalQuizHistoryPages
+    )
+
+
+  const firstQuizHistoryIndex =
+    (
+      currentQuizHistoryPage - 1
+    ) * QUIZ_HISTORY_PER_PAGE
+
+
+  const paginatedQuizHistory =
+    quizHistory.slice(
+      firstQuizHistoryIndex,
+      firstQuizHistoryIndex +
+        QUIZ_HISTORY_PER_PAGE
+    )
+
+
+  const firstVisibleQuizAttempt =
+    quizHistory.length === 0
+      ? 0
+      : firstQuizHistoryIndex + 1
+
+
+  const lastVisibleQuizAttempt =
+    Math.min(
+      firstQuizHistoryIndex +
+        QUIZ_HISTORY_PER_PAGE,
+      quizHistory.length
+    )
 
 
   const recentActivity =
@@ -768,7 +817,7 @@ function Progress() {
 
 
   return (
-    <div className="progress-theme mx-auto max-w-4xl">
+    <div className="progress-theme mx-auto w-full max-w-[1660px]">
       <style>
         {`
           .progress-theme-surface {
@@ -1195,6 +1244,285 @@ function Progress() {
                 0.20
               ) !important;
           }
+
+          /*
+           * Quiz Performance pagination — light mode
+           */
+          [data-theme-mode='light']
+          .progress-quiz-panel {
+            background-color: #ffffff !important;
+            border-color: #dfdfdf !important;
+            box-shadow: none !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-header {
+            background-color: #ffffff !important;
+            border-color: #e5e1ec !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-header h2 {
+            color: #171717 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-header p:last-child {
+            color: #65676b !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-head {
+            background-color: #f7f7fb !important;
+            border-color: #e5e1ec !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-head th {
+            color: #7a7575 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-body {
+            background-color: #ffffff !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-body > tr {
+            border-color: #e5e1ec !important;
+            background-color: #ffffff !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-row:hover {
+            background-color: #f7f3ff !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-row td:first-child {
+            color: #2b2b33 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-table-row td:nth-child(2),
+          [data-theme-mode='light']
+          .progress-quiz-table-row td:nth-child(4) {
+            color: #65676b !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-pagination {
+            background-color: #ffffff !important;
+            border-color: #e5e1ec !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-pagination > p {
+            color: #7a7575 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-nav-button,
+          [data-theme-mode='light']
+          .progress-quiz-page-button {
+            background-color: #ffffff !important;
+            border-color: #d7d3df !important;
+            color: #6f42c1 !important;
+            box-shadow: none !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-nav-button:hover:not(:disabled),
+          [data-theme-mode='light']
+          .progress-quiz-page-button:hover {
+            background-color:
+              rgba(122, 68, 255, 0.08) !important;
+            border-color:
+              rgba(122, 68, 255, 0.55) !important;
+            color: #5f30d4 !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-page-button[aria-current='page'] {
+            background-color: #7a44ff !important;
+            border-color: #7a44ff !important;
+            color: #ffffff !important;
+          }
+
+          [data-theme-mode='light']
+          .progress-quiz-nav-button:disabled {
+            background-color: #f3f2f6 !important;
+            border-color: #e2dfe8 !important;
+            color: #aaa5b2 !important;
+            opacity: 1 !important;
+          }
+
+          /*
+           * STUDYA PROGRESS ILLUMINATED SURFACE
+           *
+           * Major Progress panels only.
+           * Quiz pagination, activity controls, filtering,
+           * deletion and API behaviour remain unchanged.
+           */
+          .progress-quiz-panel,
+          .progress-accordion {
+            position: relative;
+
+            background:
+              radial-gradient(
+                ellipse 75% 52% at 22% -8%,
+                rgba(255, 255, 255, 0.075),
+                rgba(255, 255, 255, 0.025) 34%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 65% 48% at 88% -12%,
+                rgba(122, 68, 255, 0.10),
+                transparent 66%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.018),
+                transparent 48%
+              ),
+              #160b32 !important;
+
+            border-color:
+              rgba(169, 124, 255, 0.16) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.065),
+              inset 0 0 26px rgba(122, 68, 255, 0.025),
+              0 12px 34px rgba(3, 0, 15, 0.24) !important;
+
+            transition:
+              background-color 500ms ease,
+              border-color 300ms ease,
+              box-shadow 300ms ease;
+          }
+
+
+          /*
+           * Allow the illumination to show through the
+           * major panel headers.
+           */
+          .progress-quiz-panel >
+          .progress-quiz-header,
+          .progress-accordion >
+          .progress-accordion-header {
+            background:
+              transparent !important;
+          }
+
+
+          /*
+           * Reflective upper edge.
+           */
+          .progress-quiz-panel::after,
+          .progress-accordion::after {
+            content: '';
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+
+            top: 0;
+            left: 9%;
+            right: 9%;
+            height: 1px;
+
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.15) 28%,
+                rgba(201, 180, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.10) 72%,
+                transparent
+              );
+
+            opacity: 0.72;
+          }
+
+
+          .progress-quiz-panel:hover,
+          .progress-accordion:hover {
+            border-color:
+              rgba(122, 68, 255, 0.34) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 0.085),
+              inset 0 0 30px rgba(122, 68, 255, 0.04),
+              0 14px 38px rgba(30, 10, 62, 0.28),
+              0 0 22px rgba(122, 68, 255, 0.06) !important;
+          }
+
+
+          /*
+           * Light mode
+           */
+          [data-theme-mode='light']
+          .progress-quiz-panel,
+          [data-theme-mode='light']
+          .progress-accordion {
+            background:
+              radial-gradient(
+                ellipse 75% 55% at 20% -10%,
+                rgba(255, 255, 255, 0.96),
+                rgba(255, 255, 255, 0.52) 38%,
+                transparent 68%
+              ),
+              radial-gradient(
+                ellipse 62% 48% at 88% -10%,
+                rgba(122, 68, 255, 0.055),
+                transparent 67%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(122, 68, 255, 0.018),
+                transparent 48%
+              ),
+              #ffffff !important;
+
+            border-color:
+              rgba(91, 72, 125, 0.14) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 0 20px rgba(122, 68, 255, 0.012),
+              0 10px 28px rgba(61, 44, 92, 0.075) !important;
+          }
+
+
+          [data-theme-mode='light']
+          .progress-quiz-panel::after,
+          [data-theme-mode='light']
+          .progress-accordion::after {
+            background:
+              linear-gradient(
+                90deg,
+                transparent,
+                rgba(122, 68, 255, 0.075) 28%,
+                rgba(122, 68, 255, 0.12) 50%,
+                rgba(122, 68, 255, 0.06) 72%,
+                transparent
+              );
+
+            opacity: 0.52;
+          }
+
+
+          [data-theme-mode='light']
+          .progress-quiz-panel:hover,
+          [data-theme-mode='light']
+          .progress-accordion:hover {
+            border-color:
+              rgba(122, 68, 255, 0.28) !important;
+
+            box-shadow:
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              0 13px 32px rgba(91, 60, 145, 0.10),
+              0 0 18px rgba(122, 68, 255, 0.04) !important;
+          }
         `}
       </style>
 
@@ -1601,166 +1929,225 @@ function Progress() {
 
 
         {/* Quiz Performance */}
-        <section className="progress-theme-surface progress-accordion group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
-          <button
-            type="button"
-            onClick={() =>
-              setQuizPerformanceOpen(
-                (current) =>
-                  !current
-              )
-            }
-            aria-expanded={
-              quizPerformanceOpen
-            }
-            aria-controls="quiz-performance-content"
-            style={{
-              backgroundColor:
-                '#160B32',
-            }}
-            className="progress-theme-surface progress-accordion-header relative flex w-full items-center justify-between gap-4 overflow-hidden px-5 py-5 text-left transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#7A44FF] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-[#7A44FF] after:to-[#D83DFF] after:transition-all after:duration-300 group-hover:after:w-full"
-          >
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
-                Quiz History
-              </p>
+        <section className="progress-theme-surface progress-quiz-panel mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32]">
+          {/* Header */}
+          <div className="progress-theme-surface progress-quiz-header border-b border-[#2A1B4D] px-5 py-5">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#A77BFF]">
+              Quiz History
+            </p>
 
-              <h2 className="text-xl font-semibold text-white">
-                Quiz Performance
-              </h2>
+            <h2 className="text-xl font-semibold text-white">
+              Quiz Performance
+            </h2>
 
-              <p className="mt-1 text-sm text-[#898CC0]">
-                Review your recent practice quiz results.
-              </p>
-            </div>
-
-            <div className="progress-theme-interactive progress-chevron flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#392461] bg-[#251149] text-[#A77BFF]">
-              <svg
-                viewBox="0 0 20 20"
-                fill="none"
-                aria-hidden="true"
-                className={`h-4 w-4 transition-transform duration-300 ${
-                  quizPerformanceOpen
-                    ? 'rotate-180'
-                    : ''
-                }`}
-              >
-                <path
-                  d="M5 7.5L10 12.5L15 7.5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </button>
+            <p className="mt-1 text-sm text-[#898CC0]">
+              Review your recent practice quiz results.
+            </p>
+          </div>
 
 
-          <div
-            id="quiz-performance-content"
-            aria-hidden={
-              !quizPerformanceOpen
-            }
-            className={`grid transition-all duration-300 ease-in-out ${
-              quizPerformanceOpen
-                ? 'visible grid-rows-[1fr] opacity-100'
-                : 'invisible grid-rows-[0fr] opacity-0'
-            }`}
-          >
-            <div className="min-h-0 overflow-hidden">
-              <div className="border-t border-[#2A1B4D]">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="progress-theme-surface progress-table-head bg-[#120928]/60">
-                      <tr>
-                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                          Quiz
-                        </th>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="progress-theme-surface progress-table-head progress-quiz-table-head bg-[#120928]/60">
+                <tr>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                    Quiz
+                  </th>
 
-                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                          Score
-                        </th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                    Score
+                  </th>
 
-                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                          Result
-                        </th>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                    Result
+                  </th>
 
-                        <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
-                          Date
-                        </th>
-                      </tr>
-                    </thead>
+                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-[#595C90]">
+                    Date
+                  </th>
+                </tr>
+              </thead>
 
 
-                    <tbody className="progress-table-body divide-y divide-[#2A1B4D]">
-                      {!loading &&
-                        quizHistory.length ===
-                          0 && (
-                          <tr>
-                            <td
-                              colSpan="4"
-                              className="px-5 py-8 text-center text-sm text-[#898CC0]"
-                            >
-                              No quiz attempts found for this time period.
-                            </td>
-                          </tr>
+              <tbody className="progress-table-body progress-quiz-table-body divide-y divide-[#2A1B4D]">
+                {!loading &&
+                  quizHistory.length ===
+                    0 && (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="px-5 py-8 text-center text-sm text-[#898CC0]"
+                      >
+                        No quiz attempts found for this time period.
+                      </td>
+                    </tr>
+                  )}
+
+
+                {paginatedQuizHistory.map(
+                  (quiz) => (
+                    <tr
+                      key={
+                        quiz.attempt_id
+                      }
+                      className="progress-theme-interactive progress-table-row progress-quiz-table-row transition hover:bg-[#211044]"
+                    >
+                      <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">
+                        {
+                          quiz.quiz_title
+                        }
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-[#898CC0]">
+                        {
+                          quiz.score
+                        }
+                        /
+                        {
+                          quiz.total
+                        }
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreStyle(
+                            quiz.percentage
+                          )}`}
+                        >
+                          {
+                            quiz.percentage
+                          }
+                          %
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-[#898CC0]">
+                        {formatDate(
+                          quiz.attempted_at
                         )}
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
 
 
-                      {quizHistory.map(
-                        (quiz) => (
-                          <tr
-                            key={
-                              quiz.attempt_id
-                            }
-                            className="progress-theme-interactive progress-table-row transition hover:bg-[#211044]"
-                          >
-                            <td className="px-5 py-4 text-sm font-medium text-[#C2C4E4]">
-                              {
-                                quiz.quiz_title
-                              }
-                            </td>
+          {/* Pagination */}
+          {quizHistory.length > 0 && (
+            <div className="progress-theme-surface progress-quiz-pagination flex flex-col gap-3 border-t border-[#2A1B4D] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-[#898CC0]">
+                Showing{' '}
+                {
+                  firstVisibleQuizAttempt
+                }{' '}
+                to{' '}
+                {
+                  lastVisibleQuizAttempt
+                }{' '}
+                of{' '}
+                {
+                  quizHistory.length
+                }{' '}
+                attempts
+              </p>
 
-                            <td className="px-5 py-4 text-sm text-[#898CC0]">
-                              {
-                                quiz.score
-                              }
-                              /
-                              {
-                                quiz.total
-                              }
-                            </td>
 
-                            <td className="px-5 py-4">
-                              <span
-                                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${getScoreStyle(
-                                  quiz.percentage
-                                )}`}
-                              >
-                                {
-                                  quiz.percentage
-                                }
-                                %
-                              </span>
-                            </td>
-
-                            <td className="px-5 py-4 text-sm text-[#898CC0]">
-                              {formatDate(
-                                quiz.attempted_at
-                              )}
-                            </td>
-                          </tr>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuizHistoryPage(
+                      (
+                        current
+                      ) =>
+                        Math.max(
+                          1,
+                          current - 1
                         )
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                    )
+                  }
+                  disabled={
+                    currentQuizHistoryPage ===
+                    1
+                  }
+                  className="progress-theme-interactive progress-quiz-nav-button rounded-lg border border-[#392461] bg-[#251149] px-3 py-2 text-xs font-medium text-[#C2C4E4] transition duration-300 hover:border-[#7A44FF] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+
+                {Array.from(
+                  {
+                    length:
+                      totalQuizHistoryPages,
+                  },
+                  (
+                    _,
+                    index
+                  ) =>
+                    index + 1
+                ).map(
+                  (pageNumber) => (
+                    <button
+                      key={
+                        pageNumber
+                      }
+                      type="button"
+                      onClick={() =>
+                        setQuizHistoryPage(
+                          pageNumber
+                        )
+                      }
+                      aria-label={`Go to quiz history page ${pageNumber}`}
+                      aria-current={
+                        currentQuizHistoryPage ===
+                        pageNumber
+                          ? 'page'
+                          : undefined
+                      }
+                      className={`progress-theme-interactive progress-quiz-page-button flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-xs font-semibold transition duration-300 ${
+                        currentQuizHistoryPage ===
+                        pageNumber
+                          ? 'border-[#7A44FF] bg-[#7A44FF] text-white'
+                          : 'border-[#392461] bg-[#251149] text-[#C2C4E4] hover:border-[#7A44FF] hover:text-white'
+                      }`}
+                    >
+                      {
+                        pageNumber
+                      }
+                    </button>
+                  )
+                )}
+
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuizHistoryPage(
+                      (
+                        current
+                      ) =>
+                        Math.min(
+                          totalQuizHistoryPages,
+                          current + 1
+                        )
+                    )
+                  }
+                  disabled={
+                    currentQuizHistoryPage ===
+                    totalQuizHistoryPages
+                  }
+                  className="progress-theme-interactive progress-quiz-nav-button rounded-lg border border-[#392461] bg-[#251149] px-3 py-2 text-xs font-medium text-[#C2C4E4] transition duration-300 hover:border-[#7A44FF] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </section>
-
 
         {/* Recent Activity */}
         <section className="progress-theme-surface progress-accordion group mt-5 overflow-hidden rounded-xl border border-[#2A1B4D] bg-[#160B32] transition-all duration-300 hover:border-[#7A44FF] hover:shadow-[0_0_24px_rgba(122,68,255,0.28)]">
