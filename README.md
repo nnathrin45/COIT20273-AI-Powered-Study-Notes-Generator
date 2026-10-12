@@ -1,760 +1,363 @@
 # StudyAI — AI-Powered Study Notes Generator
 
-StudyA is an AI-powered study support web application developed for the **COIT20273 Capstone Project** at CQUniversity.
+**COIT20273 Capstone Project · CQUniversity Australia**
 
-The application is designed to help university students transform uploaded study materials into useful learning resources such as summaries, flashcards, practice quizzes and concept explanations. It also provides study planning, saved-material management and progress-tracking functionality within a single student-focused platform.
+StudyAI (also referred to as **StudyA** in parts of the application) is a web-based, AI-assisted study platform. It helps students transform their own learning documents into **summaries, flashcards, practice quizzes and concept explanations** while supporting study planning, progress tracking and responsible AI use.
 
----
+**Live application:** https://studyai-deployment.vercel.app  
+**Source repository:** https://github.com/nnathrin45/COIT20273-AI-Powered-Study-Notes-Generator
 
-## Project Overview
-
-University students often work with large amounts of lecture notes, readings and study documents. Reviewing and converting this material into useful revision resources can be time-consuming.
-
-StudyA addresses this problem by allowing students to upload supported study documents and use AI-assisted tools to generate structured learning content.
-
-The system combines:
-
-- Document upload and text extraction
-- AI-assisted study-content generation
-- Authentication and account security
-- Responsible AI consent controls
-- Study planning and material management
-- Student progress tracking
-- Responsive and accessible user interfaces
-
-StudyA is intended to support student learning rather than replace academic judgement or independent study.
+> **Project status:** The frontend and backend have been deployed, the public login page is accessible, and the core document-upload and AI study workflows have been manually tested on the hosted system. StudyAI is an academic capstone application, not a commercially validated or fully load-tested service. See [Deployment and demonstration notes](#deployment-and-demonstration-notes) for current restrictions.
 
 ---
 
-## Project Team
+## Project overview and objectives
 
-| Team Member | Main Responsibilities |
+University students often need to review extensive lecture notes and readings, prepare revision resources, and revisit difficult concepts. Doing this manually can be time-consuming.
+
+StudyAI aims to:
+
+- Accept student-provided study materials in supported document formats.
+- Generate several complementary revision resources from the uploaded content.
+- Support different levels of study through difficulty/complexity settings.
+- Help students organise study sessions and monitor their activity.
+- Provide a responsive interface with account protection and responsible AI consent controls.
+
+The system is intended to **support**, not replace, original course materials, independent reasoning or academic judgement. Generated content must be checked for accuracy.
+
+## Project team
+
+| Team member | Main responsibilities |
 | --- | --- |
-| **Christian Jeff Labaddan** | Business Analysis / Research, UI/UX and Frontend Development |
-| **Nitish Rayapati** | Requirements / Solution Architecture, Backend and Database Development |
-| **Natthapong Rinsakul** | Project Planning / Risk / QA, Document Processing and AI Integration |
+| **Christian Jeff Labaddan** | Business analysis and research; UI/UX and frontend development |
+| **Nitish Rayapati** | Requirements and solution architecture; backend and database development |
+| **Natthapong Rinsakul** | Project planning, risk and QA; document processing and AI integration |
 
-Development was completed collaboratively, with integration between the frontend, backend, database, document-processing and AI components.
-
----
-
-## Main System Features
-
-### Authentication and Account Security
-
-StudyA includes a complete student authentication workflow:
-
-- Student registration
-- Email-address verification
-- Secure login
-- Login verification code / two-factor authentication workflow
-- Forgot Password functionality
-- Password-reset verification code
-- Secure password-reset workflow
-- Resend verification-code support
-- JWT-based authentication
-- Password hashing using bcrypt
-- Protected frontend routes
-- Protected backend API endpoints
-- Sign Out and session clearing
-- Invalid and expired authentication handling
-- User-specific resource isolation
-- Cross-user access protection
-
-Authentication-related emails also support the application's Light and Dark themes.
+Development and integration were collaborative, including frontend/backend communication, testing, documentation and final deployment preparation.
 
 ---
 
-### Study Material Management
+## Main features
 
-Students can upload their own study documents for processing.
+### Authentication and account security
 
-Supported document formats include:
+- Student registration and email-address verification.
+- Email/password login with a verification-code (two-step authentication) workflow.
+- Forgot-password and verification-code-based password reset.
+- Password hashing with `bcrypt` and authentication with JSON Web Tokens (JWT).
+- Protected React routes and authenticated backend endpoints.
+- Invalid or expired session handling, sign-out and account-specific resource access checks.
+- Theme-aware verification and password-reset email templates.
 
-- PDF
-- DOCX
-- TXT
+The email service supports **Nodemailer/SMTP** and **Resend's HTTPS API**, selected through environment configuration. See [Email and demonstration limitations](#email-and-demonstration-limitations).
 
-The system provides:
+### Study material upload and management
 
-- File-type validation
-- File-size validation
-- Text extraction
-- Detection of unreadable or image-only documents
-- User-specific uploaded-material storage
-- Retrieval of previously uploaded materials
-- Secure uploaded-file deletion
-- Protection against accessing or deleting another user's uploaded documents
+Students can upload **PDF, DOCX and TXT** documents. Backend processing includes supported-file and size validation, text extraction, detection of unreadable or image-only documents, and user-specific access controls. Uploaded materials can be retrieved or deleted by their owning account.
 
-Uploaded study material remains associated with the authenticated student.
+The application includes a **Study Material Details** page for viewing information about an uploaded file and its generated study resources.
 
----
+### AI-powered learning tools
 
-### AI-Powered Study Features
+| Feature | Purpose |
+| --- | --- |
+| **AI Summary** | Produces a structured summary of uploaded study content. |
+| **Flashcards** | Generates question-and-answer revision cards. |
+| **Practice Quiz** | Generates multiple-choice questions, accepts answers, calculates scores, displays results and supports retakes. |
+| **Concept Explanation** | Explains a selected concept using the student's source material, with follow-up questions and conversation history. |
 
-Students can generate multiple types of study content from their uploaded material.
+**Flashcards, Practice Quiz and Concept Explanation** provide **Beginner, Intermediate and Advanced** levels. These levels change how content is requested from the AI; they are not formally validated assessments of a student's proficiency.
 
-#### AI Summary
+Concept Explanation also includes conversation creation, retrieval, renaming and deletion, plus support for supplementary documents associated with an explanation conversation. Availability and results depend on the uploaded material and the external AI service.
 
-Generates a structured summary of the selected study material to support revision and review.
+### Study productivity tools
 
-#### AI Flashcards
+- **Dashboard:** Overview of user activity and study-related information.
+- **Study Planner:** Create and manage study plans, with individual plan-detail pages and backend persistence.
+- **Study session notifications:** Backend notification routes and reminder-processing logic are implemented. Reminder email and worker operation depend on deployment configuration.
+- **Progress:** Displays activity and quiz-performance information from application data.
+- **Profile:** User profile and related account controls.
+- **Saved Materials:** The page and related code are present, but **the navigation/route is currently disabled** in `frontend/src/featureFlags.js` (`SHOW_SAVED_MATERIALS = false`). It should not be presented as an active page in the current build.
 
-Generates question-and-answer flashcards from uploaded study content.
+### Responsive interface and appearance
 
-#### Practice Quiz
+- Responsive layouts for desktop and mobile use.
+- **Dark Mode** as the default, with a **Light Mode** option.
+- Theme support across principal app screens, authentication flows and supported email templates.
+- Work on keyboard accessibility, feedback messages and usable loading/error states.
 
-Generates practice questions based on the student's uploaded material.
+### Responsible AI and privacy
 
-The quiz functionality includes:
+StudyAI includes explicit AI-processing consent, the ability to grant or revoke consent, user-specific ownership checks, and labelling that identifies AI-generated content. Uploaded documents are handled separately from permission to send their contents for AI processing.
 
-- AI-generated questions
-- Multiple-choice answers
-- Quiz submission
-- Automatic marking
-- Score calculation
-- Per-question results
-- Support for quiz retakes
+AI outputs can contain mistakes or omissions. Students should compare generated content with their original materials. Do not upload sensitive information without understanding the applicable data-processing and privacy implications.
 
-#### Concept Explanation
+### Reliability and error handling
 
-Allows students to request an AI-generated explanation of a particular concept from their uploaded material.
-
-Different explanation levels can be selected to support different levels of understanding.
-
----
-
-## Student Productivity Tools
-
-### Study Planner
-
-Students can create and manage study-planning activities through the Study Planner interface.
-
-Study-planning information is connected to backend persistence rather than temporary frontend-only data.
-
-### Saved Materials
-
-Students can access study materials and generated learning content associated with their account.
-
-### Progress Tracking
-
-The Progress page presents student study activity and performance information using live application data.
-
-### Dashboard
-
-The Dashboard provides an overview of student activity and key study statistics.
+The backend and frontend provide handling for invalid inputs or verification codes, expired sessions, unsupported or unreadable files, missing resources, malformed AI responses, Gemini service failures, rate limits, quota limits and request timeouts. Where supported, the interface presents understandable errors and retry opportunities.
 
 ---
 
-## Light and Dark Theme
+## Technology stack
 
-StudyA provides both **Dark Mode** and **Light Mode**.
+| Layer | Main technologies |
+| --- | --- |
+| Frontend | React 19, Vite, JavaScript, Tailwind CSS, React Router, Recharts |
+| Backend | Node.js, Express 5, REST APIs, Multer, JWT, bcrypt |
+| Database | MySQL, `mysql2` |
+| Document extraction | `pdf-parse`, Mammoth (DOCX), native TXT processing |
+| AI | Google Gemini through the Google GenAI SDK |
+| Email | Nodemailer (SMTP) or Resend (HTTPS API) |
+| Hosting | Vercel (frontend), Railway (backend and MySQL) |
+| Development and QA | Git, GitHub, Issues, Pull Requests, Node.js test runner, Postman, browser developer tools, Lighthouse |
 
-Dark Mode is the default application theme, while students can switch between the two modes using the application theme control.
+## High-level architecture
 
-Theme support has been implemented across the major StudyA interfaces, including:
+```text
+Student's browser
+       |
+       v
+Vercel — React / Vite frontend
+       |
+       | HTTPS requests to REST API
+       v
+Railway — Node.js / Express backend
+       |             |                |
+       v             v                v
+Railway MySQL   Persistent file    Google Gemini
+  database      storage volume       AI service
+                     |
+                 Uploads and
+                 profile images
 
-- Dashboard
-- Upload Material
-- Summary
-- Flashcards
-- Practice Quiz
-- Concept Explanation
-- Study Planner
-- Saved Materials
-- Progress
-- Profile
-- Privacy and AI Consent
-- Login
-- Registration
-- Email Verification
-- Login Verification
-- Forgot Password
+Backend email delivery: SMTP (Nodemailer) or Resend HTTPS API
+```
 
-The selected theme is retained between sessions.
-
-Authentication emails also preserve the selected StudyA theme where applicable, including:
-
-- Registration verification emails
-- Login verification-code emails
-- Password-reset emails
-
----
-
-## Responsible AI and Privacy
-
-Responsible AI and student privacy are important parts of StudyA.
-
-The application includes:
-
-- Explicit AI-processing consent
-- Consent checking before AI generation
-- Support for granting and revoking AI consent
-- Separation between document upload and AI-processing consent
-- Responsible AI labelling
-- Clear indication that generated content is AI-assisted
-- User-specific document and AI-output isolation
-- Protection against cross-user resource access
-- Secure handling of authentication information
-- Prevention of credentials being exposed through API responses
-- Controlled handling of upstream AI errors
-
-Students remain responsible for reviewing AI-generated study content for accuracy and suitability.
+- The frontend is a client-side single-page application. `frontend/vercel.json` rewrites frontend routes to `index.html`, allowing direct links and refreshes without the former 404 error.
+- The backend uses `FRONTEND_URL` to restrict the accepted frontend origin in production.
+- In production, `STUDYAI_STORAGE_DIR` points to a persistent storage directory, so uploads are not dependent on an ephemeral container filesystem.
+- The production MySQL database is separate from any developer's local MySQL database.
 
 ---
 
-## Error Handling and Reliability
+## Run locally
 
-StudyA includes error-handling behaviour across the major student workflows.
+**Prerequisites:** A compatible Node.js installation, npm, a running MySQL server, and credentials for the email/AI workflows you intend to test. A Gemini API key is required for live AI generation.
 
-The application handles situations including:
+### 1. Clone the repository
 
-- Invalid login credentials
-- Missing or expired authentication
-- Invalid verification codes
-- Expired verification sessions
-- Unsupported uploaded-file types
-- Oversized uploaded files
-- Empty or unreadable documents
-- Image-only/scanned PDFs without readable text
-- Missing application resources
-- Temporary AI-service failures
-- AI request timeouts
-- AI rate limits
-- AI daily quota limits
-- Malformed or empty AI responses
-- Backend or upstream service unavailability
+```bash
+git clone https://github.com/nnathrin45/COIT20273-AI-Powered-Study-Notes-Generator.git
+cd COIT20273-AI-Powered-Study-Notes-Generator
+```
 
-Where appropriate, students receive clear feedback and retry options without losing their uploaded study document.
+### 2. Prepare the database
 
----
+Create a local MySQL database matching the configured `DB_NAME` (the sample configuration uses `study_notes_db`), then import the tables in [`database/schema.sql`](database/schema.sql). For example, from the MySQL interactive client:
 
-## Technology Stack
+```sql
+CREATE DATABASE IF NOT EXISTS study_notes_db;
+USE study_notes_db;
+SOURCE /absolute/path/to/COIT20273-AI-Powered-Study-Notes-Generator/database/schema.sql;
+```
 
-### Frontend
+Replace the example path with the actual location of `schema.sql` and use the path syntax supported by your MySQL client.
 
-- React 19
-- Vite
-- JavaScript
-- Tailwind CSS
-- React Router
-- Recharts
+### 3. Configure and start the backend
 
-### Backend
+```bash
+cd backend
+npm ci
+```
 
-- Node.js
-- Express.js
-- REST APIs
-- JSON Web Tokens
-- bcrypt
-- Multer
+Copy `backend/.env.example` to `backend/.env` and provide valid values for at least the database settings, `JWT_SECRET`, `FRONTEND_URL`, and any AI/email functionality you plan to test.
 
-### Database
+```bash
+npm run dev
+```
 
-- MySQL
-- mysql2
+The sample backend listens on `http://localhost:5000` unless `PORT` is configured differently. Do **not** commit the `.env` file, API keys, passwords or other secrets.
 
-### Document Processing
+### 4. Start the frontend
 
-- pdf-parse
-- Mammoth
-- Native TXT processing
+In a separate terminal from the repository root:
 
-### AI Integration
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-- Google Gemini
-- Google GenAI SDK
+The frontend uses `http://localhost:5000` as the fallback API base URL. If needed, configure `VITE_API_BASE_URL` in a local frontend environment file to point to the backend you are using.
 
-### Email and Authentication Services
+### 5. Run checks
 
-- Nodemailer
-- Email verification codes
-- Login verification codes
-- Password-reset verification codes
+```bash
+# From backend/
+npm run test:unit       # backend unit tests
+npm test                # regression tests; integration cases need local test prerequisites
 
-### Development and Quality Tools
+# From frontend/
+npm run build           # production frontend build
+```
 
-- Git
-- GitHub
-- GitHub Issues
-- GitHub Pull Requests
-- Node.js automated testing
-- Vite production build verification
-- Browser developer tools
-- Lighthouse accessibility evaluation
+For additional integration/final-verification instructions, see [`backend/tests/README.md`](backend/tests/README.md). **Caution:** `npm run test:final` generates or updates evidence and reports under `testing/`; do not run it merely to inspect existing assessment evidence.
 
 ---
 
-## Project Structure
+## Deployment and demonstration notes
 
-StudyA follows a separated frontend, backend, database, documentation and testing structure to support maintainability, integration and collaborative development.
+### Live deployment
+
+| Service | Address / configuration |
+| --- | --- |
+| **Frontend** | https://studyai-deployment.vercel.app |
+| **Backend API** | https://studya-backend-production.up.railway.app |
+| **Frontend host** | Vercel project `studyai-deployment`; root directory `frontend`; Vite build output `dist` |
+| **Backend host** | Railway service `studya-backend` |
+| **Database** | Railway-hosted MySQL |
+| **Persistent storage** | Railway backend volume mounted at `/data`; `STUDYAI_STORAGE_DIR=/data` |
+
+The app was manually checked on its live deployment for account login, document upload, AI Summary, Flashcards, Practice Quiz and Concept Explanation. The three difficulty levels were exercised for Flashcards, Practice Quiz and Concept Explanation, and a Vercel route-refresh problem was fixed and retested. The public login page was checked in a private/incognito browser session.
+
+These checks demonstrate functioning core workflows, **not** guaranteed uptime, comprehensive penetration testing or tested support for large numbers of simultaneous users. Availability is subject to the hosting providers' plans, credits, resource limits and external services.
+
+### Deployment configuration overview
+
+**Frontend (Vercel):**
+
+- Build from the `frontend` root directory with `npm run build` and publish `dist`.
+- Set `VITE_API_BASE_URL` to the deployed backend API origin.
+- Keep `frontend/vercel.json` for client-side route refreshes.
+
+**Backend (Railway):**
+
+- Start with `npm start` (`node src/server.js`).
+- Supply MySQL connection settings (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) using the Railway database configuration.
+- Set `JWT_SECRET`, `NODE_ENV=production`, `FRONTEND_URL` and `STUDYAI_STORAGE_DIR`.
+- Configure `GEMINI_API_KEY` and, when needed, `GEMINI_MODEL`.
+- Configure either SMTP email variables or `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and `RESEND_FROM_ADDRESS`.
+- The deployed demonstration environment uses `STUDY_REMINDER_WORKER_ENABLED=false`; automatic reminder processing should not be represented as active there.
+
+Environment settings and credentials belong in the hosting providers' protected variable settings, **not in the Git repository**. The tracked `backend/.env.example` primarily illustrates the local SMTP setup and does not list every production-only option mentioned above.
+
+### Email and demonstration limitations
+
+The current production email provider uses Resend's testing sender (`onboarding@resend.dev`). This is suitable for the configured test-recipient workflow but generally **does not support sending verification emails to arbitrary new users** without verifying an appropriate sending domain.
+
+For the capstone evaluation, prepare an **existing demonstration account** and share its credentials privately with the assessors. Confirm in advance how any login verification code will be obtained. Do not put demo credentials, verification codes or API keys in this README.
+
+### Known limitations and future improvements
+
+- AI-generated content is not guaranteed to be factually correct; larger evaluations of educational effectiveness are still needed.
+- The present Resend test sender limits independent registration by other email addresses.
+- The **Saved Materials** frontend route is disabled by a feature flag in the uploaded source snapshot.
+- Study reminder worker execution is disabled in the demonstrated Railway environment.
+- No large-scale load/performance results are claimed.
+- After the critical `proxy-addr` issue was patched, the production dependency audit still reported **three moderate findings** in the `mammoth` / `argparse` / `sprintf-js` dependency chain. These require further review without forcing an incompatible downgrade.
+
+---
+
+## Testing and verification
+
+Testing evidence is stored in [`testing/`](testing/) and [`backend/tests/`](backend/tests/).
+
+| Check | Recorded result | Scope |
+| --- | --- | --- |
+| Automated regression suite | **71 / 71 passed** | Historical verification record in `testing/reports/summary.json` (26 September 2026) |
+| Final verification suite | **33 / 33 passed** | Same report; evidence covering AI, document processing, privacy/consent, errors and quality pipeline |
+| Backend unit tests after security patch | **64 / 64 passed** | Local verification during the October 2026 deployment work |
+| Frontend production build | **Passed** | Development verification and subsequent Vercel production deployment |
+| Production smoke tests | **Core workflows succeeded** | Login, document upload, summary, flashcards, quiz, concept explanation and route refresh |
+
+The regression and unit results refer to **different test selections and verification runs**; they should not be added together or presented as one single run. The archived reports document their own recorded dates and scope.
+
+Testing areas also included authentication, consent enforcement, input and upload validation, cross-user access protection, PDF/DOCX/TXT extraction, AI timeouts and quotas, quiz scoring, responsive behaviour, accessibility and error handling. See the files under `testing/` for the available evidence; not every functionality has been independently reverified on the current production deployment.
+
+The tests do not prove that generated text is always accurate. The application also relies on the availability and behaviour of Google Gemini.
+
+---
+
+## Repository structure
+
+The following is a **condensed view** of the uploaded repository snapshot (rather than an exhaustive listing of every file):
 
 ```text
 COIT20273-AI-Powered-Study-Notes-Generator/
-│
 ├── backend/
-│   │
 │   ├── src/
-│   │   │
-│   │   ├── config/
-│   │   │   └── database.js
-│   │   │
-│   │   ├── controllers/
-│   │   │   ├── ai.controller.js
-│   │   │   ├── consent.controller.js
-│   │   │   ├── note.controller.js
-│   │   │   ├── progress.controller.js
-│   │   │   ├── studyPlan.controller.js
-│   │   │   ├── upload.controller.js
-│   │   │   ├── uploaded.controller.js
-│   │   │   └── user.controller.js
-│   │   │
-│   │   ├── middleware/
-│   │   │   ├── auth.middleware.js
-│   │   │   ├── profilePicture.middleware.js
-│   │   │   └── upload.middleware.js
-│   │   │
-│   │   ├── routes/
-│   │   │   ├── ai.routes.js
-│   │   │   ├── consent.routes.js
-│   │   │   ├── health.routes.js
-│   │   │   ├── note.routes.js
-│   │   │   ├── progress.routes.js
-│   │   │   ├── studyPlan.routes.js
-│   │   │   ├── upload.routes.js
-│   │   │   ├── uploaded.routes.js
-│   │   │   └── user.routes.js
-│   │   │
-│   │   ├── services/
-│   │   │   ├── activity.service.js
-│   │   │   ├── ai.service.js
-│   │   │   ├── consent.service.js
-│   │   │   ├── docx.service.js
-│   │   │   ├── email.service.js
-│   │   │   ├── pdf.service.js
-│   │   │   └── txt.service.js
-│   │   │
-│   │   ├── profile-pictures/
-│   │   │   └── [user profile images]
-│   │   │
-│   │   ├── uploads/
-│   │   │   └── [uploaded study documents]
-│   │   │
+│   │   ├── config/             # MySQL and storage configuration
+│   │   ├── controllers/        # Auth, upload, AI, planner, notifications, progress
+│   │   ├── middleware/         # Authentication and upload handling
+│   │   ├── routes/             # REST endpoint definitions
+│   │   ├── services/           # Gemini, email, extraction, reminders and activity
 │   │   └── server.js
-│   │
 │   ├── tests/
-│   │   │
-│   │   ├── final/
-│   │   │   ├── ai-integration.final.test.js
-│   │   │   ├── document-processing.final.test.js
-│   │   │   ├── error-handling.final.test.js
-│   │   │   ├── privacy-consent.final.test.js
-│   │   │   └── quality-pipeline.final.test.js
-│   │   │
-│   │   ├── helpers/
-│   │   │   ├── api.js
-│   │   │   ├── evidence.js
-│   │   │   └── final-harness.js
-│   │   │
-│   │   ├── integration/
-│   │   │   ├── ai-timeout-handling.test.js
-│   │   │   ├── consent-and-ai-guards.test.js
-│   │   │   ├── quiz-scoring.test.js
-│   │   │   └── upload.test.js
-│   │   │
 │   │   ├── unit/
-│   │   │   ├── ai-service.test.js
-│   │   │   ├── ai-timeout.test.js
-│   │   │   └── extraction-accuracy.test.js
-│   │   │
-│   │   ├── README.md
-│   │   └── run-final.js
-│   │
+│   │   ├── integration/
+│   │   ├── final/
+│   │   └── helpers/
 │   ├── .env.example
-│   ├── .gitignore
 │   ├── package.json
 │   └── package-lock.json
-│
 ├── database/
 │   └── schema.sql
-│
-├── docs/
-│   ├── api-spec.md
-│   ├── architecture-flow-document-processing-ai.md
-│   ├── member2-backend-contribution.md
-│   ├── member2-report2-evidence-mapping.md
-│   ├── requirements-document-processing-ai-integration.md
-│   └── security-testing.md
-│
+├── docs/                    # API, architecture, requirements and project reports
 ├── frontend/
-│   │
-│   ├── public/
-│   │   ├── favicon.svg
-│   │   └── icons.svg
-│   │
+│   ├── public/               # Icons and illustration media
 │   ├── src/
-│   │   │
 │   │   ├── assets/
-│   │   │   ├── hero.png
-│   │   │   ├── react.svg
-│   │   │   ├── studya-logo-light.png
-│   │   │   ├── studya-logo.png
-│   │   │   └── vite.svg
-│   │   │
 │   │   ├── components/
-│   │   │   ├── AIConsent.jsx
-│   │   │   ├── AIConsentRequired.jsx
-│   │   │   ├── AnimatedSelect.jsx
-│   │   │   ├── AppLayout.jsx
-│   │   │   ├── FirstLoginConsentModal.jsx
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   ├── StudyALogo.jsx
-│   │   │   └── ThemeToggle.jsx
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Explanation.jsx
-│   │   │   ├── Flashcards.jsx
-│   │   │   ├── ForgotPassword.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── Privacy.jsx
-│   │   │   ├── Profile.jsx
-│   │   │   ├── Progress.jsx
-│   │   │   ├── Quiz.jsx
-│   │   │   ├── Register.jsx
-│   │   │   ├── SavedMaterials.jsx
-│   │   │   ├── StudyPlanner.jsx
-│   │   │   ├── Summary.jsx
-│   │   │   ├── Upload.jsx
-│   │   │   ├── VerifyEmail.jsx
-│   │   │   └── VerifyLogin.jsx
-│   │   │
-│   │   ├── services/
-│   │   │   ├── aiService.js
-│   │   │   ├── api.js
-│   │   │   ├── authService.js
-│   │   │   ├── consentService.js
-│   │   │   ├── profileService.js
-│   │   │   ├── progressService.js
-│   │   │   ├── studyPlanService.js
-│   │   │   ├── uploadedService.js
-│   │   │   └── uploadService.js
-│   │   │
-│   │   ├── App.css
-│   │   ├── App.jsx
-│   │   ├── index.css
-│   │   └── main.jsx
-│   │
-│   ├── .env.example
-│   ├── .gitignore
-│   ├── eslint.config.js
-│   ├── index.html
+│   │   ├── pages/            # Auth, dashboard, learning tools and details pages
+│   │   ├── services/         # Frontend API clients
+│   │   ├── featureFlags.js   # Saved Materials toggle
+│   │   └── App.jsx           # Frontend routes
+│   ├── vercel.json           # React/Vite route rewrite
 │   ├── package.json
-│   ├── package-lock.json
-│   ├── README.md
-│   └── vite.config.js
-│
+│   └── package-lock.json
 ├── meeting-notes/
-│   └── [team meeting documentation]
-│
 ├── testing/
-│   │
 │   ├── evidence/
-│   │   ├── AI-01-summary-generation.json
-│   │   ├── AI-02-flashcard-generation.json
-│   │   ├── AI-03-practice-quiz-generation.json
-│   │   ├── AI-04-concept-explanation-generation.json
-│   │   ├── AI-05-structured-response-round-trip.json
-│   │   ├── AI-06-output-ownership.json
-│   │   ├── AI-07-cross-user-output-isolation.json
-│   │   │
-│   │   ├── DP-01-pdf-extracted-text.txt
-│   │   ├── DP-02-docx-extracted-text.txt
-│   │   ├── DP-03-txt-extracted-text.txt
-│   │   ├── DP-04-scanned-pdf-rejected.json
-│   │   ├── DP-05-extracted-text-storage.json
-│   │   ├── DP-06-unsupported-file-type-rejected.json
-│   │   ├── DP-07-corrupt-document-handled-safely.json
-│   │   │
-│   │   ├── ERR-01-gemini-timeout.json
-│   │   ├── ERR-02-daily-quota-exhausted.json
-│   │   ├── ERR-03-short-rate-limit.json
-│   │   ├── ERR-04-malformed-ai-response.json
-│   │   ├── ERR-05-empty-ai-response.json
-│   │   ├── ERR-06-upstream-service-unavailable.json
-│   │   ├── ERR-07-consistent-ai-error-contract.json
-│   │   ├── ERR-08-invalid-input-handling.json
-│   │   │
-│   │   ├── PRIV-01-consent-required-before-processing.json
-│   │   ├── PRIV-02-revoked-consent-blocks-processing.json
-│   │   ├── PRIV-03-prompt-sent-to-model.txt
-│   │   ├── PRIV-04-responsible-ai-labelling.json
-│   │   ├── PRIV-05-no-credentials-in-api-responses.json
-│   │   ├── PRIV-06-upstream-error-does-not-leak-credentials.json
-│   │   ├── PRIV-07-secrets-excluded-from-version-control.json
-│   │   │
-│   │   ├── QA-01-full-pipeline-end-to-end.json
-│   │   ├── QA-02-quiz-marking-against-a-known-key.json
-│   │   ├── QA-03-consent-enforced-across-all-content-types.json
-│   │   └── QA-04-ai-accuracy-review-artefact.json
-│   │
 │   ├── fixtures/
-│   │   ├── source/
-│   │   │   ├── doc1-software-testing.txt
-│   │   │   ├── doc2-database-design.txt
-│   │   │   └── doc3-computer-networks.txt
-│   │   │
-│   │   ├── known-doc1-software-testing.txt
-│   │   ├── known-doc2-database-design.docx
-│   │   ├── known-doc3-computer-networks.pdf
-│   │   ├── sample-study-material.txt
-│   │   ├── scanned-no-text.pdf
-│   │   └── two-page-text.pdf
-│   │
 │   ├── manual-verification/
-│   │   ├── ERR-01-live-timeout.png
-│   │   ├── FR16-01-summary.png
-│   │   ├── FR16-02-flashcards-1.png
-│   │   ├── FR16-03-flashcards-2.png
-│   │   ├── FR16-04-quiz-1.png
-│   │   ├── FR16-05-quiz-2.png
-│   │   ├── FR16-06-explanation.png
-│   │   └── README.md
-│   │
 │   ├── reports/
-│   │   ├── final-verification-report.html
-│   │   ├── final.junit.xml
-│   │   ├── regression.junit.xml
-│   │   └── summary.json
-│   │
-│   ├── ai-accuracy-review-2026-09-12.md
-│   ├── COIT20273-API.postman_collection.json
-│   │
-│   ├── member1-accessibility-testing.md
-│   ├── member1-auth-security-testing.md
-│   ├── member1-final-frontend-refinement-testing.md
-│   ├── member1-final-lecturer-feedback-verification.md
-│   ├── member1-progress-backend-testing.md
-│   ├── member1-progress-frontend-testing.md
-│   ├── member1-responsive-browser-testing.md
-│   ├── member1-saved-materials-integration-testing.md
-│   ├── member1-study-planner-backend-testing.md
-│   ├── member1-study-planner-integration-testing.md
-│   ├── member1-uploaded-file-deletion-testing.md
-│   ├── member1-usability-testing.md
-│   │
-│   ├── postman-test-notes.txt
-│   ├── run-verification-suite.js
-│   ├── test-log-document-processing-ai.md
-│   ├── verification-results-2026-09-10.json
-│   ├── verification-results-2026-09-12.json
-│   ├── verification-results-2026-09-12-run2.json
-│   └── verify-ai-generation.js
-│
+│   └── *.md                  # Test logs and member verification notes
 ├── .gitignore
 └── README.md
 ```
 
-### Structure Overview
+The repository separates the frontend, backend, schema, documentation and testing assets. Local environment files, dependency folders, runtime uploads and deployment credentials must remain outside version control.
 
-- **`backend/`** — Node.js/Express backend containing authentication, document processing, AI integration, consent, study planning, progress tracking, uploaded-material management and API functionality.
-- **`database/`** — MySQL database schema used by StudyA.
-- **`docs/`** — API, architecture, requirements, security and project contribution documentation.
-- **`frontend/`** — React/Vite user interface containing StudyA pages, reusable components, application services, authentication interfaces and Light/Dark Theme support.
-- **`meeting-notes/`** — Team meeting documentation and collaboration records.
-- **`testing/`** — Automated tests, test fixtures, manual-verification evidence, accessibility/usability testing, integration evidence and generated verification reports.
-
-Runtime-generated files such as uploaded study documents, profile images, build output, dependency folders and local environment files are not individually shown in this structure.
-
-The project separates frontend, backend, database, documentation and testing artefacts to support maintainability and team collaboration.
-
----
-
-## Live Application
-
-StudyA is being prepared for live deployment ahead of the final project demonstration.
-
-**Live Application:** Deployment URL will be added here once the production deployment is available.
-
-The deployed application will be used for the final StudyA demonstration and system evaluation.
-
----
-
-## Testing and Verification
-
-StudyA has been tested throughout development using automated testing, integration testing and manual frontend verification.
-
-### Latest Verified Results
-
-The latest verified checks include:
-
-- **Backend automated regression tests: 71 / 71 passed**
-- **Backend test failures: 0**
-- **Frontend production build: passed**
-- Registration and authentication workflows manually verified
-- Login verification / 2FA workflow manually verified
-- Forgot Password and password-reset workflow manually verified
-- Light Mode password-reset email manually verified
-- Light/Dark Theme behaviour manually verified
-- Theme-aware authentication emails manually verified
-
-The frontend production build completes successfully. The existing Vite large-chunk advisory is non-blocking and does not prevent successful production compilation.
-
----
-
-## Testing Areas
-
-Testing and evaluation performed during development includes:
-
-- Authentication testing
-- Registration validation
-- Email verification
-- Login verification / 2FA
-- Forgot Password and password reset
-- Protected-route testing
-- Invalid and expired authentication handling
-- User-specific data-isolation testing
-- Cross-user resource-access testing
-- Uploaded-file ownership testing
-- Upload validation
-- Unsupported-file testing
-- File-size validation
-- Unreadable-document handling
-- PDF, DOCX and TXT processing
-- AI consent enforcement
-- AI Summary generation
-- AI Flashcard generation
-- Practice Quiz generation
-- Quiz submission and scoring
-- Concept Explanation generation
-- Saved Materials integration
-- Study Planner integration
-- Progress integration
-- Dashboard integration
-- Uploaded-file deletion
-- AI timeout handling
-- AI retry and recovery behaviour
-- Accessibility testing
-- Keyboard-navigation testing
-- Responsive-interface testing
-- Cross-browser testing
-- Usability testing
-- Frontend regression testing
-- Production frontend build verification
-
-Testing evidence and generated reports are maintained in the repository's `testing/` directory.
-
----
-
-## Current Final Testing Status
-
-### Completed
-
-- Frontend feature implementation
-- Frontend/backend integration
-- Frontend/AI integration
-- Authentication interface integration
-- Email verification workflow
-- Login 2FA workflow
-- Forgot Password workflow
-- Light/Dark Theme implementation
-- Theme-aware authentication emails
-- Frontend production build verification
-- Backend automated regression testing
-- Major frontend usability testing
-- Accessibility review
-- Responsive-interface testing
-- Cross-browser frontend testing
-- Frontend regression testing
-- AI error/recovery verification
-
-### Final Team Stage
-
-The project is currently in its final team integration and verification stage.
-
-Remaining team activity focuses on:
-
-- Final full-system testing across all application pages
-- End-to-end workflow verification
-- Final UI consistency review
-- Testing the deployed production environment
-- Recording and resolving any issues identified during final system testing
-- Preparing the application for the final demonstration
-
-This distinction ensures that completed subsystem testing is documented without representing the final whole-team system verification as complete before that activity has been performed.
-
----
-
-## Main Student Workflow
-
-A typical StudyA workflow is:
+## Main student workflow
 
 ```text
-Register
-   |
-Verify Email
-   |
-Login
-   |
-Login Verification
-   |
-Dashboard
-   |
-Upload Study Material
-   |
-AI Consent
-   |
-Generate Study Content
-   |
-Summary / Flashcards / Practice Quiz / Concept Explanation
-   |
-Saved Materials / Study Planner
-   |
-Progress
-   |
-Sign Out
+Existing account / registration (where email delivery is available)
+    ↓
+Sign in and complete login verification
+    ↓
+Dashboard → Upload PDF / DOCX / TXT
+    ↓
+Review AI-processing consent
+    ↓
+Choose a study activity:
+    AI Summary | Flashcards | Practice Quiz | Concept Explanation
+    ↓
+Review generated content and, where relevant, answer quiz questions
+    ↓
+Use study plans, progress tracking and available material-management pages
+    ↓
+Sign out
 ```
 
-Students can return to previously uploaded materials and generated study resources through their authenticated account.
+## Collaboration and project history
 
----
+The team used feature branches, incremental commits, GitHub Issues, Pull Requests, review and testing before merging into the shared `main` branch. The cloud-deployment changes were merged through **Pull Request #137**, including persistent backend storage configuration, the Resend email integration, the `proxy-addr` security patch and Vercel route rewrites.
 
-## Git and Development Workflow
+The repository's Git history, technical documentation and testing artefacts provide additional evidence of the development and integration process.
 
-The project was developed collaboratively using Git and GitHub.
+## Academic context
 
-The team used:
+Developed for **COIT20273 — Capstone Project**, **CQUniversity Australia**, as a collaborative academic application. Its functionality demonstrates requirements analysis, UI/UX design, software implementation, database and API integration, AI-assisted content generation, testing, and cloud deployment.
 
-- Separate feature branches
-- Incremental commits
-- GitHub Issues for task tracking
-- Pull Requests for integration
-- Code review before merging
-- Testing before and after integration
-- A shared `main` branch for completed work
-- Repository documentation and testing artefacts for evidence
-
-Completed feature branches were merged into `main` through Pull Requests. Obsolete branches may be removed after verification that their work has been safely merged, while the Git commit and Pull Request history remains preserved.
-
----
-
-## Repository
-
-**GitHub Repository:**  
-https://github.com/nnathrin45/COIT20273-AI-Powered-Study-Notes-Generator
-
-The repository contains the application source code, database schema, project documentation, meeting notes, testing evidence and verification reports.
-
----
-
-## Academic Project
-
-StudyA was developed as part of:
-
-**COIT20273 — Capstone Project**
-
-**CQUniversity Australia**
-
-The project demonstrates the analysis, design, implementation, integration and evaluation of an AI-supported information technology solution.
-
-The application was developed for academic purposes as a collaborative capstone project.
+**Source code:** https://github.com/nnathrin45/COIT20273-AI-Powered-Study-Notes-Generator  
+**Live application:** https://studyai-deployment.vercel.app
