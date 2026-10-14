@@ -2,11 +2,11 @@
   "test_id": "QA-02",
   "title": "Quiz marking against a known key",
   "issue": "#119",
-  "captured_at": "2026-09-26T11:05:16.213Z",
+  "captured_at": "2026-10-14T00:13:05.619Z",
   "checking": "the score returned matches the answer key exactly, including which questions were marked correct",
   "request": {
     "method": "POST",
-    "endpoint": "/api/ai/quiz/48/attempt",
+    "endpoint": "/api/ai/quiz/68/attempt",
     "body": {
       "answers": [
         "The stroma",
@@ -21,8 +21,8 @@
       "status": "success",
       "message": "Quiz attempt recorded",
       "attempt": {
-        "attempt_id": 26,
-        "output_id": 48,
+        "attempt_id": 33,
+        "output_id": 68,
         "score": 2,
         "total": 3,
         "percentage": 67,

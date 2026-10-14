@@ -1,7 +1,7 @@
 Test ID   : DP-01
 Artefact  : PDF-extracted-text
 Issue     : #119
-Captured  : 2026-09-26T11:05:09.002Z
+Captured  : 2026-10-14T00:13:02.364Z
 Fixture   : known-doc3-computer-networks.pdf
 Source    : testing/fixtures/source/doc3-computer-networks.txt
 Source chars: 19949

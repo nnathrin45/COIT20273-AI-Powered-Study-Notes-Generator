@@ -23,6 +23,19 @@ const BACKEND = path.join(__dirname, "..", "..");
 // require. The environment must be loaded before anything pulls that module in.
 require("dotenv").config({ path: path.join(BACKEND, ".env") });
 
+// Must be required before src/config/database: api.js is what points
+// process.env.DB_NAME at the test database instead of the development one,
+// and it does that as a side effect of being required, not lazily. database.js
+// reads process.env.DB_NAME once, at require time, to build its connection
+// pool. If database.js were required first, its pool would be created against
+// the development database, while api.js's spawned server and HTTP calls would
+// still write to the test database — so a consent record granted over HTTP
+// would exist in one database while generateOutput(), called directly through
+// this harness, checked for it in the other, and every generation call would
+// fail with a spurious 403 CONSENT_REQUIRED. This exact failure mode is what
+// happened before this ordering was fixed.
+const api = require("./api");
+
 const db = require("../../src/config/database");
 const aiService = require("../../src/services/ai.service");
 
@@ -54,8 +67,6 @@ aiService.generate = async (text, outputType, options = {}) => {
 
 // Required only after the stub is in place
 const aiController = require("../../src/controllers/ai.controller");
-
-const api = require("./api");
 
 const setBehaviour = (fn) => { behaviour = fn; };
 const getLastCall = () => lastCall;
