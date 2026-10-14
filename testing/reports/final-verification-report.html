@@ -26,16 +26,16 @@
 
 <h1>Final Verification Report</h1>
 <p class="sub">Member 3 — Document Processing &amp; AI Integration · COIT20273 AI-Powered Study Notes Generator</p>
-<p class="sub">Run started 2026-09-26T11:04:53.072Z · duration 23.5s · traced to GitHub issue #119</p>
+<p class="sub">Run started 2026-10-14T00:12:55.087Z · duration 10.8s · traced to GitHub issue #119</p>
 
 <div class="banner ok">
   ALL TESTS PASSED
 </div>
 
 <div class="cards">
-  <div class="card"><div class="n">71</div><div class="l">Regression tests</div></div>
+  <div class="card"><div class="n">103</div><div class="l">Regression tests</div></div>
   <div class="card"><div class="n">33</div><div class="l">Final verification tests</div></div>
-  <div class="card"><div class="n">104</div><div class="l">Total executed</div></div>
+  <div class="card"><div class="n">136</div><div class="l">Total executed</div></div>
   <div class="card"><div class="n">0</div><div class="l">Failures</div></div>
 </div>
 
@@ -56,7 +56,7 @@
         <td>summary generation stores and returns prose content (FR9.1, issue #119)</td>
         <td class="item">Recheck Summary generation</td>
         <td class="status">PASS</td>
-        <td class="num">1.202s</td>
+        <td class="num">0.339s</td>
         <td class="ev"><a href="../evidence/AI-01-summary-generation.json">AI-01-summary-generation.json</a></td>
       </tr>
       <tr class="pass">
@@ -64,7 +64,7 @@
         <td>flashcard generation returns structured question and answer records (FR10.1)</td>
         <td class="item">Recheck Flashcard generation</td>
         <td class="status">PASS</td>
-        <td class="num">0.007s</td>
+        <td class="num">0.002s</td>
         <td class="ev"><a href="../evidence/AI-02-flashcard-generation.json">AI-02-flashcard-generation.json</a></td>
       </tr>
       <tr class="pass">
@@ -72,7 +72,7 @@
         <td>practice quiz generation returns scoreable questions (FR11.1)</td>
         <td class="item">Recheck Practice Quiz generation</td>
         <td class="status">PASS</td>
-        <td class="num">0.009s</td>
+        <td class="num">0.002s</td>
         <td class="ev"><a href="../evidence/AI-03-practice-quiz-generation.json">AI-03-practice-quiz-generation.json</a></td>
       </tr>
       <tr class="pass">
@@ -80,7 +80,7 @@
         <td>concept explanation reflects the requested concept and level (FR12.1)</td>
         <td class="item">Recheck Concept Explanation generation</td>
         <td class="status">PASS</td>
-        <td class="num">0.009s</td>
+        <td class="num">0.004s</td>
         <td class="ev"><a href="../evidence/AI-04-concept-explanation-generation.json">AI-04-concept-explanation-generation.json</a></td>
       </tr>
       <tr class="pass">
@@ -88,7 +88,7 @@
         <td>structured content survives storage and is returned parsed (FR10.1, FR11.1)</td>
         <td class="item">Verify generated structured responses are parsed correctly</td>
         <td class="status">PASS</td>
-        <td class="num">0.011s</td>
+        <td class="num">0.004s</td>
         <td class="ev"><a href="../evidence/AI-05-structured-response-round-trip.json">AI-05-structured-response-round-trip.json</a></td>
       </tr>
       <tr class="pass">
@@ -96,7 +96,7 @@
         <td>stored outputs stay bound to the generating user and document (NFR3)</td>
         <td class="item">Verify saved AI outputs remain associated with the correct user/document</td>
         <td class="status">PASS</td>
-        <td class="num">0.007s</td>
+        <td class="num">0.002s</td>
         <td class="ev"><a href="../evidence/AI-06-output-ownership.json">AI-06-output-ownership.json</a></td>
       </tr>
       <tr class="pass">
@@ -104,7 +104,7 @@
         <td>another user cannot retrieve outputs generated from a document they do not own (NFR3)</td>
         <td class="item">Verify saved AI outputs remain associated with the correct user/document</td>
         <td class="status">PASS</td>
-        <td class="num">0.101s</td>
+        <td class="num">0.067s</td>
         <td class="ev"><a href="../evidence/AI-07-cross-user-output-isolation.json">AI-07-cross-user-output-isolation.json</a></td>
       </tr></tbody>
 </table>
@@ -117,7 +117,7 @@
         <td>PDF extraction recovers the source document in full (FR8, issue #119)</td>
         <td class="item">Recheck PDF extraction</td>
         <td class="status">PASS</td>
-        <td class="num">1.232s</td>
+        <td class="num">0.636s</td>
         <td class="ev"><a href="../evidence/DP-01-pdf-extracted-text.txt">DP-01-pdf-extracted-text.txt</a></td>
       </tr>
       <tr class="pass">
@@ -125,7 +125,7 @@
         <td>DOCX extraction recovers the source document in full (FR8, issue #119)</td>
         <td class="item">Recheck DOCX extraction</td>
         <td class="status">PASS</td>
-        <td class="num">0.045s</td>
+        <td class="num">0.021s</td>
         <td class="ev"><a href="../evidence/DP-02-docx-extracted-text.txt">DP-02-docx-extracted-text.txt</a></td>
       </tr>
       <tr class="pass">
@@ -133,7 +133,7 @@
         <td>TXT extraction recovers the source document in full (FR8, issue #119)</td>
         <td class="item">Recheck TXT processing</td>
         <td class="status">PASS</td>
-        <td class="num">0.005s</td>
+        <td class="num">0.001s</td>
         <td class="ev"><a href="../evidence/DP-03-txt-extracted-text.txt">DP-03-txt-extracted-text.txt</a></td>
       </tr>
       <tr class="pass">
@@ -141,7 +141,7 @@
         <td>a scanned, image-only PDF is rejected with actionable advice (FR8.4, SR-DP4)</td>
         <td class="item">Verify unreadable/scanned/no-text document handling</td>
         <td class="status">PASS</td>
-        <td class="num">0.163s</td>
+        <td class="num">0.098s</td>
         <td class="ev"><a href="../evidence/DP-04-scanned-pdf-rejected.json">DP-04-scanned-pdf-rejected.json</a></td>
       </tr>
       <tr class="pass">
@@ -149,7 +149,7 @@
         <td>extracted text is stored intact and retrievable (FR8, issue #119)</td>
         <td class="item">Verify extracted text is stored and processed correctly</td>
         <td class="status">PASS</td>
-        <td class="num">0.097s</td>
+        <td class="num">0.076s</td>
         <td class="ev"><a href="../evidence/DP-05-extracted-text-storage.json">DP-05-extracted-text-storage.json</a></td>
       </tr>
       <tr class="pass">
@@ -157,7 +157,7 @@
         <td>an unsupported file type is rejected before any processing (FR6.1)</td>
         <td class="item">Recheck malformed or unsupported document behaviour</td>
         <td class="status">PASS</td>
-        <td class="num">0.068s</td>
+        <td class="num">0.061s</td>
         <td class="ev"><a href="../evidence/DP-06-unsupported-file-type-rejected.json">DP-06-unsupported-file-type-rejected.json</a></td>
       </tr>
       <tr class="pass">
@@ -165,7 +165,7 @@
         <td>a corrupt file with an accepted extension fails safely (FR6.1, NFR5)</td>
         <td class="item">Recheck malformed or unsupported document behaviour</td>
         <td class="status">PASS</td>
-        <td class="num">0.076s</td>
+        <td class="num">0.062s</td>
         <td class="ev"><a href="../evidence/DP-07-corrupt-document-handled-safely.json">DP-07-corrupt-document-handled-safely.json</a></td>
       </tr></tbody>
 </table>
@@ -178,7 +178,7 @@
         <td>Gemini timeout returns 504 AI_TIMEOUT and preserves the document (NFR5, issue #119)</td>
         <td class="item">Recheck Gemini timeout handling</td>
         <td class="status">PASS</td>
-        <td class="num">1.461s</td>
+        <td class="num">0.341s</td>
         <td class="ev"><a href="../evidence/ERR-01-gemini-timeout.json">ERR-01-gemini-timeout.json</a></td>
       </tr>
       <tr class="pass">
@@ -186,7 +186,7 @@
         <td>Daily quota exhausted returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)</td>
         <td class="item">Recheck quota/rate-limit handling</td>
         <td class="status">PASS</td>
-        <td class="num">0.008s</td>
+        <td class="num">0.002s</td>
         <td class="ev"><a href="../evidence/ERR-02-daily-quota-exhausted.json">ERR-02-daily-quota-exhausted.json</a></td>
       </tr>
       <tr class="pass">
@@ -194,7 +194,7 @@
         <td>Short rate limit returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)</td>
         <td class="item">Recheck quota/rate-limit handling</td>
         <td class="status">PASS</td>
-        <td class="num">0.005s</td>
+        <td class="num">0.002s</td>
         <td class="ev"><a href="../evidence/ERR-03-short-rate-limit.json">ERR-03-short-rate-limit.json</a></td>
       </tr>
       <tr class="pass">
@@ -202,7 +202,7 @@
         <td>Malformed AI response returns 502 AI_MALFORMED_RESPONSE and preserves the document (NFR5, issue #119)</td>
         <td class="item">Verify malformed AI responses are handled safely</td>
         <td class="status">PASS</td>
-        <td class="num">0.005s</td>
+        <td class="num">0.001s</td>
         <td class="ev"><a href="../evidence/ERR-04-malformed-ai-response.json">ERR-04-malformed-ai-response.json</a></td>
       </tr>
       <tr class="pass">
@@ -210,7 +210,7 @@
         <td>Empty AI response returns 502 AI_EMPTY_RESPONSE and preserves the document (NFR5, issue #119)</td>
         <td class="item">Verify empty AI responses are handled safely</td>
         <td class="status">PASS</td>
-        <td class="num">0.005s</td>
+        <td class="num">0.001s</td>
         <td class="ev"><a href="../evidence/ERR-05-empty-ai-response.json">ERR-05-empty-ai-response.json</a></td>
       </tr>
       <tr class="pass">
@@ -218,7 +218,7 @@
         <td>Upstream service unavailable returns 503 AI_UNAVAILABLE and preserves the document (NFR5, issue #119)</td>
         <td class="item">Verify AI errors return consistent API responses</td>
         <td class="status">PASS</td>
-        <td class="num">0.004s</td>
+        <td class="num">0.001s</td>
         <td class="ev"><a href="../evidence/ERR-06-upstream-service-unavailable.json">ERR-06-upstream-service-unavailable.json</a></td>
       </tr>
       <tr class="pass">
@@ -226,7 +226,7 @@
         <td>every AI failure mode shares one response contract (NFR5, issue #119)</td>
         <td class="item">Verify AI errors return consistent API responses</td>
         <td class="status">PASS</td>
-        <td class="num">0.010s</td>
+        <td class="num">0.004s</td>
         <td class="ev"><a href="../evidence/ERR-07-consistent-ai-error-contract.json">ERR-07-consistent-ai-error-contract.json</a></td>
       </tr>
       <tr class="pass">
@@ -234,7 +234,7 @@
         <td>invalid input is rejected before the model is reached (FR12.1, issue #119)</td>
         <td class="item">Review AI/document-processing endpoints for invalid input handling</td>
         <td class="status">PASS</td>
-        <td class="num">0.005s</td>
+        <td class="num">0.002s</td>
         <td class="ev"><a href="../evidence/ERR-08-invalid-input-handling.json">ERR-08-invalid-input-handling.json</a></td>
       </tr></tbody>
 </table>
@@ -247,7 +247,7 @@
         <td>generation is refused when consent has never been recorded (FR17.1)</td>
         <td class="item">Verify AI requests cannot proceed without active consent</td>
         <td class="status">PASS</td>
-        <td class="num">1.180s</td>
+        <td class="num">0.334s</td>
         <td class="ev"><a href="../evidence/PRIV-01-consent-required-before-processing.json">PRIV-01-consent-required-before-processing.json</a></td>
       </tr>
       <tr class="pass">
@@ -255,7 +255,7 @@
         <td>revoking consent blocks further processing immediately (FR17.2)</td>
         <td class="item">Verify revoked consent prevents new AI processing</td>
         <td class="status">PASS</td>
-        <td class="num">0.109s</td>
+        <td class="num">0.075s</td>
         <td class="ev"><a href="../evidence/PRIV-02-revoked-consent-blocks-processing.json">PRIV-02-revoked-consent-blocks-processing.json</a></td>
       </tr>
       <tr class="pass">
@@ -263,7 +263,7 @@
         <td>only the study material is sent to the model, with no account data (NFR3, privacy)</td>
         <td class="item">Verify only required study-material content is sent for AI processing</td>
         <td class="status">PASS</td>
-        <td class="num">0.098s</td>
+        <td class="num">0.066s</td>
         <td class="ev"><a href="../evidence/PRIV-03-prompt-sent-to-model.txt">PRIV-03-prompt-sent-to-model.txt</a></td>
       </tr>
       <tr class="pass">
@@ -271,7 +271,7 @@
         <td>generated content is labelled and carries a disclaimer (FR16.1)</td>
         <td class="item">Recheck responsible-AI labels/disclaimers in returned data</td>
         <td class="status">PASS</td>
-        <td class="num">0.114s</td>
+        <td class="num">0.077s</td>
         <td class="ev"><a href="../evidence/PRIV-04-responsible-ai-labelling.json">PRIV-04-responsible-ai-labelling.json</a></td>
       </tr>
       <tr class="pass">
@@ -279,7 +279,7 @@
         <td>no credential is exposed in a successful API response (security)</td>
         <td class="item">Confirm sensitive credentials/API keys are not exposed</td>
         <td class="status">PASS</td>
-        <td class="num">0.112s</td>
+        <td class="num">0.076s</td>
         <td class="ev"><a href="../evidence/PRIV-05-no-credentials-in-api-responses.json">PRIV-05-no-credentials-in-api-responses.json</a></td>
       </tr>
       <tr class="pass">
@@ -287,7 +287,7 @@
         <td>an upstream failure does not leak the API key into the error response (security, NFR5)</td>
         <td class="item">Confirm sensitive credentials/API keys are not exposed</td>
         <td class="status">PASS</td>
-        <td class="num">0.096s</td>
+        <td class="num">0.064s</td>
         <td class="ev"><a href="../evidence/PRIV-06-upstream-error-does-not-leak-credentials.json">PRIV-06-upstream-error-does-not-leak-credentials.json</a></td>
       </tr>
       <tr class="pass">
@@ -295,7 +295,7 @@
         <td>the environment file is excluded from version control (security)</td>
         <td class="item">Confirm sensitive credentials/API keys are not exposed</td>
         <td class="status">PASS</td>
-        <td class="num">0.107s</td>
+        <td class="num">0.090s</td>
         <td class="ev"><a href="../evidence/PRIV-07-secrets-excluded-from-version-control.json">PRIV-07-secrets-excluded-from-version-control.json</a></td>
       </tr></tbody>
 </table>
@@ -308,7 +308,7 @@
         <td>the full document-to-AI-output pipeline completes end to end (issue #119 readiness)</td>
         <td class="item">Confirm Member 3 subsystem readiness</td>
         <td class="status">PASS</td>
-        <td class="num">1.477s</td>
+        <td class="num">0.346s</td>
         <td class="ev"><a href="../evidence/QA-01-full-pipeline-end-to-end.json">QA-01-full-pipeline-end-to-end.json</a></td>
       </tr>
       <tr class="pass">
@@ -316,7 +316,7 @@
         <td>quiz marking is objectively correct against a known answer key (FR11.2)</td>
         <td class="item">Recheck quiz scoring tests</td>
         <td class="status">PASS</td>
-        <td class="num">0.101s</td>
+        <td class="num">0.075s</td>
         <td class="ev"><a href="../evidence/QA-02-quiz-marking-against-a-known-key.json">QA-02-quiz-marking-against-a-known-key.json</a></td>
       </tr>
       <tr class="pass">
@@ -324,7 +324,7 @@
         <td>consent is enforced for all four content types (FR17, issue #119)</td>
         <td class="item">Recheck consent and AI guard tests</td>
         <td class="status">PASS</td>
-        <td class="num">0.081s</td>
+        <td class="num">0.063s</td>
         <td class="ev"><a href="../evidence/QA-03-consent-enforced-across-all-content-types.json">QA-03-consent-enforced-across-all-content-types.json</a></td>
       </tr>
       <tr class="pass">
@@ -332,7 +332,7 @@
         <td>the recorded AI accuracy review is present and complete (risk R1, FR9–FR12)</td>
         <td class="item">Review AI output accuracy against source documents</td>
         <td class="status">PASS</td>
-        <td class="num">0.003s</td>
+        <td class="num">0.000s</td>
         <td class="ev"><a href="../evidence/QA-04-ai-accuracy-review-artefact.json">QA-04-ai-accuracy-review-artefact.json</a></td>
       </tr></tbody>
 </table>
@@ -345,118 +345,118 @@
  <thead><tr><th>Test</th><th>Status</th><th>Time</th></tr></thead>
  <tbody>
   <tr class="pass">
-   <td>a timeout is reported as 504 AI_TIMEOUT and marked retryable (T-23, NFR5)</td><td class="status">PASS</td><td class="num">1.474s</td>
+   <td>a timeout is reported as 504 AI_TIMEOUT and marked retryable (T-23, NFR5)</td><td class="status">PASS</td><td class="num">0.599s</td>
   </tr>
   <tr class="pass">
-   <td>the uploaded document survives a timeout (NFR5, T-23)</td><td class="status">PASS</td><td class="num">0.091s</td>
+   <td>the uploaded document survives a timeout (NFR5, T-23)</td><td class="status">PASS</td><td class="num">0.074s</td>
   </tr>
   <tr class="pass">
-   <td>no partial output is stored when a generation times out (T-23)</td><td class="status">PASS</td><td class="num">0.115s</td>
+   <td>no partial output is stored when a generation times out (T-23)</td><td class="status">PASS</td><td class="num">0.076s</td>
   </tr>
   <tr class="pass">
-   <td>a retry after a timeout succeeds against the same document (NFR5, T-23)</td><td class="status">PASS</td><td class="num">0.150s</td>
+   <td>a retry after a timeout succeeds against the same document (NFR5, T-23)</td><td class="status">PASS</td><td class="num">0.077s</td>
   </tr>
   <tr class="pass">
-   <td>consent starts unrecorded and is not an error (FR17.1)</td><td class="status">PASS</td><td class="num">1.521s</td>
+   <td>consent starts unrecorded and is not an error (FR17.1)</td><td class="status">PASS</td><td class="num">0.396s</td>
   </tr>
   <tr class="pass">
-   <td>consent is recorded and retrievable (FR17.1, NFR11)</td><td class="status">PASS</td><td class="num">0.087s</td>
+   <td>consent is recorded and retrievable (FR17.1, NFR11)</td><td class="status">PASS</td><td class="num">0.060s</td>
   </tr>
   <tr class="pass">
-   <td>consent history is append-only, so the latest decision wins (NFR11)</td><td class="status">PASS</td><td class="num">0.124s</td>
+   <td>consent history is append-only, so the latest decision wins (NFR11)</td><td class="status">PASS</td><td class="num">0.068s</td>
   </tr>
   <tr class="pass">
-   <td>an invalid consent value is rejected (FR17.1)</td><td class="status">PASS</td><td class="num">0.068s</td>
+   <td>an invalid consent value is rejected (FR17.1)</td><td class="status">PASS</td><td class="num">0.060s</td>
   </tr>
   <tr class="pass">
-   <td>generation is refused when consent has never been given (FR17.1, T-20)</td><td class="status">PASS</td><td class="num">0.084s</td>
+   <td>generation is refused when consent has never been given (FR17.1, T-20)</td><td class="status">PASS</td><td class="num">0.065s</td>
   </tr>
   <tr class="pass">
-   <td>generation is refused again after consent is revoked (FR17.2, T-22)</td><td class="status">PASS</td><td class="num">0.116s</td>
+   <td>generation is refused again after consent is revoked (FR17.2, T-22)</td><td class="status">PASS</td><td class="num">0.069s</td>
   </tr>
   <tr class="pass">
-   <td>consent is enforced for every output type, not only summaries (FR17)</td><td class="status">PASS</td><td class="num">0.133s</td>
+   <td>consent is enforced for every output type, not only summaries (FR17)</td><td class="status">PASS</td><td class="num">0.069s</td>
   </tr>
   <tr class="pass">
-   <td>an unsupported output type is rejected before consent is considered (T-30)</td><td class="status">PASS</td><td class="num">0.003s</td>
+   <td>an unsupported output type is rejected before consent is considered (T-30)</td><td class="status">PASS</td><td class="num">0.001s</td>
   </tr>
   <tr class="pass">
-   <td>a missing file_id is rejected</td><td class="status">PASS</td><td class="num">0.013s</td>
+   <td>a missing file_id is rejected</td><td class="status">PASS</td><td class="num">0.001s</td>
   </tr>
   <tr class="pass">
-   <td>an explanation without a concept is rejected (FR12.1, T-44)</td><td class="status">PASS</td><td class="num">0.020s</td>
+   <td>an explanation without a concept is rejected (FR12.1, T-44)</td><td class="status">PASS</td><td class="num">0.004s</td>
   </tr>
   <tr class="pass">
-   <td>an explanation with an unrecognised level is rejected (FR12.1, T-45)</td><td class="status">PASS</td><td class="num">0.031s</td>
+   <td>an explanation with an unrecognised level is rejected (FR12.1, T-45)</td><td class="status">PASS</td><td class="num">0.005s</td>
   </tr>
   <tr class="pass">
-   <td>a document belonging to another user is reported as not found (NFR3, T-39)</td><td class="status">PASS</td><td class="num">0.096s</td>
+   <td>a document belonging to another user is reported as not found (NFR3, T-39)</td><td class="status">PASS</td><td class="num">0.062s</td>
   </tr>
   <tr class="pass">
-   <td>generation against a file with no extracted text advises re-uploading (FR8.4)</td><td class="status">PASS</td><td class="num">0.037s</td>
+   <td>generation against a file with no extracted text advises re-uploading (FR8.4)</td><td class="status">PASS</td><td class="num">0.007s</td>
   </tr>
   <tr class="pass">
-   <td>the AI endpoints require authentication (NFR2, T-13)</td><td class="status">PASS</td><td class="num">0.048s</td>
+   <td>the AI endpoints require authentication (NFR2, T-13)</td><td class="status">PASS</td><td class="num">0.005s</td>
   </tr>
   <tr class="pass">
-   <td>a fully correct attempt scores every question (FR11.2, T-34)</td><td class="status">PASS</td><td class="num">1.486s</td>
+   <td>a fully correct attempt scores every question (FR11.2, T-34)</td><td class="status">PASS</td><td class="num">0.341s</td>
   </tr>
   <tr class="pass">
-   <td>a wholly incorrect attempt scores zero (FR11.2)</td><td class="status">PASS</td><td class="num">0.010s</td>
+   <td>a wholly incorrect attempt scores zero (FR11.2)</td><td class="status">PASS</td><td class="num">0.003s</td>
   </tr>
   <tr class="pass">
-   <td>a partial attempt records unanswered questions as incorrect (FR11.2, T-35)</td><td class="status">PASS</td><td class="num">0.019s</td>
+   <td>a partial attempt records unanswered questions as incorrect (FR11.2, T-35)</td><td class="status">PASS</td><td class="num">0.028s</td>
   </tr>
   <tr class="pass">
-   <td>per-question results identify which answers were correct (FR11.2)</td><td class="status">PASS</td><td class="num">0.015s</td>
+   <td>per-question results identify which answers were correct (FR11.2)</td><td class="status">PASS</td><td class="num">0.003s</td>
   </tr>
   <tr class="pass">
-   <td>each attempt is stored separately so retakes are preserved (FR11.2, T-36)</td><td class="status">PASS</td><td class="num">0.129s</td>
+   <td>each attempt is stored separately so retakes are preserved (FR11.2, T-36)</td><td class="status">PASS</td><td class="num">0.076s</td>
   </tr>
   <tr class="pass">
-   <td>the number of answers must match the number of questions (FR11.2, T-37)</td><td class="status">PASS</td><td class="num">0.004s</td>
+   <td>the number of answers must match the number of questions (FR11.2, T-37)</td><td class="status">PASS</td><td class="num">0.003s</td>
   </tr>
   <tr class="pass">
-   <td>answers must be supplied as an array (FR11.2)</td><td class="status">PASS</td><td class="num">0.003s</td>
+   <td>answers must be supplied as an array (FR11.2)</td><td class="status">PASS</td><td class="num">0.002s</td>
   </tr>
   <tr class="pass">
-   <td>an attempt cannot be submitted against a non-quiz output (T-38)</td><td class="status">PASS</td><td class="num">0.010s</td>
+   <td>an attempt cannot be submitted against a non-quiz output (T-38)</td><td class="status">PASS</td><td class="num">0.002s</td>
   </tr>
   <tr class="pass">
-   <td>a quiz belonging to another user cannot be attempted (NFR3)</td><td class="status">PASS</td><td class="num">0.067s</td>
+   <td>a quiz belonging to another user cannot be attempted (NFR3)</td><td class="status">PASS</td><td class="num">0.058s</td>
   </tr>
   <tr class="pass">
-   <td>quiz attempt endpoints require authentication (NFR2)</td><td class="status">PASS</td><td class="num">0.015s</td>
+   <td>quiz attempt endpoints require authentication (NFR2)</td><td class="status">PASS</td><td class="num">0.002s</td>
   </tr>
   <tr class="pass">
-   <td>accepts a .txt upload and extracts its text (FR8.3, T-01)</td><td class="status">PASS</td><td class="num">1.263s</td>
+   <td>accepts a .txt upload and extracts its text (FR8.3, T-01)</td><td class="status">PASS</td><td class="num">0.350s</td>
   </tr>
   <tr class="pass">
-   <td>returns file_id so the caller can generate without a second lookup (FR6, T-48)</td><td class="status">PASS</td><td class="num">0.079s</td>
+   <td>returns file_id so the caller can generate without a second lookup (FR6, T-48)</td><td class="status">PASS</td><td class="num">0.065s</td>
   </tr>
   <tr class="pass">
-   <td>rejects a file whose extension is not allowed (FR6.1, T-04)</td><td class="status">PASS</td><td class="num">0.066s</td>
+   <td>rejects a file whose extension is not allowed (FR6.1, T-04)</td><td class="status">PASS</td><td class="num">0.060s</td>
   </tr>
   <tr class="pass">
-   <td>accepts .pdf, .docx and .txt extensions at the validation stage (FR6.1)</td><td class="status">PASS</td><td class="num">0.155s</td>
+   <td>accepts .pdf, .docx and .txt extensions at the validation stage (FR6.1)</td><td class="status">PASS</td><td class="num">0.092s</td>
   </tr>
   <tr class="pass">
-   <td>rejects a file over the 15 MB limit (FR6.2, T-05)</td><td class="status">PASS</td><td class="num">0.133s</td>
+   <td>rejects a file over the 15 MB limit (FR6.2, T-05)</td><td class="status">PASS</td><td class="num">0.082s</td>
   </tr>
   <tr class="pass">
-   <td>rejects a request with no file attached (T-07)</td><td class="status">PASS</td><td class="num">0.066s</td>
+   <td>rejects a request with no file attached (T-07)</td><td class="status">PASS</td><td class="num">0.060s</td>
   </tr>
   <tr class="pass">
-   <td>rejects a document with no readable text (FR8.4)</td><td class="status">PASS</td><td class="num">0.069s</td>
+   <td>rejects a document with no readable text (FR8.4)</td><td class="status">PASS</td><td class="num">0.058s</td>
   </tr>
   <tr class="pass">
-   <td>rejects a scanned, image-only PDF (FR8.4, SR-DP4, T-26)</td><td class="status">PASS</td><td class="num">0.093s</td>
+   <td>rejects a scanned, image-only PDF (FR8.4, SR-DP4, T-26)</td><td class="status">PASS</td><td class="num">0.064s</td>
   </tr>
   <tr class="pass">
-   <td>extracted PDF text carries no pdf-parse page markers (T-26)</td><td class="status">PASS</td><td class="num">0.119s</td>
+   <td>extracted PDF text carries no pdf-parse page markers (T-26)</td><td class="status">PASS</td><td class="num">0.090s</td>
   </tr>
   <tr class="pass">
-   <td>one user cannot read another user's document (NFR3, T-08)</td><td class="status">PASS</td><td class="num">0.156s</td>
+   <td>one user cannot read another user's document (NFR3, T-08)</td><td class="status">PASS</td><td class="num">0.118s</td>
   </tr>
   <tr class="pass">
    <td>upload requires authentication (NFR2)</td><td class="status">PASS</td><td class="num">0.002s</td>
@@ -468,7 +468,7 @@
    <td>buildPrompt instructs the model not to invent facts (T-15, risk R1)</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>buildPrompt rejects an unsupported output type (T-16)</td><td class="status">PASS</td><td class="num">0.001s</td>
+   <td>buildPrompt rejects an unsupported output type (T-16)</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
    <td>buildPrompt truncates long input on a word boundary (T-17, NFR1)</td><td class="status">PASS</td><td class="num">0.000s</td>
@@ -528,7 +528,7 @@
    <td>a request that does not return in time is rejected as AI_TIMEOUT (T-23)</td><td class="status">PASS</td><td class="num">0.022s</td>
   </tr>
   <tr class="pass">
-   <td>a request that returns in time is unaffected by the timeout (T-23)</td><td class="status">PASS</td><td class="num">0.001s</td>
+   <td>a request that returns in time is unaffected by the timeout (T-23)</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
    <td>a request failing on its own merits keeps its own error (T-23)</td><td class="status">PASS</td><td class="num">0.000s</td>
@@ -540,22 +540,118 @@
    <td>the timeout timer does not outlive the race (T-23)</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>TXT extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.008s</td>
+   <td>Explanation includes previous questions and answers</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>TXT extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.005s</td>
+   <td>First-time explanations work without conversation history</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>DOCX extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.041s</td>
+   <td>Explanation history is limited to 6000 characters</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>DOCX extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.023s</td>
+   <td>Primary study material remains authoritative</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>PDF extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.158s</td>
+   <td>Summary does not receive explanation chat history</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
   <tr class="pass">
-   <td>PDF extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.076s</td>
+   <td>Previous messages are retrieved and ordered chronologically</td><td class="status">PASS</td><td class="num">0.001s</td>
+  </tr>
+  <tr class="pass">
+   <td>Long previous answers retain later recommendations</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>New conversations work without previous messages</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Controller requests a maximum of five previous turns</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Unknown conversations are rejected before generation</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Conversations belonging to another main file are rejected</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: updates an owned conversation title</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: normalizes surrounding and repeated whitespace</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: rejects blank and non-string titles</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: rejects titles longer than 255 characters</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: protects the automatic New chat title</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: prevents another user changing a conversation</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: rejects invalid conversation IDs</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Rename: rejects conversations that do not exist</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>TXT extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.003s</td>
+  </tr>
+  <tr class="pass">
+   <td>TXT extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.001s</td>
+  </tr>
+  <tr class="pass">
+   <td>DOCX extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.021s</td>
+  </tr>
+  <tr class="pass">
+   <td>DOCX extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.012s</td>
+  </tr>
+  <tr class="pass">
+   <td>PDF extraction recovers the source in full (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.078s</td>
+  </tr>
+  <tr class="pass">
+   <td>PDF extraction recovers every section heading (FR8, T-25)</td><td class="status">PASS</td><td class="num">0.026s</td>
+  </tr>
+  <tr class="pass">
+   <td>Beginner flashcards focus on basic knowledge</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Intermediate flashcards focus on application</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Advanced flashcards focus on analysis</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>All difficulty prompts are distinct</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Intermediate default and invalid-level rejection</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Original flashcard format and source rules remain</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz beginner difficulty focuses on foundational knowledge</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz intermediate difficulty focuses on practical application</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz advanced difficulty focuses on analysis and trade-offs</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz difficulty produces three distinct prompts</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz defaults to intermediate when no difficulty is provided</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz rejects unsupported difficulty values</td><td class="status">PASS</td><td class="num">0.000s</td>
+  </tr>
+  <tr class="pass">
+   <td>Quiz retains existing question and answer format instructions</td><td class="status">PASS</td><td class="num">0.000s</td>
   </tr>
  </tbody>
 </table>

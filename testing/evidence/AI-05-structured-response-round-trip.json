@@ -2,11 +2,11 @@
   "test_id": "AI-05",
   "title": "Structured response round trip",
   "issue": "#119",
-  "captured_at": "2026-09-26T11:05:06.518Z",
+  "captured_at": "2026-10-14T00:13:01.140Z",
   "checking": "quiz content stored as JSON text is returned as parsed records on retrieval",
   "request": {
     "method": "GET",
-    "endpoint": "/api/ai/outputs/84"
+    "endpoint": "/api/ai/outputs/146"
   },
   "response": {
     "status": 200,

@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="AI-01 summary generation stores and returns prose content (FR9.1, issue #119)" time="1.202251" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="AI-02 flashcard generation returns structured question and answer records (FR10.1)" time="0.007492" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="AI-03 practice quiz generation returns scoreable questions (FR11.1)" time="0.009039" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="AI-04 concept explanation reflects the requested concept and level (FR12.1)" time="0.008694" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="AI-05 structured content survives storage and is returned parsed (FR10.1, FR11.1)" time="0.011208" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="AI-06 stored outputs stay bound to the generating user and document (NFR3)" time="0.006574" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="AI-07 another user cannot retrieve outputs generated from a document they do not own (NFR3)" time="0.100897" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\ai-integration.final.test.js"/>
-	<testcase name="DP-01 PDF extraction recovers the source document in full (FR8, issue #119)" time="1.231573" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="DP-02 DOCX extraction recovers the source document in full (FR8, issue #119)" time="0.044589" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="DP-03 TXT extraction recovers the source document in full (FR8, issue #119)" time="0.005343" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="DP-04 a scanned, image-only PDF is rejected with actionable advice (FR8.4, SR-DP4)" time="0.163366" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="DP-05 extracted text is stored intact and retrievable (FR8, issue #119)" time="0.097277" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="DP-06 an unsupported file type is rejected before any processing (FR6.1)" time="0.067654" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="DP-07 a corrupt file with an accepted extension fails safely (FR6.1, NFR5)" time="0.075854" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\document-processing.final.test.js"/>
-	<testcase name="ERR-01 Gemini timeout returns 504 AI_TIMEOUT and preserves the document (NFR5, issue #119)" time="1.461361" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-02 Daily quota exhausted returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.008111" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-03 Short rate limit returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.004792" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-04 Malformed AI response returns 502 AI_MALFORMED_RESPONSE and preserves the document (NFR5, issue #119)" time="0.004801" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-05 Empty AI response returns 502 AI_EMPTY_RESPONSE and preserves the document (NFR5, issue #119)" time="0.005017" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-06 Upstream service unavailable returns 503 AI_UNAVAILABLE and preserves the document (NFR5, issue #119)" time="0.004028" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-07 every AI failure mode shares one response contract (NFR5, issue #119)" time="0.010034" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="ERR-08 invalid input is rejected before the model is reached (FR12.1, issue #119)" time="0.005366" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\error-handling.final.test.js"/>
-	<testcase name="PRIV-01 generation is refused when consent has never been recorded (FR17.1)" time="1.180165" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="PRIV-02 revoking consent blocks further processing immediately (FR17.2)" time="0.109200" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="PRIV-03 only the study material is sent to the model, with no account data (NFR3, privacy)" time="0.097772" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="PRIV-04 generated content is labelled and carries a disclaimer (FR16.1)" time="0.114459" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="PRIV-05 no credential is exposed in a successful API response (security)" time="0.112289" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="PRIV-06 an upstream failure does not leak the API key into the error response (security, NFR5)" time="0.096166" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="PRIV-07 the environment file is excluded from version control (security)" time="0.106992" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\privacy-consent.final.test.js"/>
-	<testcase name="QA-01 the full document-to-AI-output pipeline completes end to end (issue #119 readiness)" time="1.477485" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\quality-pipeline.final.test.js"/>
-	<testcase name="QA-02 quiz marking is objectively correct against a known answer key (FR11.2)" time="0.101115" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\quality-pipeline.final.test.js"/>
-	<testcase name="QA-03 consent is enforced for all four content types (FR17, issue #119)" time="0.081337" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\quality-pipeline.final.test.js"/>
-	<testcase name="QA-04 the recorded AI accuracy review is present and complete (risk R1, FR9–FR12)" time="0.002862" classname="test" file="C:\Users\nitis\Documents\COIT20273-AI-Powered-Study-Notes-Generator\backend\tests\final\quality-pipeline.final.test.js"/>
+	<testcase name="AI-01 summary generation stores and returns prose content (FR9.1, issue #119)" time="0.339004" classname="test"/>
+	<testcase name="AI-02 flashcard generation returns structured question and answer records (FR10.1)" time="0.002470" classname="test"/>
+	<testcase name="AI-03 practice quiz generation returns scoreable questions (FR11.1)" time="0.002070" classname="test"/>
+	<testcase name="AI-04 concept explanation reflects the requested concept and level (FR12.1)" time="0.003587" classname="test"/>
+	<testcase name="AI-05 structured content survives storage and is returned parsed (FR10.1, FR11.1)" time="0.003602" classname="test"/>
+	<testcase name="AI-06 stored outputs stay bound to the generating user and document (NFR3)" time="0.002311" classname="test"/>
+	<testcase name="AI-07 another user cannot retrieve outputs generated from a document they do not own (NFR3)" time="0.066527" classname="test"/>
+	<testcase name="DP-01 PDF extraction recovers the source document in full (FR8, issue #119)" time="0.635584" classname="test"/>
+	<testcase name="DP-02 DOCX extraction recovers the source document in full (FR8, issue #119)" time="0.020505" classname="test"/>
+	<testcase name="DP-03 TXT extraction recovers the source document in full (FR8, issue #119)" time="0.001424" classname="test"/>
+	<testcase name="DP-04 a scanned, image-only PDF is rejected with actionable advice (FR8.4, SR-DP4)" time="0.097897" classname="test"/>
+	<testcase name="DP-05 extracted text is stored intact and retrievable (FR8, issue #119)" time="0.076207" classname="test"/>
+	<testcase name="DP-06 an unsupported file type is rejected before any processing (FR6.1)" time="0.060964" classname="test"/>
+	<testcase name="DP-07 a corrupt file with an accepted extension fails safely (FR6.1, NFR5)" time="0.061813" classname="test"/>
+	<testcase name="ERR-01 Gemini timeout returns 504 AI_TIMEOUT and preserves the document (NFR5, issue #119)" time="0.340641" classname="test"/>
+	<testcase name="ERR-02 Daily quota exhausted returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.001816" classname="test"/>
+	<testcase name="ERR-03 Short rate limit returns 429 AI_QUOTA_EXCEEDED and preserves the document (NFR5, issue #119)" time="0.002134" classname="test"/>
+	<testcase name="ERR-04 Malformed AI response returns 502 AI_MALFORMED_RESPONSE and preserves the document (NFR5, issue #119)" time="0.001173" classname="test"/>
+	<testcase name="ERR-05 Empty AI response returns 502 AI_EMPTY_RESPONSE and preserves the document (NFR5, issue #119)" time="0.001071" classname="test"/>
+	<testcase name="ERR-06 Upstream service unavailable returns 503 AI_UNAVAILABLE and preserves the document (NFR5, issue #119)" time="0.001034" classname="test"/>
+	<testcase name="ERR-07 every AI failure mode shares one response contract (NFR5, issue #119)" time="0.004071" classname="test"/>
+	<testcase name="ERR-08 invalid input is rejected before the model is reached (FR12.1, issue #119)" time="0.001698" classname="test"/>
+	<testcase name="PRIV-01 generation is refused when consent has never been recorded (FR17.1)" time="0.333922" classname="test"/>
+	<testcase name="PRIV-02 revoking consent blocks further processing immediately (FR17.2)" time="0.074662" classname="test"/>
+	<testcase name="PRIV-03 only the study material is sent to the model, with no account data (NFR3, privacy)" time="0.065840" classname="test"/>
+	<testcase name="PRIV-04 generated content is labelled and carries a disclaimer (FR16.1)" time="0.076523" classname="test"/>
+	<testcase name="PRIV-05 no credential is exposed in a successful API response (security)" time="0.076245" classname="test"/>
+	<testcase name="PRIV-06 an upstream failure does not leak the API key into the error response (security, NFR5)" time="0.063961" classname="test"/>
+	<testcase name="PRIV-07 the environment file is excluded from version control (security)" time="0.089526" classname="test"/>
+	<testcase name="QA-01 the full document-to-AI-output pipeline completes end to end (issue #119 readiness)" time="0.345838" classname="test"/>
+	<testcase name="QA-02 quiz marking is objectively correct against a known answer key (FR11.2)" time="0.075492" classname="test"/>
+	<testcase name="QA-03 consent is enforced for all four content types (FR17, issue #119)" time="0.063269" classname="test"/>
+	<testcase name="QA-04 the recorded AI accuracy review is present and complete (risk R1, FR9–FR12)" time="0.000344" classname="test"/>
 	<!-- tests 33 -->
 	<!-- suites 0 -->
 	<!-- pass 33 -->
@@ -40,5 +40,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 11636.0357 -->
+	<!-- duration_ms 5338.936333 -->
 </testsuites>

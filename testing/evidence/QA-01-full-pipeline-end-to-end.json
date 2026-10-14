@@ -2,10 +2,10 @@
   "test_id": "QA-01",
   "title": "Full pipeline end to end",
   "issue": "#119",
-  "captured_at": "2026-09-26T11:05:16.110Z",
+  "captured_at": "2026-10-14T00:13:05.543Z",
   "checking": "every stage of the Member 3 subsystem, from upload to retrieval, including the failure path",
   "request": {
-    "account": "autotest-1790420715978-yq52ml@example.invalid",
+    "account": "autotest-1791936785460-qajm5p@example.invalid",
     "document": "photosynthesis.txt"
   },
   "response": {
@@ -13,7 +13,7 @@
       {
         "stage": "1. Registration and login",
         "result": "token issued",
-        "user_id": 145
+        "user_id": 229
       },
       {
         "stage": "2. Consent granted (FR17.1)",
@@ -22,18 +22,18 @@
       {
         "stage": "3. Upload and text extraction (FR6, FR8)",
         "status": 201,
-        "file_id": 94,
+        "file_id": 156,
         "characters_extracted": 240
       },
       {
         "stage": "4. Extracted text stored (FR8)",
         "stored_characters": 240,
-        "owned_by": 145
+        "owned_by": 229
       },
       {
         "stage": "5. AI request and response parsing (FR11.1)",
         "status": 201,
-        "output_id": 47,
+        "output_id": 67,
         "questions_returned": 3,
         "labelled_ai_generated": true
       },
